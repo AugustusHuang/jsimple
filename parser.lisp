@@ -1,3 +1,37 @@
+
+;;;; Javascript syntax and grammar in ECMA-262:
+;;;; input-element-div ::
+;;;;   whitespace | line-terminator | comment | common-token |
+;;;;   div-punctuator |  right-brace-punctuator
+;;;; whitespace ::
+;;;;   TAB | VT | FF | SP | NBSP | ZWNBSP | USP
+;;;; line-terminator ::
+;;;;   LF | CR | LS | PS
+;;;; comment ::
+;;;;   multi-line-comment | single-line-comment
+;;;; multi-line-comment ::
+;;;;   /* (multi-line-comment-chars) */
+;;;; multi-line-comment-chars ::
+;;;;   multi-line-not-asterisk-char (multi-line-comment-chars) |
+;;;;   * (post-asterisk-comment-chars)
+;;;; post-asterisk-comment-chars ::
+;;;;   multi-line-not-forward-slash-or-asterisk-char (multi-line-comment-chars) |
+;;;;   * (post-asterisk-comment-chars)
+;;;; multi-line-not-asterisk-char ::
+;;;;   source-character \ *
+;;;; multi-line-not-forward-slash-or-asterish-char ::
+;;;;   source-character \ [* | /]
+;;;; single-line-comment ::
+;;;;   // (single-line-comment-chars)
+;;;; single-line-comment-chars ::
+;;;;   single-line-comment-char (single-line-comment-chars)
+;;;; single-line-comment-char ::
+;;;;   source-character \ line-terminator
+;;;; common-token ::
+;;;;   id | punctuator | number | string | template
+;;;; 
+
+;;;; Parser package.
 (in-package :jsimple-parser)
 
 (defvar *lexer-position* 0)
@@ -61,6 +95,8 @@
 	       (values 'id (copy-seq buffer)))
 	   (incf *lexer-position*)
            (vector-push-extend c buffer))))
+      ;; TODO: Handle string!
+      ()
       (t (error 'lexer-error c *lexer-position*)))))
 
 ;;; Since Lisp is written with prefix operators, we have to convert it into
@@ -93,10 +129,12 @@
 
   (statements
    (statements statement)
-   nil)
+   expression)
 
   (statement
-   ())
+   while-statement
+   iteration-statement
+   )
 
   (expression
    (expression + expression #'infix-to-prefix)
