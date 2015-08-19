@@ -12,7 +12,9 @@
 (defpackage :jsimple-parser
   (:use :cl
 	:jsimple-error
-	:yacc)
+	:lispbuilder-regex
+	:lispbuilder-lexer
+	:lispbuilder-yacc)
   (:documentation
    "Parser of jsimple, a simple javascript interpreter written in Common Lisp.")
   (:export))

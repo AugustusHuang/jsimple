@@ -19,6 +19,8 @@
 (defun point-p (char)
   (eql char #\.))
 
+;;; Lexer state machine:
+;;; 
 (defun jsimple-lexer (stream)
   "Simple lexer function, will return the token and its type to upper level."
   (let ((c (read-char stream nil nil))
