@@ -1,3 +1,5 @@
+;;;; All jsimple interpreter error handling function.
+
 (in-package :jsimple-error)
 
 (define-condition general-error ()
@@ -17,9 +19,9 @@
   (())
   (:documentation "Jsimple parser error."))
 
-;;; Since this is a really simple interpreter, don't expect too much optimize,
-;;; and almost all error will be reported as runtime error since it may not
-;;; be modified.
+;; Since this is a really simple interpreter, don't expect too much optimize,
+;; and almost all error will be reported as runtime error since it may not
+;; be modified.
 (define-condition runtime-error (general-error)
   ()
   (:documentation "Jsimple runtime error."))
@@ -42,7 +44,7 @@
    (index :initarg :index :reader invalid-index-index)
    (type :initarg :type :reader invalid-index-type))
   (:report (lambda (condition stream)
-	     ;; Since index maybe a non-number...
+	     ; Since index maybe a non-number...
 	     (format stream "Invalid index error: object ~S of type ~A, index ~A."
 		     (invalid-index-name condition)
 		     (invalid-index-type condition)
@@ -64,8 +66,23 @@
    (type :initarg :type :reader invalid-function-type))
   (:report (lambda (condition stream)
 	     (format stream "Invalid function error: object ~S of type ~A, function ~S."
-		     (invalid-name-name condition)
-		     (invalid-name-type condition)
-		     (invalid-name-funame condition))))
-  (:documentation "Invalid function of an object, occurs when user wants to call a non-existing function of an object."))
+		     (invalid-function-name condition)
+		     (invalid-function-type condition)
+		     (invalid-function-funame condition))))
+  (:documentation "Invalid function of an object, occurs when user wants to call a non-existing or out of scope function of an object."))
+
+(define-condition invalid-object (runtime-error)
+  ((name :initarg :name :reader invalid-object-name))
+  (:report (lambda (condition stream)
+	     (format stream "Invalid object error: object ~S not defined."
+		     (invalid-object-name condition))))
+  (:documentation "Invalid object, occurs when user wants to access or refer a non-existing or out of scope object."))
+
+;; Though we can represent this number as NaN, signal it to the user.
+(define-condition number-too-large (runtime-error)
+  ((number :initarg :number :reader number-too-large-number))
+  (:report (lambda (condition name)
+	     (format stream "Number too larget: ~D."
+		     (number-too-large-number condition))))
+  (:documentation "Too large number, occurs when user wants to use a number larger than maximum."))
 
