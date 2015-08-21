@@ -44,17 +44,33 @@ These are the operators I currently feel good with:
 	`mod-float`
 	`inc`
 	`dec`
+	`le`
+	`ge`
+	`leq`
+	`geq`
+	`eq`
+	`neq`
 	`set`
 	`get`
 	`and`
 	`or`
 	`not`
-	
+	`left-shift`
+	`right-shift`
+	`struct`
+	`aref`
+	`coerce-float`
+	`coerce-string`
 	`nop`
 
 Why `inc` and `dec`? They are assumed atomic (maybe, I think), so in
-multi-threaded system it won't cause unpredictable result.
-Still not completed!
+multi-threaded system it won't cause unpredictable result.  
+`coerce` have to take part when we are trying to add a number and a string,
+since javascript will take the number as another string and return a string.
+And if an integer is added with a floating number, result will be a float.  
+Still not completed! I don't know whether operators like `*=` or `-=` acts
+atomically or not in javascript, or defined by a standard to have such kind
+of restrictions.
 
 ## opcodes
 We won't compile the IR into raw assembly codes, so it seems no need to assign
