@@ -37,6 +37,7 @@
    (numeric
     string
     identifier
+    regex
     + ++ - --
     * / %
     += -= *= /= %= = == === != !==
@@ -65,7 +66,9 @@
    debugger-statement)
 
   (block-statement
-   ({ statement-list } (lambda (a b c) (declare (ignore a c)) (funcall #'build-block-statement b))))
+   ({ statement-list } (lambda (a b c)
+			 (declare (ignore a c))
+			 (funcall #'build-block-statement b))))
 
   (statement-list
    (statement-list statement #'push-tail-2)
