@@ -77,6 +77,11 @@ We won't compile the IR into raw assembly codes, so it seems no need to assign
 a RISC-like binary code structure to IR.
 
 ## Format
-The whole IR of a javascript input will be a linear array of form
+The whole IR of a javascript input will be a list of form
 `(operator operand1 operand2 operand3)`, here the number of arguments vary from
-0 to 3.
+0 to 3. Every form should be called a **node**. A node structure will be made
+(I borrow this name from **CMUCL**).
+
+## Virtual machine
+The IR will be assumed to run on a Lisp virtual machine. It has a linear memory
+and the unit objects will be nodes.
