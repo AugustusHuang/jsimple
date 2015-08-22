@@ -31,20 +31,20 @@
 
 (define-condition lexer-error (general-error)
   ((char :initarg :char :reader lexer-error-char)
-   (position :initarg :position :reader lexer-error-position))
+   (line :initarg :line :reader lexer-error-line))
   (:report (lambda (condition stream)
-	     (format stream "Lexer error: ~S at position ~D."
+	     (format stream "Lexer error: ~S at line ~D."
 		     (lexer-error-char condition)
-		     (lexer-error-position condition))))
+		     (lexer-error-line condition))))
   (:documentation "Jsimple lexer error."))
 
 (define-condition parser-error (general-error)
   (())
   (:documentation "Jsimple parser error."))
 
-;; Since this is a really simple interpreter, don't expect too much optimize,
-;; and almost all error will be reported as runtime error since it may not
-;; be modified.
+;;; Since this is a really simple interpreter, don't expect too much optimize,
+;;; and almost all error will be reported as runtime error since it may not
+;;; be modified.
 (define-condition runtime-error (general-error)
   ()
   (:documentation "Jsimple runtime error."))
@@ -67,7 +67,7 @@
    (index :initarg :index :reader invalid-index-index)
    (type :initarg :type :reader invalid-index-type))
   (:report (lambda (condition stream)
-	     ; Since index maybe a non-number...
+	     ;; Since index maybe a non-number...
 	     (format stream "Invalid index error: object ~S of type ~A, index ~A."
 		     (invalid-index-name condition)
 		     (invalid-index-type condition)
@@ -101,7 +101,7 @@
 		     (invalid-object-name condition))))
   (:documentation "Invalid object, occurs when user wants to access or refer a non-existing or out of scope object."))
 
-;; Though we can represent this number as NaN, signal it to the user.
+;;; Though we can represent this number as NaN, signal it to the user.
 (define-condition number-too-large (runtime-error)
   ((number :initarg :number :reader number-too-large-number))
   (:report (lambda (condition name)

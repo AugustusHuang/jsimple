@@ -44,7 +44,9 @@
 
 (in-package :jsimple-parser)
 
-;;; FIXME: Change Javascript from 3rd or 5th version to 6th version...
+;;; Now javascript has a new 6th version standard, adjust PARSE-JS lib,
+;;; make it compatible with new features. Also make some modifications
+;;; on the coding style.
 (defmacro with-defs (&body body)
   (loop :for form :in body
         :if (and (eq (car form) 'def) (< (length form) 4))
@@ -59,7 +61,11 @@
 (defmacro defun/defs (name args &body body)
   `(defun ,name ,args (with-defs ,@body)))
 
-(defstruct token type value line char pos newline-before comments-before)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defstruct token type value line char pos newline-before comments-before))
+
+;;; These functions are tiny, make them inline.
+(declaim (inline tokenp token-type-p token-id))
 (defun tokenp (token type value)
   (and (eq (token-type token) type)
        (eql (token-value token) value)))
@@ -72,18 +78,17 @@
 (defvar *char*)
 (defvar *position*)
 
-;; This condition will be moved to error.lisp.
+;;; This condition will be moved to error.lisp.
 (define-condition js-parse-error (simple-error)
   ((line :initform *line* :reader js-parse-error-line)
    (char :initform *char* :reader js-parse-error-char)))
-(defmethod print-object ((err js-parse-error) stream)
-  (call-next-method)
-  (format stream " (line ~a, character ~a)" (js-parse-error-line err) (js-parse-error-char err)))
 (defun js-parse-error (control &rest args)
   (error 'js-parse-error :format-control control :format-arguments args))
 
-(defparameter *operator-chars* "+-*&%=<>!?|~^")
-(defparameter *operators*
+;;; NOTE: All constant parameters should be surronded by +.
+(defparameter +operator-chars+ "+-*&%=<>!?|~^")
+
+(defparameter +operators+
   (let ((ops (make-hash-table :test 'equal)))
     (dolist (op '(:in :instanceof :typeof :new :void :delete :++ :-- :+ :- :! :~ :& :|\|| :^ :* :/ :%
                   :>> :<< :>>> :< :> :<= :>= :== :=== :!= :!== :? := :+= :-= :/= :*= :%= :>>= :<<=
@@ -91,36 +96,58 @@
       (setf (gethash (string-downcase (string op)) ops) op))
     ops))
 
-(defparameter *whitespace-chars*
-  (concatenate '(vector character) (list #\space #\tab #.(code-char 11) #\page #\return #\newline
-                                         (code-char #xa0) (code-char #x2028) (code-char #x2029))))
-(defparameter *line-terminators*
-  (concatenate '(vector character) (list #\newline #\return (code-char #x2028) (code-char #x2029))))
+(defparameter +whitespace-chars+
+  (concatenate 'string (list #\space #\tab #.(code-char 11) #\page #\return
+			     #\newline (code-char #xa0) (code-char #x2028)
+			     (code-char #x2029))))
 
-(defparameter *keywords*
+(defparameter +line-terminators+
+  (concatenate 'string (list #\newline #\return
+			     (code-char #x2028) (code-char #x2029))))
+
+;;; FIXME: undefined?
+(defparameter +keywords+
   (let ((keywords (make-hash-table :test 'equal)))
-    (dolist (word '(:break :case :catch :continue :debugger :default :delete :do :else :false
-                    :finally :for :function :if :in :instanceof :new :null :return :switch
-                    :throw :true :try :typeof :var :void :while :with))
+    (dolist (word '(:break :case :catch :class :const :continue :debugger
+		    :default :delete :do :else :export :extends :false
+		    :finally :for :function :if :import :in :instanceof :new
+		    :null :return :super :switch :this :throw :true :try
+		    :typeof :var :void :while :with :yield))
       (setf (gethash (string-downcase (string word)) keywords) word))
     keywords))
-(defparameter *keywords-before-expression* '(:return :new :delete :throw :else :case))
-(defparameter *atom-keywords* '(:false :null :true :undefined))
-(defparameter *reserved-words-ecma-3*
+
+;;; FIXME: Any more?
+(defparameter +keywords-before-expression+
+  '(:return :new :delete :throw :else :case))
+
+(defparameter +atom-keywords+
+  '(:false :null :true :undefined))
+
+(defparameter +reserved-words-ecma-3+
   (let ((words (make-hash-table :test 'equal)))
-    (dolist (word '("abstract" "enum" "int" "short" "boolean" "export" "interface" "static"
-                    "byte" "extends" "long" "super" "char" "final" "native" "synchronized"
-                    "class" "float" "package" "throws" "const" "goto" "private" "transient"
-                    "debugger" "implements" "protected" "volatile" "double" "import" "public"))
+    (dolist (word '("abstract" "enum" "int" "short" "boolean" "export"
+		    "interface" "static" "byte" "extends" "long" "super"
+		    "char" "final" "native" "synchronized" "class" "float"
+		    "package" "throws" "const" "goto" "private" "transient"
+                    "debugger" "implements" "protected" "volatile" "double"
+		    "import" "public"))
       (setf (gethash word words) t))
     words))
-(defparameter *reserved-words-ecma-5*
+
+(defparameter +reserved-words-ecma-5+
   (let ((words (make-hash-table :test 'equal)))
     (dolist (word '("class" "enum" "extends" "super" "const" "export" "import"))
       (setf (gethash word words) t))
     words))
-(defparameter *check-for-reserved-words* nil)
-(defparameter *ecma-version* 3)
+
+(defparameter +reserved-words-ecma-6+
+  (let ((words (make-hash-table :test 'equal)))
+    (dolist (word '("enum" "await"))
+      (setf (gethash word words) t))
+    words))
+
+(defparameter +check-for-reserved-words+ nil)
+(defparameter +ecma-version+ 6)
 
 (defun read-js-number (stream &key junk-allowed)
   (flet ((peek-1 () (peek-char nil stream nil nil))
@@ -130,8 +157,8 @@
 (defun read-js-number-1 (peek next &key junk-allowed)
   (labels ((digits (radix)
              (with-output-to-string (out)
-               (loop :for ch := (funcall peek) :while (and ch (digit-char-p ch radix)) :do
-                  (write-char (funcall next) out)))))
+               (loop for ch = (funcall peek) while (and ch (digit-char-p ch radix)) do
+		    (write-char (funcall next) out)))))
     (let ((minus (case (funcall peek) (#\+ (funcall next) nil) (#\- (funcall next) t)))
           (body (digits 10))
           (*read-default-float-format* 'double-float))
@@ -161,9 +188,9 @@
                    (floating-point-underflow () (ret 0d0)))))
               ((equal body "") (ret nil))
               ((and (char= (char body 0) #\0)
-                    (loop :for i :from 1 :below (length body) :do
-                       (unless (digit-char-p (char body i)) (return nil))
-                       :finally (return t)))
+                    (loop for i from 1 below (length body) do
+			 (unless (digit-char-p (char body i)) (return nil))
+                       finally (return t)))
                (ret (parse-integer body :radix 8)))
               ((equal body "") (ret nil))
               (t (ret (parse-integer body))))))))
@@ -188,7 +215,8 @@
                    (member value *keywords-before-expression*))
               (and (eq type :punc)
                    (find value "[{(,.;:"))))
-    (prog1 (make-token :type type :value value :line *line* :char *char* :pos *position*
+    (prog1 (make-token :type type :value value :line *line* :char *char*
+		       :pos *position*
                        :newline-before newline-before
                        :comments-before (reverse comments-before))
       (setf newline-before nil)
@@ -208,20 +236,20 @@
       ch))
 
   (def skip-whitespace ()
-    (loop :for ch := (peek)
-          :while (and ch (find ch *whitespace-chars*))
-          :do (next)))
+    (loop for ch = (peek)
+       while (and ch (find ch *whitespace-chars*))
+       do (next)))
   (def read-while (pred)
     (with-output-to-string (*standard-output*)
-      (loop :for ch := (peek)
-            :while (and ch (funcall pred ch))
-            :do (princ (next)))))
+      (loop for ch = (peek)
+	 while (and ch (funcall pred ch))
+	 do (princ (next)))))
 
   (def read-num (&optional start)
     (let ((num (or (read-js-number-1 (lambda () (if start start (peek)))
                                      (lambda () (if start (prog1 start (setf start nil)) (next)))
                                      :junk-allowed t)
-                   (js-parse-error "Invalid syntax."))))
+                   (error 'lexer-error))))
       (token :num num)))
 
   (def handle-dot ()
@@ -231,13 +259,13 @@
         (token :punc #\.)))
 
   (def hex-bytes (n char)
-    (loop :with num := 0
-          :for pos :from (1- n) :downto 0
-          :do (let ((digit (digit-char-p (next t) 16)))
-                (if digit
-                    (incf num (* digit (expt 16 pos)))
-                    (js-parse-error "Invalid \\~a escape pattern." char)))
-          :finally (return num)))
+    (loop with num = 0
+       for pos from (1- n) downto 0
+       do (let ((digit (digit-char-p (next t) 16)))
+	    (if digit
+		(incf num (* digit (expt 16 pos)))
+		(error 'lexer-error)))
+       finally (return num)))
   (def read-escaped-char (&optional in-string)
     (let ((ch (next t in-string)))
       (case ch
@@ -248,10 +276,10 @@
         (#\newline nil)
         (t (let ((num (digit-char-p ch 8)))
              (if num
-                 (loop :for nx := (digit-char-p (peek) 8) :do
-                    (when (or (not nx) (>= num 32)) (return (code-char num)))
-                    (next)
-                    (setf num (+ nx (* num 8))))
+                 (loop for nx = (digit-char-p (peek) 8) do
+		      (when (or (not nx) (>= num 32)) (return (code-char num)))
+		      (next)
+		      (setf num (+ nx (* num 8))))
                  ch))))))
   (def read-string ()
     (let ((quote (next)))
@@ -260,10 +288,11 @@
                  (with-output-to-string (*standard-output*)
                    (loop (let ((ch (next t)))
                            (cond ((eql ch #\\) (let ((ch (read-escaped-char t))) (when ch (write-char ch))))
-                                 ((find ch *line-terminators*) (js-parse-error "Line terminator inside of string."))
+                                 ((find ch *line-terminators*)
+				  (error 'lexer-error ))
                                  ((eql ch quote) (return))
                                  (t (write-char ch)))))))
-        (end-of-file () (js-parse-error "Unterminated string constant.")))))
+        (end-of-file () (error 'lexer-error)))))
 
   (def add-comment (type c)
     (when include-comments
@@ -282,52 +311,49 @@
     (if include-comments
         (add-comment :comment1
                      (with-output-to-string (out)
-                       (loop :for ch := (next)
-                          :until (or (find ch *line-terminators*) (not ch))
-                          :do (write-char ch out))))
-        (loop :for ch := (next)
-           :until (or (find ch *line-terminators*) (not ch)))))
+                       (loop for ch = (next)
+                          until (or (find ch *line-terminators*) (not ch))
+                          do (write-char ch out))))
+        (loop for ch = (next)
+           until (or (find ch *line-terminators*) (not ch)))))
 
   (def read-multiline-comment ()
     (next)
     (if include-comments
         (add-comment :comment2
                      (with-output-to-string (out)
-                       (loop :with star := nil
-                          :for ch := (or (next) (js-parse-error "Unterminated comment."))
-                          :until (and star (eql ch #\/))
-                          :do
-                          (setf star (eql ch #\*))
-                          (write-char ch out))))
-        (loop :with star := nil
-           :for ch := (or (next) (js-parse-error "Unterminated comment."))
-           :until (and star (eql ch #\/))
-           :do (setf star (eql ch #\*)))))
+                       (loop with star = nil
+                          for ch = (or (next) (js-parse-error "Unterminated comment."))
+                          until (and star (eql ch #\/))
+                          do (setf star (eql ch #\*)) (write-char ch out))))
+        (loop with star = nil
+           for ch = (or (next) (js-parse-error "Unterminated comment."))
+           until (and star (eql ch #\/))
+           do (setf star (eql ch #\*)))))
 
   (def read-regexp ()
     (handler-case
         (token :regexp
                (cons
                 (with-output-to-string (*standard-output*)
-                  (loop :with backslash := nil :with inset := nil
-                        :for ch := (next t) :until (and (not backslash) (not inset) (eql ch #\/)) :do
-                     (unless backslash
-                       (when (eql ch #\[) (setf inset t))
-                       (when (and inset (not backslash) (eql ch #\])) (setf inset nil)))
-                     (setf backslash (and (eql ch #\\) (not backslash)))
-                     ;; Handle \u sequences, since CL-PPCRE does not understand them.
-                     (if (and backslash (eql (peek) #\u))
-                         (let* ((code (progn
-                                        (setf backslash nil)
-                                        (next)
-                                        (hex-bytes 4 #\u)))
-                                (ch (code-char code)))
-                           ;; on CCL, parsing /\uFFFF/ fails because (code-char #xFFFF) returns NIL.
-                           ;; so when NIL, we better use the original sequence.
-                           (if ch
-                               (write-char ch)
-                               (format t "\\u~4,'0X" code)))
-                         (write-char ch))))
+                  (loop with backslash = nil with inset = nil
+		     for ch = (next t)
+		     until (and (not backslash) (not inset) (eql ch #\/)) do
+		       (unless backslash
+			 (when (eql ch #\[) (setf inset t))
+			 (when (and inset (not backslash) (eql ch #\])) (setf inset nil)))
+		       (setf backslash (and (eql ch #\\) (not backslash)))
+		     ;; Handle \u sequences, since CL-PPCRE does not understand them.
+		       (if (and backslash (eql (peek) #\u))
+			   (let* ((code (progn
+					  (setf backslash nil)
+					  (next)
+					  (hex-bytes 4 #\u)))
+				  (ch (code-char code)))
+			     (if ch
+				 (write-char ch)
+				 (format t "\\u~4,'0X" code)))
+			   (write-char ch))))
                 (read-while #'identifier-char-p)))
       (end-of-file () (js-parse-error "Unterminated regular expression."))))
 
@@ -354,14 +380,14 @@
   (def read-word ()
     (let* ((unicode-escape nil)
            (word (with-output-to-string (*standard-output*)
-                   (loop :for ch := (peek) :do
-                      (cond ((eql ch #\\)
-                             (next)
-                             (unless (eql (next) #\u) (js-parse-error "Unrecognized escape in identifier."))
-                             (write-char (code-char (hex-bytes 4 #\u)))
-                             (setf unicode-escape t))
-                            ((and ch (identifier-char-p ch)) (write-char (next)))
-                            (t (return))))))
+                   (loop for ch = (peek) do
+			(cond ((eql ch #\\)
+			       (next)
+			       (unless (eql (next) #\u) (js-parse-error "Unrecognized escape in identifier."))
+			       (write-char (code-char (hex-bytes 4 #\u)))
+			       (setf unicode-escape t))
+			      ((and ch (identifier-char-p ch)) (write-char (next)))
+			      (t (return))))))
            (keyword (and (not unicode-escape) (gethash word *keywords*))))
       (cond ((and *check-for-reserved-words* (not unicode-escape)
                   (gethash word (ecase *ecma-version* (3 *reserved-words-ecma-3*) (5 *reserved-words-ecma-5*))))

@@ -26,9 +26,9 @@ system-dependent package), add the package into its use list.
 Comments can be surronded with `#|` and `|#` or started with `;`. If you want
 to comment out some maybe-useful code, use `#| blabla |#` like `#if 0`
 `#endif` in C. `;` comments have four levels, file-wise comment should start
-with `;;;;`, paragraph-wise (here paragraph means a group of forms which
-aimed to one target) comment should start with `;;;`, form-wise comment should
-start with `;;` and in-form comment `;`. In-form comment style can also be
+with `;;;;`, paragraph-wise comment should start with `;;;` (paragraph means
+a big form, like a function or a macro), form-wise comment should
+start with `;;` and in-line comment `;`. In-line comment style can also be
 applied to small pieces of codes which need to be commented out. Comment should
 be informative.
 
