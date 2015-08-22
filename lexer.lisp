@@ -1,281 +1,391 @@
+;;;; The MIT License (MIT)
+
+;;;; Copyright (c) 2015 Huang Xuxing
+
+;;;; Permission is hereby granted, free of charge, to any person obtaining
+;;;; a copy of this software and associated documentation files
+;;;; (the "Software"), to deal in the Software without restriction,
+;;;; including without limitation the rights to use, copy, modify, merge,
+;;;; publish, distribute, sublicense, and/or sell copies of the Software,
+;;;; and to permit persons to whom the Software is furnished to do so,
+;;;; subject to the following conditions:
+
+;;;; The above copyright notice and this permission notice shall be included
+;;;; in all copies or substantial portions of the Software.
+
+;;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+;;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+;;;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+;;;; THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+;;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+;;;; ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+;;;; OTHER DEALINGS IN THE SOFTWARE.
+
+;;;; Copyright (c) Marijn Haverbeke, marijnh@gmail.com
+
+;;;; This software is provided 'as-is', without any express or implied
+;;;; warranty. In no event will the authors be held liable for any
+;;;; damages arising from the use of this software.
+
+;;;; Permission is granted to anyone to use this software for any
+;;;; purpose, including commercial applications, and to alter it and
+;;;; redistribute it freely, subject to the following restrictions:
+
+;;;; 1. The origin of this software must not be misrepresented; you must
+;;;;    not claim that you wrote the original software. If you use this
+;;;;    software in a product, an acknowledgment in the product
+;;;;    documentation would be appreciated but is not required.
+
+;;;; 2. Altered source versions must be plainly marked as such, and must
+;;;;    not be misrepresented as being the original software.
+
+;;;; 3. This notice may not be removed or altered from any source
+;;;;    distribution.
+
 (in-package :jsimple-parser)
 
-;;; Lexer constants used as arguments in lexer construction.
-;;; File js-syntax contains a syntax forest.
-(defparameter +decimal-digit+ "[0-9]")
-(defconstant +decimal-digits+ "[0-9]+")
-(defconstant +non-zero-digit+ "[1-9]")
-(defconstant +octal-digit+ "[0-7]")
-(defconstant +hex-digit+ "[:xdigit:]")
-(defconstant +unicode-identifier-start+ "[\xaa\xb5\xba\xc0-\xd6\xd8-\xf6\xf8-\u02c1\u02c6-\u02d1\u02e0-\u02e4\u02ec\u02ee\u0370-\u0374\u0376\u0377\u037a-\u037d\u0386\u0388-\u038a\u038c\u038e-\u03a1\u03a3-\u03f5\u03f7-\u0481\u048a-\u0527\u0531-\u0556\u0559\u0561-\u0587\u05d0-\u05ea\u05f0-\u05f2\u0620-\u064a\u066e\u066f\u0671-\u06d3\u06d5\u06e5\u06e6\u06ee\u06ef\u06fa-\u06fc\u06ff\u0710\u0712-\u072f\u074d-\u07a5\u07b1\u07ca-\u07ea\u07f4\u07f5\u07fa\u0800-\u0815\u081a\u0824\u0828\u0840-\u0858\u08a0\u08a2-\u08ac\u0904-\u0939\u093d\u0950\u0958-\u0961\u0971-\u0977\u0979-\u097f\u0985-\u098c\u098f\u0990\u0993-\u09a8\u09aa-\u09b0\u09b2\u09b6-\u09b9\u09bd\u09ce\u09dc\u09dd\u09df-\u09e1\u09f0\u09f1\u0a05-\u0a0a\u0a0f\u0a10\u0a13-\u0a28\u0a2a-\u0a30\u0a32\u0a33\u0a35\u0a36\u0a38\u0a39\u0a59-\u0a5c\u0a5e\u0a72-\u0a74\u0a85-\u0a8d\u0a8f-\u0a91\u0a93-\u0aa8\u0aaa-\u0ab0\u0ab2\u0ab3\u0ab5-\u0ab9\u0abd\u0ad0\u0ae0\u0ae1\u0b05-\u0b0c\u0b0f\u0b10\u0b13-\u0b28\u0b2a-\u0b30\u0b32\u0b33\u0b35-\u0b39\u0b3d\u0b5c\u0b5d\u0b5f-\u0b61\u0b71\u0b83\u0b85-\u0b8a\u0b8e-\u0b90\u0b92-\u0b95\u0b99\u0b9a\u0b9c\u0b9e\u0b9f\u0ba3\u0ba4\u0ba8-\u0baa\u0bae-\u0bb9\u0bd0\u0c05-\u0c0c\u0c0e-\u0c10\u0c12-\u0c28\u0c2a-\u0c33\u0c35-\u0c39\u0c3d\u0c58\u0c59\u0c60\u0c61\u0c85-\u0c8c\u0c8e-\u0c90\u0c92-\u0ca8\u0caa-\u0cb3\u0cb5-\u0cb9\u0cbd\u0cde\u0ce0\u0ce1\u0cf1\u0cf2\u0d05-\u0d0c\u0d0e-\u0d10\u0d12-\u0d3a\u0d3d\u0d4e\u0d60\u0d61\u0d7a-\u0d7f\u0d85-\u0d96\u0d9a-\u0db1\u0db3-\u0dbb\u0dbd\u0dc0-\u0dc6\u0e01-\u0e30\u0e32\u0e33\u0e40-\u0e46\u0e81\u0e82\u0e84\u0e87\u0e88\u0e8a\u0e8d\u0e94-\u0e97\u0e99-\u0e9f\u0ea1-\u0ea3\u0ea5\u0ea7\u0eaa\u0eab\u0ead-\u0eb0\u0eb2\u0eb3\u0ebd\u0ec0-\u0ec4\u0ec6\u0edc-\u0edf\u0f00\u0f40-\u0f47\u0f49-\u0f6c\u0f88-\u0f8c\u1000-\u102a\u103f\u1050-\u1055\u105a-\u105d\u1061\u1065\u1066\u106e-\u1070\u1075-\u1081\u108e\u10a0-\u10c5\u10c7\u10cd\u10d0-\u10fa\u10fc-\u1248\u124a-\u124d\u1250-\u1256\u1258\u125a-\u125d\u1260-\u1288\u128a-\u128d\u1290-\u12b0\u12b2-\u12b5\u12b8-\u12be\u12c0\u12c2-\u12c5\u12c8-\u12d6\u12d8-\u1310\u1312-\u1315\u1318-\u135a\u1380-\u138f\u13a0-\u13f4\u1401-\u166c\u166f-\u167f\u1681-\u169a\u16a0-\u16ea\u16ee-\u16f0\u1700-\u170c\u170e-\u1711\u1720-\u1731\u1740-\u1751\u1760-\u176c\u176e-\u1770\u1780-\u17b3\u17d7\u17dc\u1820-\u1877\u1880-\u18a8\u18aa\u18b0-\u18f5\u1900-\u191c\u1950-\u196d\u1970-\u1974\u1980-\u19ab\u19c1-\u19c7\u1a00-\u1a16\u1a20-\u1a54\u1aa7\u1b05-\u1b33\u1b45-\u1b4b\u1b83-\u1ba0\u1bae\u1baf\u1bba-\u1be5\u1c00-\u1c23\u1c4d-\u1c4f\u1c5a-\u1c7d\u1ce9-\u1cec\u1cee-\u1cf1\u1cf5\u1cf6\u1d00-\u1dbf\u1e00-\u1f15\u1f18-\u1f1d\u1f20-\u1f45\u1f48-\u1f4d\u1f50-\u1f57\u1f59\u1f5b\u1f5d\u1f5f-\u1f7d\u1f80-\u1fb4\u1fb6-\u1fbc\u1fbe\u1fc2-\u1fc4\u1fc6-\u1fcc\u1fd0-\u1fd3\u1fd6-\u1fdb\u1fe0-\u1fec\u1ff2-\u1ff4\u1ff6-\u1ffc\u2071\u207f\u2090-\u209c\u2102\u2107\u210a-\u2113\u2115\u2119-\u211d\u2124\u2126\u2128\u212a-\u212d\u212f-\u2139\u213c-\u213f\u2145-\u2149\u214e\u2160-\u2188\u2c00-\u2c2e\u2c30-\u2c5e\u2c60-\u2ce4\u2ceb-\u2cee\u2cf2\u2cf3\u2d00-\u2d25\u2d27\u2d2d\u2d30-\u2d67\u2d6f\u2d80-\u2d96\u2da0-\u2da6\u2da8-\u2dae\u2db0-\u2db6\u2db8-\u2dbe\u2dc0-\u2dc6\u2dc8-\u2dce\u2dd0-\u2dd6\u2dd8-\u2dde\u2e2f\u3005-\u3007\u3021-\u3029\u3031-\u3035\u3038-\u303c\u3041-\u3096\u309d-\u309f\u30a1-\u30fa\u30fc-\u30ff\u3105-\u312d\u3131-\u318e\u31a0-\u31ba\u31f0-\u31ff\u3400-\u4db5\u4e00-\u9fcc\ua000-\ua48c\ua4d0-\ua4fd\ua500-\ua60c\ua610-\ua61f\ua62a\ua62b\ua640-\ua66e\ua67f-\ua697\ua6a0-\ua6ef\ua717-\ua71f\ua722-\ua788\ua78b-\ua78e\ua790-\ua793\ua7a0-\ua7aa\ua7f8-\ua801\ua803-\ua805\ua807-\ua80a\ua80c-\ua822\ua840-\ua873\ua882-\ua8b3\ua8f2-\ua8f7\ua8fb\ua90a-\ua925\ua930-\ua946\ua960-\ua97c\ua984-\ua9b2\ua9cf\uaa00-\uaa28\uaa40-\uaa42\uaa44-\uaa4b\uaa60-\uaa76\uaa7a\uaa80-\uaaaf\uaab1\uaab5\uaab6\uaab9-\uaabd\uaac0\uaac2\uaadb-\uaadd\uaae0-\uaaea\uaaf2-\uaaf4\uab01-\uab06\uab09-\uab0e\uab11-\uab16\uab20-\uab26\uab28-\uab2e\uabc0-\uabe2\uac00-\ud7a3\ud7b0-\ud7c6\ud7cb-\ud7fb\uf900-\ufa6d\ufa70-\ufad9\ufb00-\ufb06\ufb13-\ufb17\ufb1d\ufb1f-\ufb28\ufb2a-\ufb36\ufb38-\ufb3c\ufb3e\ufb40\ufb41\ufb43\ufb44\ufb46-\ufbb1\ufbd3-\ufd3d\ufd50-\ufd8f\ufd92-\ufdc7\ufdf0-\ufdfb\ufe70-\ufe74\ufe76-\ufefc\uff21-\uff3a\uff41-\uff5a\uff66-\uffbe\uffc2-\uffc7\uffca-\uffcf\uffd2-\uffd7\uffda-\uffdc]")
-(defconstant +unicode-identifier-part+ "[\xaa\xb5\xba\xc0-\xd6\xd8-\xf6\xf8-\u02c1\u02c6-\u02d1\u02e0-\u02e4\u02ec\u02ee\u0370-\u0374\u0376\u0377\u037a-\u037d\u0386\u0388-\u038a\u038c\u038e-\u03a1\u03a3-\u03f5\u03f7-\u0481\u048a-\u0527\u0531-\u0556\u0559\u0561-\u0587\u05d0-\u05ea\u05f0-\u05f2\u0620-\u064a\u066e\u066f\u0671-\u06d3\u06d5\u06e5\u06e6\u06ee\u06ef\u06fa-\u06fc\u06ff\u0710\u0712-\u072f\u074d-\u07a5\u07b1\u07ca-\u07ea\u07f4\u07f5\u07fa\u0800-\u0815\u081a\u0824\u0828\u0840-\u0858\u08a0\u08a2-\u08ac\u0904-\u0939\u093d\u0950\u0958-\u0961\u0971-\u0977\u0979-\u097f\u0985-\u098c\u098f\u0990\u0993-\u09a8\u09aa-\u09b0\u09b2\u09b6-\u09b9\u09bd\u09ce\u09dc\u09dd\u09df-\u09e1\u09f0\u09f1\u0a05-\u0a0a\u0a0f\u0a10\u0a13-\u0a28\u0a2a-\u0a30\u0a32\u0a33\u0a35\u0a36\u0a38\u0a39\u0a59-\u0a5c\u0a5e\u0a72-\u0a74\u0a85-\u0a8d\u0a8f-\u0a91\u0a93-\u0aa8\u0aaa-\u0ab0\u0ab2\u0ab3\u0ab5-\u0ab9\u0abd\u0ad0\u0ae0\u0ae1\u0b05-\u0b0c\u0b0f\u0b10\u0b13-\u0b28\u0b2a-\u0b30\u0b32\u0b33\u0b35-\u0b39\u0b3d\u0b5c\u0b5d\u0b5f-\u0b61\u0b71\u0b83\u0b85-\u0b8a\u0b8e-\u0b90\u0b92-\u0b95\u0b99\u0b9a\u0b9c\u0b9e\u0b9f\u0ba3\u0ba4\u0ba8-\u0baa\u0bae-\u0bb9\u0bd0\u0c05-\u0c0c\u0c0e-\u0c10\u0c12-\u0c28\u0c2a-\u0c33\u0c35-\u0c39\u0c3d\u0c58\u0c59\u0c60\u0c61\u0c85-\u0c8c\u0c8e-\u0c90\u0c92-\u0ca8\u0caa-\u0cb3\u0cb5-\u0cb9\u0cbd\u0cde\u0ce0\u0ce1\u0cf1\u0cf2\u0d05-\u0d0c\u0d0e-\u0d10\u0d12-\u0d3a\u0d3d\u0d4e\u0d60\u0d61\u0d7a-\u0d7f\u0d85-\u0d96\u0d9a-\u0db1\u0db3-\u0dbb\u0dbd\u0dc0-\u0dc6\u0e01-\u0e30\u0e32\u0e33\u0e40-\u0e46\u0e81\u0e82\u0e84\u0e87\u0e88\u0e8a\u0e8d\u0e94-\u0e97\u0e99-\u0e9f\u0ea1-\u0ea3\u0ea5\u0ea7\u0eaa\u0eab\u0ead-\u0eb0\u0eb2\u0eb3\u0ebd\u0ec0-\u0ec4\u0ec6\u0edc-\u0edf\u0f00\u0f40-\u0f47\u0f49-\u0f6c\u0f88-\u0f8c\u1000-\u102a\u103f\u1050-\u1055\u105a-\u105d\u1061\u1065\u1066\u106e-\u1070\u1075-\u1081\u108e\u10a0-\u10c5\u10c7\u10cd\u10d0-\u10fa\u10fc-\u1248\u124a-\u124d\u1250-\u1256\u1258\u125a-\u125d\u1260-\u1288\u128a-\u128d\u1290-\u12b0\u12b2-\u12b5\u12b8-\u12be\u12c0\u12c2-\u12c5\u12c8-\u12d6\u12d8-\u1310\u1312-\u1315\u1318-\u135a\u1380-\u138f\u13a0-\u13f4\u1401-\u166c\u166f-\u167f\u1681-\u169a\u16a0-\u16ea\u16ee-\u16f0\u1700-\u170c\u170e-\u1711\u1720-\u1731\u1740-\u1751\u1760-\u176c\u176e-\u1770\u1780-\u17b3\u17d7\u17dc\u1820-\u1877\u1880-\u18a8\u18aa\u18b0-\u18f5\u1900-\u191c\u1950-\u196d\u1970-\u1974\u1980-\u19ab\u19c1-\u19c7\u1a00-\u1a16\u1a20-\u1a54\u1aa7\u1b05-\u1b33\u1b45-\u1b4b\u1b83-\u1ba0\u1bae\u1baf\u1bba-\u1be5\u1c00-\u1c23\u1c4d-\u1c4f\u1c5a-\u1c7d\u1ce9-\u1cec\u1cee-\u1cf1\u1cf5\u1cf6\u1d00-\u1dbf\u1e00-\u1f15\u1f18-\u1f1d\u1f20-\u1f45\u1f48-\u1f4d\u1f50-\u1f57\u1f59\u1f5b\u1f5d\u1f5f-\u1f7d\u1f80-\u1fb4\u1fb6-\u1fbc\u1fbe\u1fc2-\u1fc4\u1fc6-\u1fcc\u1fd0-\u1fd3\u1fd6-\u1fdb\u1fe0-\u1fec\u1ff2-\u1ff4\u1ff6-\u1ffc\u2071\u207f\u2090-\u209c\u2102\u2107\u210a-\u2113\u2115\u2119-\u211d\u2124\u2126\u2128\u212a-\u212d\u212f-\u2139\u213c-\u213f\u2145-\u2149\u214e\u2160-\u2188\u2c00-\u2c2e\u2c30-\u2c5e\u2c60-\u2ce4\u2ceb-\u2cee\u2cf2\u2cf3\u2d00-\u2d25\u2d27\u2d2d\u2d30-\u2d67\u2d6f\u2d80-\u2d96\u2da0-\u2da6\u2da8-\u2dae\u2db0-\u2db6\u2db8-\u2dbe\u2dc0-\u2dc6\u2dc8-\u2dce\u2dd0-\u2dd6\u2dd8-\u2dde\u2e2f\u3005-\u3007\u3021-\u3029\u3031-\u3035\u3038-\u303c\u3041-\u3096\u309d-\u309f\u30a1-\u30fa\u30fc-\u30ff\u3105-\u312d\u3131-\u318e\u31a0-\u31ba\u31f0-\u31ff\u3400-\u4db5\u4e00-\u9fcc\ua000-\ua48c\ua4d0-\ua4fd\ua500-\ua60c\ua610-\ua61f\ua62a\ua62b\ua640-\ua66e\ua67f-\ua697\ua6a0-\ua6ef\ua717-\ua71f\ua722-\ua788\ua78b-\ua78e\ua790-\ua793\ua7a0-\ua7aa\ua7f8-\ua801\ua803-\ua805\ua807-\ua80a\ua80c-\ua822\ua840-\ua873\ua882-\ua8b3\ua8f2-\ua8f7\ua8fb\ua90a-\ua925\ua930-\ua946\ua960-\ua97c\ua984-\ua9b2\ua9cf\uaa00-\uaa28\uaa40-\uaa42\uaa44-\uaa4b\uaa60-\uaa76\uaa7a\uaa80-\uaaaf\uaab1\uaab5\uaab6\uaab9-\uaabd\uaac0\uaac2\uaadb-\uaadd\uaae0-\uaaea\uaaf2-\uaaf4\uab01-\uab06\uab09-\uab0e\uab11-\uab16\uab20-\uab26\uab28-\uab2e\uabc0-\uabe2\uac00-\ud7a3\ud7b0-\ud7c6\ud7cb-\ud7fb\uf900-\ufa6d\ufa70-\ufad9\ufb00-\ufb06\ufb13-\ufb17\ufb1d\ufb1f-\ufb28\ufb2a-\ufb36\ufb38-\ufb3c\ufb3e\ufb40\ufb41\ufb43\ufb44\ufb46-\ufbb1\ufbd3-\ufd3d\ufd50-\ufd8f\ufd92-\ufdc7\ufdf0-\ufdfb\ufe70-\ufe74\ufe76-\ufefc\uff21-\uff3a\uff41-\uff5a\uff66-\uffbe\uffc2-\uffc7\uffca-\uffcf\uffd2-\uffd7\uffda-\uffdc0-9\u0300-\u036f\u0483-\u0487\u0591-\u05bd\u05bf\u05c1\u05c2\u05c4\u05c5\u05c7\u0610-\u061a\u064b-\u0669\u0670\u06d6-\u06dc\u06df-\u06e4\u06e7\u06e8\u06ea-\u06ed\u06f0-\u06f9\u0711\u0730-\u074a\u07a6-\u07b0\u07c0-\u07c9\u07eb-\u07f3\u0816-\u0819\u081b-\u0823\u0825-\u0827\u0829-\u082d\u0859-\u085b\u08e4-\u08fe\u0900-\u0903\u093a-\u093c\u093e-\u094f\u0951-\u0957\u0962\u0963\u0966-\u096f\u0981-\u0983\u09bc\u09be-\u09c4\u09c7\u09c8\u09cb-\u09cd\u09d7\u09e2\u09e3\u09e6-\u09ef\u0a01-\u0a03\u0a3c\u0a3e-\u0a42\u0a47\u0a48\u0a4b-\u0a4d\u0a51\u0a66-\u0a71\u0a75\u0a81-\u0a83\u0abc\u0abe-\u0ac5\u0ac7-\u0ac9\u0acb-\u0acd\u0ae2\u0ae3\u0ae6-\u0aef\u0b01-\u0b03\u0b3c\u0b3e-\u0b44\u0b47\u0b48\u0b4b-\u0b4d\u0b56\u0b57\u0b62\u0b63\u0b66-\u0b6f\u0b82\u0bbe-\u0bc2\u0bc6-\u0bc8\u0bca-\u0bcd\u0bd7\u0be6-\u0bef\u0c01-\u0c03\u0c3e-\u0c44\u0c46-\u0c48\u0c4a-\u0c4d\u0c55\u0c56\u0c62\u0c63\u0c66-\u0c6f\u0c82\u0c83\u0cbc\u0cbe-\u0cc4\u0cc6-\u0cc8\u0cca-\u0ccd\u0cd5\u0cd6\u0ce2\u0ce3\u0ce6-\u0cef\u0d02\u0d03\u0d3e-\u0d44\u0d46-\u0d48\u0d4a-\u0d4d\u0d57\u0d62\u0d63\u0d66-\u0d6f\u0d82\u0d83\u0dca\u0dcf-\u0dd4\u0dd6\u0dd8-\u0ddf\u0df2\u0df3\u0e31\u0e34-\u0e3a\u0e47-\u0e4e\u0e50-\u0e59\u0eb1\u0eb4-\u0eb9\u0ebb\u0ebc\u0ec8-\u0ecd\u0ed0-\u0ed9\u0f18\u0f19\u0f20-\u0f29\u0f35\u0f37\u0f39\u0f3e\u0f3f\u0f71-\u0f84\u0f86\u0f87\u0f8d-\u0f97\u0f99-\u0fbc\u0fc6\u102b-\u103e\u1040-\u1049\u1056-\u1059\u105e-\u1060\u1062-\u1064\u1067-\u106d\u1071-\u1074\u1082-\u108d\u108f-\u109d\u135d-\u135f\u1712-\u1714\u1732-\u1734\u1752\u1753\u1772\u1773\u17b4-\u17d3\u17dd\u17e0-\u17e9\u180b-\u180d\u1810-\u1819\u18a9\u1920-\u192b\u1930-\u193b\u1946-\u194f\u19b0-\u19c0\u19c8\u19c9\u19d0-\u19d9\u1a17-\u1a1b\u1a55-\u1a5e\u1a60-\u1a7c\u1a7f-\u1a89\u1a90-\u1a99\u1b00-\u1b04\u1b34-\u1b44\u1b50-\u1b59\u1b6b-\u1b73\u1b80-\u1b82\u1ba1-\u1bad\u1bb0-\u1bb9\u1be6-\u1bf3\u1c24-\u1c37\u1c40-\u1c49\u1c50-\u1c59\u1cd0-\u1cd2\u1cd4-\u1ce8\u1ced\u1cf2-\u1cf4\u1dc0-\u1de6\u1dfc-\u1dff\u200c\u200d\u203f\u2040\u2054\u20d0-\u20dc\u20e1\u20e5-\u20f0\u2cef-\u2cf1\u2d7f\u2de0-\u2dff\u302a-\u302f\u3099\u309a\ua620-\ua629\ua66f\ua674-\ua67d\ua69f\ua6f0\ua6f1\ua802\ua806\ua80b\ua823-\ua827\ua880\ua881\ua8b4-\ua8c4\ua8d0-\ua8d9\ua8e0-\ua8f1\ua900-\ua909\ua926-\ua92d\ua947-\ua953\ua980-\ua983\ua9b3-\ua9c0\ua9d0-\ua9d9\uaa29-\uaa36\uaa43\uaa4c\uaa4d\uaa50-\uaa59\uaa7b\uaab0\uaab2-\uaab4\uaab7\uaab8\uaabe\uaabf\uaac1\uaaeb-\uaaef\uaaf5\uaaf6\uabe3-\uabea\uabec\uabed\uabf0-\uabf9\ufb1e\ufe00-\ufe0f\ufe20-\ufe26\ufe33\ufe34\ufe4d-\ufe4f\uff10-\uff19\uff3f]")
-(defconstant +identifier-start+
-  (concatenate 'string
-	       +unicode-identifier-start+ "|"
-	       "[$_a-zA-Z]" "|"
-	       "(\\[u]" +hex-digit+ "{4})"))
-(defconstant +identifier-part+
-  (concatenate 'string
-	       +identifier-start+ "|"
-	       +unicode-identifier-part+ "|"
-	       +decimal-digit+))
-(defconstant +identifier+
-  (concatenate 'string +identifier-start+ +identifier-part+ "*"))
-(defconstant +exponent-indicator+ "[eE]")
-(defconstant +signed-integer+ "[+-]?[0-9]+")
-(defconstant +decimal-integer-literal+
-  (concatenate 'string "[0]|" +non-zero-digit+ +decimal-digits+ "*"))
-(defconstant +exponent-part+
-  (concatenate 'string +exponent-indicator+ +signed-integer+))
-(defconstant +octal-integer-literal+
-  (concatenate 'string "[0]" +octal-digit+ "*"))
-(defconstant +hex-integer-literal+
-  (concatenate 'string "[0][xX]" +hex-digit+ "*"))
-(defconstant +decimal-literal+
-  (concatenate 'string
-	       "(" +decimal-integer-literal+
-	       "\\." +decimal-digits+ "*"
-	       +exponent-part+ "?)|(\\." +decimal-digits+ +exponent-part+
-	       "?)|(" +decimal-integer-literal+ +exponent-part+ "?)"))
-(defconstant +line-continuation+ "\\\\(\r\n|\r|\n)")
-(defconstant +octal-escape-sequence+ "(?:[1-7][0-7]{0,2}|[0-7]{2,3})")
-(defconstant +hex-escape-sequence+
-  (concatenate 'string "[x]" +hex-digit+ "{2}"))
-(defconstant +unicode-escape-sequence+
-  (concatenate 'string "[u]" +hex-digit+ "{4}"))
-(defconstant +single-escape-character+ "[\'\"\\\\bfnrtv]")
-(defconstant +non-escape-character+ "[^\'\"\\\\bfnrtv0-9xu]")
-(defconstant +character-escape-sequence+
-  (concatenate 'string +single-escape-character+ "|" +non-escape-character+))
-(defconstant +escape-sequence+
-  (concatenate 'string +character-escape-sequence+ "|" +octal-escape-sequence+
-	       "|" +hex-escape-sequence+ "|" +unicode-escape-sequence+))
-(defconstant +double-string-character+
-  (concatenate 'string "([^\"\\\\\n\r]+)|(\\\\" +escape-sequence+ ")|"
-	       +line-continuation+))
-(defconstant +single-string-character+
-  (concatenate 'string "([^\'\\\\\n\r]+)|(\\\\" +escape-sequence+ ")|"
-	       +line-continuation+))
-(defconstant +string-literal+
-  (concatenate 'string "(\"" +double-string-character+ "*\")|(\'"
-	       +single-string-character+ "*\')"))
-(defconstant +regular-expression-non-terminator "[^\n\r]")
-(defconstant +regular-expression-backslash-sequence+
-  (concatenate 'string "\\\\" +regular-expression-non-terminator+))
-(defconstant +regular-expression-class-char+
-  (concatenate 'string "[^\n\r\]\\\\]|" +regular-expression-backslash-sequence+))
-;; NOTE: "\[" will be handled as [, which is a invalid regular expression.
-(defconstant +regular-expression-class+
-  (concatenate 'string "\\[" +regular-expression-class-char "*\\]"))
-(defconstant +regular-expression-flags+
-  (concatenate 'string +identifier-part+ "*"))
-(defconstant +regular-expression-first-char+
-  (concatenate 'string "([^\n\r\*\\\\\/\\[])|"
-	       +regular-expression-backslash-sequence+ "|"
-	       +regular-expression-class+))
-(defconstant +regular-expression-char+
-  (concatenate 'string "([^\n\r\\\\\/\\[])|"
-	       +regular-expression-backslash-sequence+ "|"
-	       +regular-expression-class+))
-(defconstant +regular-expression-body+
-  (concatenate 'string +regular-expression-first-char+
-	       +regular-expression-char+ "*"))
-(defconstant +regular-expression-literal+
-  (concatenate 'string +regular-expression-body+ "\/"
-	       +regular-expression-flags+))
+;;; FIXME: Change Javascript from 3rd or 5th version to 6th version...
+(defmacro with-defs (&body body)
+  (loop :for form :in body
+        :if (and (eq (car form) 'def) (< (length form) 4))
+          :collect (cadr form) :into vars :and
+          :if (caddr form) :collect `(setf ,(cadr form) ,(caddr form)) :into body :end
+        :else :if (eq (car form) 'def)
+          :collect (cdr form) :into funcs
+        :else
+          :collect form :into body
+        :finally (return `(let ,vars (labels ,funcs ,@body)))))
 
-;; Lexer generated by LISPBUILDER-LEXER.
-(deflexer jsimple-lexer
-    (+regular-expression-literal+)
-  (return (values 'regex %0))
-  ("(\r\n|\r|\n)+\s*++")
-  (return (values 'br++ %0))
-  ("(\r\n|\r|\n)+\s*--")
-  (return (values 'br-- %0))
-  ("\s+")
-  (return (values (quote #\;) %0))
-  ("/*(.|\r|\n)*?*/")
-  (return (values (quote #\;) %0))
-  ("//.*($|\r\n|\r|\n")
-  (return (values (quote #\;) %0))
-  (+string-literal+)
-  (return (values 'string %0))
-  ("break")
-  (return (values 'break %0))
-  ("case")
-  (return (values 'case %0))
-  ("catch")
-  (return (values 'catch %0))
-  ("continue")
-  (return (values 'continue %0))
-  ("debugger")
-  (return (values 'debugger %0))
-  ("default")
-  (return (values 'default %0))
-  ("delete")
-  (return (values 'delete %0))
-  ("do")
-  (return (values 'do %0))
-  ("else")
-  (return (values 'else %0))
-  ("finally")
-  (return (values 'finally %0))
-  ("for")
-  (return (values 'for %0))
-  ("function")
-  (return (values 'function %0))
-  ("if")
-  (return (values 'if %0))
-  ("in")
-  (return (values 'in %0))
-  ("instanceof")
-  (return (values 'instanceof %0))
-  ("new")
-  (return (values 'new %0))
-  ("return")
-  (return (values 'return %0))
-  ("switch")
-  (return (values 'switch %0))
-  ("this")
-  (return (values 'this %0))
-  ("throw")
-  (return (values 'throw %0))
-  ("try")
-  (return (values 'try %0))
-  ("typeof")
-  (return (values 'typeof %0))
-  ("var")
-  (return (values 'var %0))
-  ("void")
-  (return (values 'void %0))
-  ("while")
-  (return (values 'while %0))
-  ("with")
-  (return (values 'with %0))
-  ("true")
-  (return (values 'true %0))
-  ("false")
-  (return (values 'false %0))
-  ("null")
-  (return (values 'null %0))
-  ("class")
-  (return (values 'class %0))
-  ("const")
-  (return (values 'const %0))
-  ("enum")
-  (return (values 'enum %0))
-  ("export")
-  (return (values 'export %0))
-  ("extends")
-  (return (values 'extends %0))
-  ("import")
-  (return (values 'import %0))
-  ("super")
-  (return (values 'super %0))
-  (+identifier+)
-  (return (values 'identifier %0))
-  (+decimal-literal+)
-  (return (values 'numeric (num %0)))
-  (+hex-integer-literal+)
-  (return (values 'numeric (int %0)))
-  (+octal-integer-literal+)
-  (return (values 'numeric (int %0)))
-  ("{")
-  (return (values '{ %0))
-  ("}")
-  (return (values '} %0))
-  ("(")
-  (return (values (quote #\() %0))
-  (")")
-  (return (values (quote #\)) %0))
-  ("[")
-  (return (values '[ %0))
-  ("]")
-  (return (values '] %0))
-  ("\.")
-  (return (values (quote #\.) %0))
-  (";")
-  (return (values (quote #\;) %0))
-  (",")
-  (return (values (quote #\,) %0))
-  ("?")
-  (return (values '? %0))
-  (":")
-  (return (values (quote #\:) %0))
-  ("===")
-  (return (values '=== %0))
-  ("==")
-  (return (values '== %0))
-  ("=")
-  (return (values '= %0))
-  ("!==")
-  (return (values '!== %0))
-  ("!=")
-  (return (values '!= %0))
-  ("!")
-  (return (values '! %0))
-  ("<<=")
-  (return (values '<<= %0))
-  ("<<")
-  (return (values '<< %0))
-  ("<=")
-  (return (values '<= %0))
-  ("<")
-  (return (values '< %0))
-  (">>>=")
-  (return (values '>>>= %0))
-  (">>>")
-  (return (values '>>> %0))
-  (">>=")
-  (return (values '>>= %0))
-  (">>")
-  (return (values '>> %0))
-  (">=")
-  (return (values '>= %0))
-  (">")
-  (return (values '> %0))
-  ("+=")
-  (return (values '+= %0))
-  ("++")
-  (return (values '++ %0))
-  ("+")
-  (return (values '+ %0))
-  ("-=")
-  (return (values '-= %0))
-  ("--")
-  (return (values '-- %0))
-  ("-")
-  (return (values '- %0))
-  ("*=")
-  (return (values '*= %0))
-  ("*")
-  (return (values '* %0))
-  ("/=")
-  (return (values '/= %0))
-  ("/")
-  (return (values '/ %0))
-  ("%=")
-  (return (values '%= %0))
-  ("%")
-  (return (values '% %0))
-  ("&&")
-  (return (values '&& %0))
-  ("&=")
-  (return (values '&= %0))
-  ("&")
-  (return (values '& %0))
-  ("||")
-  (return (values '|| %0))
-  ("|=")
-  (return (values (quote "|=") %0))
-  ("|")
-  (return (values (quote #\|) %0))
-  ("^=")
-  (return (values '^= %0))
-  ("^")
-  (return (values '^ %0))
-  ("~")
-  (return (values '~ %0))
-  (".")
-  (progn
-    (error 'general-error)))
+(defmacro defun/defs (name args &body body)
+  `(defun ,name ,args (with-defs ,@body)))
+
+(defstruct token type value line char pos newline-before comments-before)
+(defun tokenp (token type value)
+  (and (eq (token-type token) type)
+       (eql (token-value token) value)))
+(defun token-type-p (token type)
+  (eq (token-type token) type))
+(defun token-id (token)
+  (token-value token))
+
+(defvar *line*)
+(defvar *char*)
+(defvar *position*)
+
+;; This condition will be moved to error.lisp.
+(define-condition js-parse-error (simple-error)
+  ((line :initform *line* :reader js-parse-error-line)
+   (char :initform *char* :reader js-parse-error-char)))
+(defmethod print-object ((err js-parse-error) stream)
+  (call-next-method)
+  (format stream " (line ~a, character ~a)" (js-parse-error-line err) (js-parse-error-char err)))
+(defun js-parse-error (control &rest args)
+  (error 'js-parse-error :format-control control :format-arguments args))
+
+(defparameter *operator-chars* "+-*&%=<>!?|~^")
+(defparameter *operators*
+  (let ((ops (make-hash-table :test 'equal)))
+    (dolist (op '(:in :instanceof :typeof :new :void :delete :++ :-- :+ :- :! :~ :& :|\|| :^ :* :/ :%
+                  :>> :<< :>>> :< :> :<= :>= :== :=== :!= :!== :? := :+= :-= :/= :*= :%= :>>= :<<=
+                  :>>>= :~= :%= :|\|=| :^= :&= :&& :|\|\||))
+      (setf (gethash (string-downcase (string op)) ops) op))
+    ops))
+
+(defparameter *whitespace-chars*
+  (concatenate '(vector character) (list #\space #\tab #.(code-char 11) #\page #\return #\newline
+                                         (code-char #xa0) (code-char #x2028) (code-char #x2029))))
+(defparameter *line-terminators*
+  (concatenate '(vector character) (list #\newline #\return (code-char #x2028) (code-char #x2029))))
+
+(defparameter *keywords*
+  (let ((keywords (make-hash-table :test 'equal)))
+    (dolist (word '(:break :case :catch :continue :debugger :default :delete :do :else :false
+                    :finally :for :function :if :in :instanceof :new :null :return :switch
+                    :throw :true :try :typeof :var :void :while :with))
+      (setf (gethash (string-downcase (string word)) keywords) word))
+    keywords))
+(defparameter *keywords-before-expression* '(:return :new :delete :throw :else :case))
+(defparameter *atom-keywords* '(:false :null :true :undefined))
+(defparameter *reserved-words-ecma-3*
+  (let ((words (make-hash-table :test 'equal)))
+    (dolist (word '("abstract" "enum" "int" "short" "boolean" "export" "interface" "static"
+                    "byte" "extends" "long" "super" "char" "final" "native" "synchronized"
+                    "class" "float" "package" "throws" "const" "goto" "private" "transient"
+                    "debugger" "implements" "protected" "volatile" "double" "import" "public"))
+      (setf (gethash word words) t))
+    words))
+(defparameter *reserved-words-ecma-5*
+  (let ((words (make-hash-table :test 'equal)))
+    (dolist (word '("class" "enum" "extends" "super" "const" "export" "import"))
+      (setf (gethash word words) t))
+    words))
+(defparameter *check-for-reserved-words* nil)
+(defparameter *ecma-version* 3)
+
+(defun read-js-number (stream &key junk-allowed)
+  (flet ((peek-1 () (peek-char nil stream nil nil))
+         (next-1 () (read-char stream nil nil)))
+    (read-js-number-1 #'peek-1 #'next-1 :junk-allowed junk-allowed)))
+
+(defun read-js-number-1 (peek next &key junk-allowed)
+  (labels ((digits (radix)
+             (with-output-to-string (out)
+               (loop :for ch := (funcall peek) :while (and ch (digit-char-p ch radix)) :do
+                  (write-char (funcall next) out)))))
+    (let ((minus (case (funcall peek) (#\+ (funcall next) nil) (#\- (funcall next) t)))
+          (body (digits 10))
+          (*read-default-float-format* 'double-float))
+      (flet ((ret (x)
+               (return-from read-js-number-1
+                 (and x (or junk-allowed (eq (funcall peek) nil)) (if minus (if (eq x :infinity) :-infinity (- x)) x)))))
+        (cond ((and (equal body "0") (find (funcall peek) "xX") (funcall next))
+               (ret (parse-integer (digits 16) :junk-allowed t :radix 16)))
+              ((find (funcall peek) ".eE")
+               (let ((base (if (string= body "") 0 (parse-integer body)))
+                     (expt 0) (expt-neg nil))
+                 (if (and (eql (funcall peek) #\.) (funcall next))
+                     (let ((digs (digits 10)))
+                       (if (string= digs "")
+                           (when (string= body "") (ret nil))
+                           (loop (handler-case
+                                     (return (incf base (/ (parse-integer digs) (expt 10d0 (length digs)))))
+                                   (floating-point-overflow () (setf digs (subseq digs 0 (1- (length digs)))))))))
+                     (when (equal body "") (ret nil)))
+                 (when (and (find (funcall peek) "eE") (funcall next))
+                   (setf expt-neg (and (find (funcall peek) "+-") (eql (funcall next) #\-)))
+                   (let ((digs (digits 10)))
+                     (when (equal digs "") (ret nil))
+                     (setf expt (parse-integer digs))))
+                 (handler-case (ret (* base (expt 10d0 (if expt-neg (- expt) expt))))
+                   (floating-point-overflow () (ret :infinity))
+                   (floating-point-underflow () (ret 0d0)))))
+              ((equal body "") (ret nil))
+              ((and (char= (char body 0) #\0)
+                    (loop :for i :from 1 :below (length body) :do
+                       (unless (digit-char-p (char body i)) (return nil))
+                       :finally (return t)))
+               (ret (parse-integer body :radix 8)))
+              ((equal body "") (ret nil))
+              (t (ret (parse-integer body))))))))
+
+(defun/defs lex-js (stream &key include-comments)
+  (def expression-allowed t)
+  (def newline-before nil)
+  (def line 1)
+  (def char 0)
+  (def position 0)
+  (def comments-before nil)
+
+  (def start-token ()
+    (setf *line* line
+          *char* char
+          *position* position))
+  (def token (type value)
+    (setf expression-allowed
+          (or (and (eq type :operator)
+                   (not (member value '("++" "--") :test #'string=)))
+              (and (eq type :keyword)
+                   (member value *keywords-before-expression*))
+              (and (eq type :punc)
+                   (find value "[{(,.;:"))))
+    (prog1 (make-token :type type :value value :line *line* :char *char* :pos *position*
+                       :newline-before newline-before
+                       :comments-before (reverse comments-before))
+      (setf newline-before nil)
+      (setf comments-before nil)))
+
+  (def peek ()
+    (peek-char nil stream nil))
+  (def next (&optional eof-error in-string)
+    (let ((ch (read-char stream eof-error)))
+      (when ch
+        (incf position)
+        (if (find ch *line-terminators*)
+            (progn
+              (setf line (1+ line) char 0)
+              (unless in-string (setf newline-before t)))
+            (incf char)))
+      ch))
+
+  (def skip-whitespace ()
+    (loop :for ch := (peek)
+          :while (and ch (find ch *whitespace-chars*))
+          :do (next)))
+  (def read-while (pred)
+    (with-output-to-string (*standard-output*)
+      (loop :for ch := (peek)
+            :while (and ch (funcall pred ch))
+            :do (princ (next)))))
+
+  (def read-num (&optional start)
+    (let ((num (or (read-js-number-1 (lambda () (if start start (peek)))
+                                     (lambda () (if start (prog1 start (setf start nil)) (next)))
+                                     :junk-allowed t)
+                   (js-parse-error "Invalid syntax."))))
+      (token :num num)))
+
+  (def handle-dot ()
+    (next)
+    (if (digit-char-p (peek))
+        (read-num #\.)
+        (token :punc #\.)))
+
+  (def hex-bytes (n char)
+    (loop :with num := 0
+          :for pos :from (1- n) :downto 0
+          :do (let ((digit (digit-char-p (next t) 16)))
+                (if digit
+                    (incf num (* digit (expt 16 pos)))
+                    (js-parse-error "Invalid \\~a escape pattern." char)))
+          :finally (return num)))
+  (def read-escaped-char (&optional in-string)
+    (let ((ch (next t in-string)))
+      (case ch
+        (#\n #\newline) (#\r #\return) (#\t #\tab)
+        (#\b #\backspace) (#\v #.(code-char 11)) (#\f #\page) (#\0 #\null)
+        (#\x (code-char (hex-bytes 2 #\x)))
+        (#\u (code-char (hex-bytes 4 #\u)))
+        (#\newline nil)
+        (t (let ((num (digit-char-p ch 8)))
+             (if num
+                 (loop :for nx := (digit-char-p (peek) 8) :do
+                    (when (or (not nx) (>= num 32)) (return (code-char num)))
+                    (next)
+                    (setf num (+ nx (* num 8))))
+                 ch))))))
+  (def read-string ()
+    (let ((quote (next)))
+      (handler-case
+          (token :string
+                 (with-output-to-string (*standard-output*)
+                   (loop (let ((ch (next t)))
+                           (cond ((eql ch #\\) (let ((ch (read-escaped-char t))) (when ch (write-char ch))))
+                                 ((find ch *line-terminators*) (js-parse-error "Line terminator inside of string."))
+                                 ((eql ch quote) (return))
+                                 (t (write-char ch)))))))
+        (end-of-file () (js-parse-error "Unterminated string constant.")))))
+
+  (def add-comment (type c)
+    (when include-comments
+      ;; doing this instead of calling (token) as we don't want
+      ;; to put comments-before into a comment token
+      (push (make-token :type type
+                        :value c
+                        :line *line*
+                        :char *char*
+                        :pos *position*
+                        :newline-before newline-before)
+            comments-before)))
+
+  (def read-line-comment ()
+    (next)
+    (if include-comments
+        (add-comment :comment1
+                     (with-output-to-string (out)
+                       (loop :for ch := (next)
+                          :until (or (find ch *line-terminators*) (not ch))
+                          :do (write-char ch out))))
+        (loop :for ch := (next)
+           :until (or (find ch *line-terminators*) (not ch)))))
+
+  (def read-multiline-comment ()
+    (next)
+    (if include-comments
+        (add-comment :comment2
+                     (with-output-to-string (out)
+                       (loop :with star := nil
+                          :for ch := (or (next) (js-parse-error "Unterminated comment."))
+                          :until (and star (eql ch #\/))
+                          :do
+                          (setf star (eql ch #\*))
+                          (write-char ch out))))
+        (loop :with star := nil
+           :for ch := (or (next) (js-parse-error "Unterminated comment."))
+           :until (and star (eql ch #\/))
+           :do (setf star (eql ch #\*)))))
+
+  (def read-regexp ()
+    (handler-case
+        (token :regexp
+               (cons
+                (with-output-to-string (*standard-output*)
+                  (loop :with backslash := nil :with inset := nil
+                        :for ch := (next t) :until (and (not backslash) (not inset) (eql ch #\/)) :do
+                     (unless backslash
+                       (when (eql ch #\[) (setf inset t))
+                       (when (and inset (not backslash) (eql ch #\])) (setf inset nil)))
+                     (setf backslash (and (eql ch #\\) (not backslash)))
+                     ;; Handle \u sequences, since CL-PPCRE does not understand them.
+                     (if (and backslash (eql (peek) #\u))
+                         (let* ((code (progn
+                                        (setf backslash nil)
+                                        (next)
+                                        (hex-bytes 4 #\u)))
+                                (ch (code-char code)))
+                           ;; on CCL, parsing /\uFFFF/ fails because (code-char #xFFFF) returns NIL.
+                           ;; so when NIL, we better use the original sequence.
+                           (if ch
+                               (write-char ch)
+                               (format t "\\u~4,'0X" code)))
+                         (write-char ch))))
+                (read-while #'identifier-char-p)))
+      (end-of-file () (js-parse-error "Unterminated regular expression."))))
+
+  (def read-operator (&optional start)
+    (labels ((grow (str)
+               (let ((bigger (concatenate 'string str (string (peek)))))
+                 (if (gethash bigger *operators*)
+                     (progn (next) (grow bigger))
+                     (token :operator (gethash str *operators*))))))
+      (grow (or start (string (next))))))
+
+  (def handle-slash ()
+    (next)
+    (case (peek)
+      (#\/ (read-line-comment)
+           (next-token))
+      (#\* (read-multiline-comment)
+           (next-token))
+      (t (if expression-allowed
+             (read-regexp)
+             (read-operator "/")))))
+
+  (def identifier-char-p (ch) (or (and (alphanumericp ch) (not (find ch *whitespace-chars*))) (eql ch #\$) (eql ch #\_)))
+  (def read-word ()
+    (let* ((unicode-escape nil)
+           (word (with-output-to-string (*standard-output*)
+                   (loop :for ch := (peek) :do
+                      (cond ((eql ch #\\)
+                             (next)
+                             (unless (eql (next) #\u) (js-parse-error "Unrecognized escape in identifier."))
+                             (write-char (code-char (hex-bytes 4 #\u)))
+                             (setf unicode-escape t))
+                            ((and ch (identifier-char-p ch)) (write-char (next)))
+                            (t (return))))))
+           (keyword (and (not unicode-escape) (gethash word *keywords*))))
+      (cond ((and *check-for-reserved-words* (not unicode-escape)
+                  (gethash word (ecase *ecma-version* (3 *reserved-words-ecma-3*) (5 *reserved-words-ecma-5*))))
+             (js-parse-error "'~a' is a reserved word." word))
+            ((not keyword) (token :name word))
+            ((gethash word *operators*) (token :operator keyword))
+            ((member keyword *atom-keywords*) (token :atom keyword))
+            (t (token :keyword keyword)))))
+
+  (def next-token (&optional force-regexp)
+    (if force-regexp
+        (read-regexp)
+        (progn
+          (skip-whitespace)
+          (start-token)
+          (let ((next (peek)))
+            (cond ((not next) (token :eof "EOF"))
+                  ((digit-char-p next) (read-num))
+                  ((find next "'\"") (read-string))
+                  ((eql next #\.) (handle-dot))
+                  ((find next "[]{}(),;:") (token :punc (next)))
+                  ((eql next #\/) (handle-slash))
+                  ((find next *operator-chars*) (read-operator))
+                  ((or (identifier-char-p next) (eql next #\\)) (read-word))
+                  (t (js-parse-error "Unexpected character '~a'." next)))))))
+
+  #'next-token)
