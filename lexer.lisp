@@ -236,6 +236,7 @@
     (loop for ch = (peek)
        while (and ch (find ch +whitespace-chars+))
        do (next)))
+  
   (def read-while (pred)
     (with-output-to-string (*standard-output*)
       (loop for ch = (peek)
@@ -246,7 +247,7 @@
     (let ((num (or (read-js-number-1 (lambda () (if start start (peek)))
                                      (lambda () (if start (prog1 start (setf start nil)) (next)))
                                      :junk-allowed t)
-                   (error 'lexer-error))))
+                   (lexer-error "Invalid number syntax: "))))
       (token :num num)))
 
   (def handle-dot ()
@@ -261,7 +262,7 @@
        do (let ((digit (digit-char-p (next t) 16)))
 	    (if digit
 		(incf num (* digit (expt 16 pos)))
-		(error 'lexer-error)))
+		(lexer-error "Invalid \\~A escape pattern: " char)))
        finally (return num)))
   
   (def read-escaped-char (&optional in-string)
@@ -290,10 +291,10 @@
 				  (let ((ch (read-escaped-char t)))
 				    (when ch (write-char ch))))
                                  ((find ch +line-terminators+)
-				  (error 'lexer-error))
+				  (lexer-error "Line terminator inside string: "))
                                  ((eql ch quote) (return))
                                  (t (write-char ch)))))))
-        (end-of-file () (error 'lexer-error)))))
+        (end-of-file () (lexer-error "Unterminated string: ")))))
 
   (def add-comment (type c)
     (when include-comments
@@ -324,11 +325,13 @@
         (add-comment :long-comment
                      (with-output-to-string (out)
                        (loop with star = nil
-                          for ch = (or (next) (error 'lexer-error))
+                          for ch = (or (next)
+				       (lexer-error "Unterminated comment: "))
                           until (and star (eql ch #\/))
                           do (setf star (eql ch #\*)) (write-char ch out))))
         (loop with star = nil
-           for ch = (or (next) (error 'lexer-error))
+           for ch = (or (next)
+			(lexer-error "Unterminated comment: "))
            until (and star (eql ch #\/))
            do (setf star (eql ch #\*)))))
 
@@ -356,7 +359,7 @@
 				 (format t "\\u~4,'0X" code)))
 			   (write-char ch))))
                 (read-while #'identifier-char-p)))
-      (end-of-file () (error 'lexer-error))))
+      (end-of-file () (lexer-error "Unterminated regex: "))))
 
   (def read-operator (&optional start)
     (labels ((grow (str)
@@ -389,7 +392,8 @@
                    (loop for ch = (peek) do
 			(cond ((eql ch #\\)
 			       (next)
-			       (unless (eql (next) #\u) (error 'lexer-error))
+			       (unless (eql (next) #\u)
+				 (lexer-error "Unrecognized escape in id: "))
 			       (write-char (code-char (hex-bytes 4 #\u)))
 			       (setf unicode-escape t))
 			      ((and ch (identifier-char-p ch)) (write-char (next)))
@@ -399,7 +403,7 @@
                   (gethash word (ecase *ecma-version*
 				  (5 +reserved-words-ecma-5+)
 				  (6 +reserved-words-ecma-6+))))
-             (error 'lexer-error))
+             (lexer-error "Reserved word ~A: " word))
             ((not keyword) (token :name word))
             ((gethash word +operators+) (token :operator keyword))
             ((member keyword +atom-keywords+) (token :atom keyword))
@@ -420,6 +424,7 @@
                   ((eql next #\/) (handle-slash))
                   ((find next +operator-chars+) (read-operator))
                   ((or (identifier-char-p next) (eql next #\\)) (read-word))
-                  (t (error 'lexer-error)))))))
+                  (t (lexer-error "Unexpected char '~A': " next)))))))
+  
   #'next-token)
 

@@ -34,15 +34,28 @@
 	 :initform jsimple-parser:*char* :reader lexer-error-char)
    (line :initarg :line
 	 :initform jsimple-parser:*line* :reader lexer-error-line))
-  (:report (lambda (condition stream)
-	     (format stream "Lexer error: ~S at line ~D."
-		     (lexer-error-char condition)
-		     (lexer-error-line condition))))
   (:documentation "Jsimple lexer error."))
 
+(defmethod print-object ((err lexer-error) stream)
+  (call-next-method)
+  (format stream "lexer error char ~D at line ~D."
+	  (lexer-error-char err)
+	  (lexer-error-line err)))
+
+;;; Every error will have a wrapper function to make it specific.
+(defun lexer-error (control &rest args)
+  (error 'lexer-error :format-control control :format-arguments args))
+
 (define-condition parser-error (general-error)
-  (())
+  ()
   (:documentation "Jsimple parser error."))
+
+(defmethod print-object ((err parser-error) stream)
+  (call-next-method)
+  (format stream "parser error."))
+
+(defun parser-error (control &rest args)
+  (error 'parser-error :format-control control :format-arguments args))
 
 ;;; Since this is a really simple interpreter, don't expect too much optimize,
 ;;; and almost all error will be reported as runtime error since it may not
@@ -51,63 +64,106 @@
   ()
   (:documentation "Jsimple runtime error."))
 
+(defmethod print-object ((err runtime-error) stream)
+  (call-next-method)
+  (format stream "runtime error."))
+
+(defun runtime-error (control &rest args)
+  (error 'runtime-error :format-control control :format-arguments args))
+
 (define-condition arithmetic-error (runtime-error)
   ((operator :initarg :operator :reader arithmetic-error-operator)
    (operands :initarg :operands :reader arithmetic-error-operands))
-  (:report (lambda (condition stream)
-	     (format stream "Arithmetic error: operator ~A, operands ~A."
-		     (arithmetic-error-operator condition)
-		     (arithmetic-error-operands condition))))
   (:documentation "Arithmetic error, occurs when trying to do silly arithmetic or invalid operands."))
+
+(defmethod print-object ((err arithmetic-error) stream)
+  (call-next-method)
+  (format stream "arithmetic error operator ~A operands ~A."
+	  (arithmetic-error-operator err)
+	  (arithmetic-error-operands err)))
+
+(defun arithmetic-error (control &rest args)
+  (error 'arithmetic-error :format-control control :format-arguments args))
 
 (define-condition divide-by-0-error (runtime-error)
   ()
   (:documentation "Division by 0 error, occurs when trying to divide a number by 0."))
 
-(define-condition invalid-index (runtime-error)
-  ((name :initarg :name :reader invalid-index-name)
-   (index :initarg :index :reader invalid-index-index)
-   (type :initarg :type :reader invalid-index-type))
-  (:report (lambda (condition stream)
-	     ;; Since index maybe a non-number...
-	     (format stream "Invalid index error: object ~S of type ~A, index ~A."
-		     (invalid-index-name condition)
-		     (invalid-index-type condition)
-		     (invalid-index-index condition))))
+(defmethod print-object ((err divide-by-0-error) stream)
+  (call-next-method)
+  (format stream "divide by 0 error."))
+
+(defun divide-by-0-error (control &rest args)
+  (error 'divide-by-0-error :format-control control :format-arguments args))
+
+(define-condition invalid-index-error (runtime-error)
+  ((name :initarg :name :reader invalid-index-error-name)
+   (index :initarg :index :reader invalid-index-error-index)
+   (type :initarg :type :reader invalid-index-error-type))
   (:documentation "Invalid index of an object, occurs when user wants to access a non-existing slot of an array or string."))
 
-(define-condition invalid-property (runtime-error)
-  ((name :initarg :name :reader invalid-name-name)
-   (property :initarg :property :reader invalid-name-property))
-  (:report (lambda (condition stream)
-	     (format stream "Invalid property error: object ~S, property ~A."
-		     (invalid-name-name condition)
-		     (invalid-name-property condition))))
+(defmethod print-object ((err invalid-index-error) stream)
+  (call-next-method)
+  (format stream "invalid index error object ~S of type ~A index ~A."
+	  (invalid-index-error-name err)
+	  (invalid-index-error-type err)
+	  (invalid-index-error-index err)))
+
+(defun invalid-index-error (control &rest args)
+  (error 'invalid-index-error :format-control control :format-arguments args))
+
+(define-condition invalid-property-error (runtime-error)
+  ((name :initarg :name :reader invalid-property-error-name)
+   (property :initarg :property :reader invalid-property-error-property))
   (:documentation "Invalid property of an object, occurs when user wants to access a non-existing property of an object."))
 
-(define-condition invalid-function (runtime-error)
-  ((name :initarg :name :reader invalid-function-name)
-   (funame :initarg :funame :reader invalid-function-funame)
-   (type :initarg :type :reader invalid-function-type))
-  (:report (lambda (condition stream)
-	     (format stream "Invalid function error: object ~S of type ~A, function ~S."
-		     (invalid-function-name condition)
-		     (invalid-function-type condition)
-		     (invalid-function-funame condition))))
+(defmethod print-object ((err invalid-property-error) stream)
+  (call-next-method)
+  (format stream "invalid property error object ~S property ~A."
+	  (invalid-property-error-name err)
+	  (invalid-property-error-property err)))
+
+(defun invalid-property-error (control &rest args)
+  (error 'invalid-property-error :format-control control :format-arguments args))
+
+(define-condition invalid-function-error (runtime-error)
+  ((name :initarg :name :reader invalid-function-error-name)
+   (funame :initarg :funame :reader invalid-function-error-funame)
+   (type :initarg :type :reader invalid-function-error-type))
   (:documentation "Invalid function of an object, occurs when user wants to call a non-existing or out of scope function of an object."))
 
-(define-condition invalid-object (runtime-error)
-  ((name :initarg :name :reader invalid-object-name))
-  (:report (lambda (condition stream)
-	     (format stream "Invalid object error: object ~S not defined."
-		     (invalid-object-name condition))))
+(defmethod print-object ((err invalid-function-error) stream)
+  (call-next-method)
+  (format stream "invalid function error object ~S of type ~A function ~S."
+	  (invalid-function-error-name err)
+	  (invalid-function-error-type err)
+	  (invalid-function-error-funame err)))
+
+(defun invalid-function-error (control &rest args)
+  (error 'invalid-function-error :format-control control :format-arguments args))
+
+(define-condition invalid-object-error (runtime-error)
+  ((name :initarg :name :reader invalid-object-error-name))
   (:documentation "Invalid object, occurs when user wants to access or refer a non-existing or out of scope object."))
 
+(defmethod print-object ((err invalid-object-error) stream)
+  (call-next-method)
+  (format stream "invalid object error object ~S not defined."
+	  (invalid-object-error-name err)))
+
+(defun invalid-object-error (control &rest args)
+  (error 'invalid-object-error :format-control control :format-arguments args))
+
 ;;; Though we can represent this number as NaN, signal it to the user.
-(define-condition number-too-large (runtime-error)
-  ((number :initarg :number :reader number-too-large-number))
-  (:report (lambda (condition name)
-	     (format stream "Number too larget: ~D."
-		     (number-too-large-number condition))))
+(define-condition number-too-large-error (runtime-error)
+  ((number :initarg :number :reader number-too-large-error-number))
   (:documentation "Too large number, occurs when user wants to use a number larger than maximum."))
+
+(defmethod print-object ((err number-too-large-error) stream)
+  (call-next-method)
+  (format stream "number too large error ~D."
+	  (number-too-large-error-number err)))
+
+(defun number-too-large-error (control &rest args)
+  (error 'number-too-large-error :format-control control :format-arguments args))
 
