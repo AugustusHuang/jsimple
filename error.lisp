@@ -30,8 +30,10 @@
   (:documentation "General jsimple error, will be the superclass of all."))
 
 (define-condition lexer-error (general-error)
-  ((char :initarg :char :reader lexer-error-char)
-   (line :initarg :line :reader lexer-error-line))
+  ((char :initarg :char
+	 :initform jsimple-parser:*char* :reader lexer-error-char)
+   (line :initarg :line
+	 :initform jsimple-parser:*line* :reader lexer-error-line))
   (:report (lambda (condition stream)
 	     (format stream "Lexer error: ~S at line ~D."
 		     (lexer-error-char condition)

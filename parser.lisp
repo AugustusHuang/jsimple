@@ -47,21 +47,23 @@
 
 ;;; FIXME: Change Javascript from 3rd version to 6th version. Some new
 ;;; reserved keywords will be added, and maybe some change in the source.
-(defparameter *unary-prefix* '(:typeof :void :delete :-- :++ :! :~ :- :+))
-(defparameter *unary-postfix* '(:-- :++))
-(defparameter *assignment*
+(defparameter +unary-prefix+ '(:typeof :void :delete :-- :++ :! :~ :- :+))
+(defparameter +unary-postfix+ '(:-- :++))
+(defparameter +assignment+
   (let ((assign (make-hash-table)))
     (dolist (op '(:+= :-= :/= :*= :%= :>>= :<<= :>>>= :|\|=| :^= :&=))
-      (setf (gethash op assign) (intern (subseq (string op) 0 (1- (length (string op)))) :keyword)))
+      (setf (gethash op assign)
+	    (intern (subseq (string op) 0 (1- (length (string op)))) :keyword)))
     (setf (gethash := assign) t)
     assign))
 
-(defparameter *precedence*
+(defparameter +precedence+
   (let ((precs (make-hash-table)))
-    (loop :for ops :in '((:|\|\||) (:&&) (:|\||) (:^) (:&) (:== :=== :!= :!==)
-                         (:< :> :<= :>= :in :instanceof) (:>> :<< :>>>) (:+ :-) (:* :/ :%))
-          :for n :from 1
-          :do (dolist (op ops) (setf (gethash op precs) n)))
+    (loop for ops in '((:|\|\||) (:&&) (:|\||) (:^) (:&) (:== :=== :!= :!==)
+		       (:< :> :<= :>= :in :instanceof)
+		       (:>> :<< :>>>) (:+ :-) (:* :/ :%))
+       for n from 1
+       do (dolist (op ops) (setf (gethash op precs) n)))
     precs))
 
 (defparameter *in-function* nil)
@@ -69,8 +71,8 @@
 (defmacro with-label-scope (type label &body body)
   `(let ((*label-scope* (cons (cons ,type ,label) *label-scope*))) ,@body))
 
-(defun parse-js (input &key strict-semicolons (ecma-version 3) reserved-words)
-  (check-type ecma-version (member 3 5))
+(defun parse-js (input &key strict-semicolons (ecma-version 6) reserved-words)
+  (check-type ecma-version (member 5 6))
   (let ((*ecma-version* ecma-version)
         (*check-for-reserved-words* reserved-words)
         (*line* 0)
@@ -87,19 +89,23 @@
 
   (def peek ()
     (or peeked (setf peeked (funcall input))))
+  
   (def next ()
     (if peeked
         (setf token peeked peeked nil)
         (setf token (funcall input)))
     token)
+  
   (def skip (n)
     (dotimes (i n) (next)))
 
   (def token-error (token control &rest args)
     (let ((*line* (token-line token)) (*char* (token-char token)))
       (apply #'js-parse-error control args)))
+  
   (def error* (control &rest args)
     (apply #'token-error token control args))
+  
   (def unexpected (token)
     (token-error token "Unexpected token '~a'." (token-id token)))
 
@@ -107,16 +113,21 @@
     (if (tokenp token type val)
         (next)
         (error* "Unexpected token '~a', expected '~a'." (token-id token) val)))
+  
   (def expect (punc)
     (expect-token :punc punc))
+  
   (def expect-key (keyword)
     (expect-token :keyword keyword))
+  
   (def can-insert-semicolon ()
     (and (not strict-semicolons)
          (or (token-newline-before token)
              (token-type-p token :eof)
              (tokenp token :punc #\}))))
+  
   (def semicolonp () (tokenp token :punc #\;))
+  
   (def semicolon ()
     (cond ((semicolonp) (next))
           ((not (can-insert-semicolon)) (unexpected token))))
@@ -146,8 +157,10 @@
                (#\; (next) (as :block ()))
                (t (unexpected token))))
       (:keyword
+       ;; Add const and let in ECMA version 6.
        (case (prog1 (token-value token) (next))
          (:break (break/cont :break))
+	 (:const (prog1 (const*) (semicolon)))
          (:continue (break/cont :continue))
          (:debugger (semicolon) (as :debugger))
          (:do (let ((body (with-label-scope :loop label (statement))))
@@ -156,6 +169,7 @@
          (:for (for* label))
          (:function (function* t))
          (:if (if*))
+	 (:let (prog1 (js-let) (semicolon)))
          (:return (unless *in-function* (error* "'return' outside of function."))
                   (as :return
                       (cond ((semicolonp) (next) nil)
@@ -173,8 +187,8 @@
                            (t (unless cases (unexpected token))
                               (push (statement) (cdr (car cases))))))
                       (next)
-                      (as :switch val (loop :for case :in (nreverse cases) :collect
-                                         (cons (car case) (nreverse (cdr case))))))))
+                      (as :switch val (loop for case in (nreverse cases) collect
+					   (cons (car case) (nreverse (cdr case))))))))
          (:throw (let ((ex (expression))) (semicolon) (as :throw ex)))
          (:try (try*))
          (:var (prog1 (var*) (semicolon)))
@@ -190,9 +204,9 @@
 
   (def break/cont (type)
     (as type (cond ((or (and (semicolonp) (next)) (can-insert-semicolon))
-                    (unless (loop :for (ltype) :in *label-scope* :do
-                               (when (or (eq ltype :loop) (and (eq type :break) (eq ltype :switch)))
-                                 (return t)))
+                    (unless (loop for (ltype) in *label-scope* do
+				 (when (or (eq ltype :loop) (and (eq type :break) (eq ltype :switch)))
+				   (return t)))
                       (error* "'~a' not inside a loop or switch." type))
                     nil)
                    ((token-type-p token :name)
@@ -209,7 +223,7 @@
     (prog1 (as :block (loop :until (tokenp token :punc #\})
                             :collect (statement)))
       (next)))
-
+  
   (def for-in (label init lhs)
     (let ((obj (progn (next) (expression))))
       (expect #\))
@@ -293,6 +307,13 @@
   (def var* (&optional no-in)
     (as :var (vardefs no-in)))
 
+  ;; I don't know whether const will appear in IN content.
+  (def const* (&optional no-in)
+    (as :const (vardefs no-in)))
+
+  (def js-let (&optional no-in)
+    (as :let (vardefs no-in)))
+  
   (def new* ()
     (let ((newexp (expr-atom nil)))
       (let ((args nil))
@@ -320,10 +341,10 @@
 
   (def expr-list (closing &optional allow-trailing-comma allow-empty)
     (let ((elts ()))
-      (loop :for first := t :then nil :until (tokenp token :punc closing) :do
-         (unless first (expect #\,))
-         (when (and allow-trailing-comma (tokenp token :punc closing)) (return))
-         (push (unless (and allow-empty (tokenp token :punc #\,)) (expression nil)) elts))
+      (loop for first = t then nil until (tokenp token :punc closing) do
+	   (unless first (expect #\,))
+	   (when (and allow-trailing-comma (tokenp token :punc closing)) (return))
+	   (push (unless (and allow-empty (tokenp token :punc #\,)) (expression nil)) elts))
       (next)
       (nreverse elts)))
 
@@ -331,20 +352,20 @@
     (as :array (expr-list #\] t t)))
 
   (def object* ()
-    (as :object (loop :for first := t :then nil
-                      :until (tokenp token :punc #\})
-                      :unless first :do (expect #\,)
-                      :until (tokenp token :punc #\}) :collect
-                   (let ((name (as-property-name)))
-                     (cond ((tokenp token :punc #\:)
-                            (next) (cons name (expression nil)))
-                           ((and (eql *ecma-version* 5) (or (equal name "get") (equal name "set")))
-                            (let ((name1 (as-property-name))
-                                  (body (progn (unless (tokenp token :punc #\() (unexpected token))
-                                               (function* nil))))
-                              (list* name1 (if (equal name "get") :get :set) body)))
-                           (t (unexpected token))))
-                   :finally (next))))
+    (as :object (loop for first = t then nil
+                      until (tokenp token :punc #\})
+                      unless first do (expect #\,)
+                      until (tokenp token :punc #\}) collect
+		     (let ((name (as-property-name)))
+		       (cond ((tokenp token :punc #\:)
+			      (next) (cons name (expression nil)))
+			     ((and (eql *ecma-version* 5) (or (equal name "get") (equal name "set")))
+			      (let ((name1 (as-property-name))
+				    (body (progn (unless (tokenp token :punc #\() (unexpected token))
+						 (function* nil))))
+				(list* name1 (if (equal name "get") :get :set) body)))
+			     (t (unexpected token))))
+                   finally (next))))
 
   (def as-property-name ()
     (if (member (token-type token) '(:num :string))
@@ -376,9 +397,9 @@
     (if (and (token-type-p token :operator) (member (token-value token) *unary-prefix*))
         (as :unary-prefix (prog1 (token-value token) (next)) (maybe-unary allow-calls))
         (let ((val (expr-atom allow-calls)))
-          (loop :while (and (token-type-p token :operator)
-                            (member (token-value token) *unary-postfix*)
-                            (not (token-newline-before token))) :do
+          (loop while (and (token-type-p token :operator)
+			   (member (token-value token) *unary-postfix*)
+			   (not (token-newline-before token))) do
              (setf val (as :unary-postfix (token-value token) val))
              (next))
           val)))
@@ -415,8 +436,8 @@
           (as :seq expr (progn (next) (expression)))
           expr)))
 
-  (as :toplevel (loop :until (token-type-p token :eof)
-                      :collect (statement))))
+  (as :program (loop until (token-type-p token eof)
+		  collect (statement))))
 
 (defun parse-js-string (&rest args)
   (apply 'parse-js args))

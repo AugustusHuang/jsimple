@@ -7,17 +7,23 @@
   (:export :general-error
 	   :lexer-error
 	   :parser-error
-	   :runtime-error))
+	   :runtime-error
+	   :arithmetic-error
+	   :divide-by-0-error
+	   :invalid-index
+	   :invalid-property
+	   :invalid-function
+	   :invalid-object
+	   :number-too-large))
 
 (defpackage :jsimple-parser
   (:use :cl
-	:jsimple-error
-	:lispbuilder-regex
-	:lispbuilder-lexer
-	:lispbuilder-yacc)
+	:jsimple-error)
   (:documentation
-   "Parser of jsimple, a simple javascript interpreter written in Common Lisp.")
-  (:export))
+   "Parser of jsimple.")
+  (:export :*line*
+	   :*char*
+	   :*position*))
 
 (defpackage :jsimple-runtime
   (:use :cl

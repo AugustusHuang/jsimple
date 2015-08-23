@@ -48,15 +48,15 @@
 ;;; make it compatible with new features. Also make some modifications
 ;;; on the coding style.
 (defmacro with-defs (&body body)
-  (loop :for form :in body
-        :if (and (eq (car form) 'def) (< (length form) 4))
-          :collect (cadr form) :into vars :and
-          :if (caddr form) :collect `(setf ,(cadr form) ,(caddr form)) :into body :end
-        :else :if (eq (car form) 'def)
-          :collect (cdr form) :into funcs
-        :else
-          :collect form :into body
-        :finally (return `(let ,vars (labels ,funcs ,@body)))))
+  (loop for form in body
+     if (and (eq (car form) 'def) (< (length form) 4))
+     collect (cadr form) into vars and
+     if (caddr form) collect `(setf ,(cadr form) ,(caddr form)) into body end
+     else if (eq (car form) 'def)
+     collect (cdr form) into funcs
+     else
+     collect form into body
+     finally (return `(let ,vars (labels ,funcs ,@body)))))
 
 (defmacro defun/defs (name args &body body)
   `(defun ,name ,args (with-defs ,@body)))
@@ -78,20 +78,15 @@
 (defvar *char*)
 (defvar *position*)
 
-;;; This condition will be moved to error.lisp.
-(define-condition js-parse-error (simple-error)
-  ((line :initform *line* :reader js-parse-error-line)
-   (char :initform *char* :reader js-parse-error-char)))
-(defun js-parse-error (control &rest args)
-  (error 'js-parse-error :format-control control :format-arguments args))
-
 ;;; NOTE: All constant parameters should be surronded by +.
 (defparameter +operator-chars+ "+-*&%=<>!?|~^")
 
 (defparameter +operators+
   (let ((ops (make-hash-table :test 'equal)))
-    (dolist (op '(:in :instanceof :typeof :new :void :delete :++ :-- :+ :- :! :~ :& :|\|| :^ :* :/ :%
-                  :>> :<< :>>> :< :> :<= :>= :== :=== :!= :!== :? := :+= :-= :/= :*= :%= :>>= :<<=
+    (dolist (op '(:in :instanceof :typeof :new :void :delete
+		  :++ :-- :+ :- :! :~ :& :|\|| :^ :* :/ :%
+                  :>> :<< :>>> :< :> :<= :>= :== :=== :!= :!==
+		  :? := :+= :-= :/= :*= :%= :>>= :<<=
                   :>>>= :~= :%= :|\|=| :^= :&= :&& :|\|\||))
       (setf (gethash (string-downcase (string op)) ops) op))
     ops))
@@ -105,7 +100,6 @@
   (concatenate 'string (list #\newline #\return
 			     (code-char #x2028) (code-char #x2029))))
 
-;;; FIXME: undefined?
 (defparameter +keywords+
   (let ((keywords (make-hash-table :test 'equal)))
     (dolist (word '(:break :case :catch :class :const :continue :debugger
@@ -116,23 +110,14 @@
       (setf (gethash (string-downcase (string word)) keywords) word))
     keywords))
 
-;;; FIXME: Any more?
 (defparameter +keywords-before-expression+
   '(:return :new :delete :throw :else :case))
 
+(defparameter +keywords-strict+
+  '(:let :static :implements :interface :package :private :protected :public))
+
 (defparameter +atom-keywords+
   '(:false :null :true :undefined))
-
-(defparameter +reserved-words-ecma-3+
-  (let ((words (make-hash-table :test 'equal)))
-    (dolist (word '("abstract" "enum" "int" "short" "boolean" "export"
-		    "interface" "static" "byte" "extends" "long" "super"
-		    "char" "final" "native" "synchronized" "class" "float"
-		    "package" "throws" "const" "goto" "private" "transient"
-                    "debugger" "implements" "protected" "volatile" "double"
-		    "import" "public"))
-      (setf (gethash word words) t))
-    words))
 
 (defparameter +reserved-words-ecma-5+
   (let ((words (make-hash-table :test 'equal)))
@@ -146,8 +131,9 @@
       (setf (gethash word words) t))
     words))
 
-(defparameter +check-for-reserved-words+ nil)
-(defparameter +ecma-version+ 6)
+(defparameter *check-for-reserved-words* nil)
+(defparameter *use-strict* nil)
+(defparameter *ecma-version* 6)
 
 (defun read-js-number (stream &key junk-allowed)
   (flet ((peek-1 () (peek-char nil stream nil nil))
@@ -157,16 +143,23 @@
 (defun read-js-number-1 (peek next &key junk-allowed)
   (labels ((digits (radix)
              (with-output-to-string (out)
-               (loop for ch = (funcall peek) while (and ch (digit-char-p ch radix)) do
+               (loop for ch = (funcall peek)
+		  while (and ch (digit-char-p ch radix)) do
 		    (write-char (funcall next) out)))))
-    (let ((minus (case (funcall peek) (#\+ (funcall next) nil) (#\- (funcall next) t)))
+    (let ((minus (case (funcall peek)
+		   (#\+ (funcall next) nil) (#\- (funcall next) t)))
           (body (digits 10))
           (*read-default-float-format* 'double-float))
       (flet ((ret (x)
                (return-from read-js-number-1
-                 (and x (or junk-allowed (eq (funcall peek) nil)) (if minus (if (eq x :infinity) :-infinity (- x)) x)))))
+                 (and x (or junk-allowed (eq (funcall peek) nil))
+		      (if minus (if (eq x :infinity) :-infinity (- x)) x)))))
         (cond ((and (equal body "0") (find (funcall peek) "xX") (funcall next))
                (ret (parse-integer (digits 16) :junk-allowed t :radix 16)))
+	      ((and (equal body "0") (find (funcall peek) "oO") (funcall next))
+	       (ret (parse-integer (digits 8) :junk-allowed t :radix 8)))
+	      ((and (equal body "0") (find (funcall peek) "bB") (funcall next))
+	       (ret (parse-integer (digits 2) :junk-allowed t :radix 2)))
               ((find (funcall peek) ".eE")
                (let ((base (if (string= body "") 0 (parse-integer body)))
                      (expt 0) (expt-neg nil))
@@ -175,8 +168,10 @@
                        (if (string= digs "")
                            (when (string= body "") (ret nil))
                            (loop (handler-case
-                                     (return (incf base (/ (parse-integer digs) (expt 10d0 (length digs)))))
-                                   (floating-point-overflow () (setf digs (subseq digs 0 (1- (length digs)))))))))
+                                     (return (incf base (/ (parse-integer digs)
+							   (expt 10d0 (length digs)))))
+                                   (floating-point-overflow ()
+				     (setf digs (subseq digs 0 (1- (length digs)))))))))
                      (when (equal body "") (ret nil)))
                  (when (and (find (funcall peek) "eE") (funcall next))
                    (setf expt-neg (and (find (funcall peek) "+-") (eql (funcall next) #\-)))
@@ -207,12 +202,13 @@
     (setf *line* line
           *char* char
           *position* position))
+  
   (def token (type value)
     (setf expression-allowed
           (or (and (eq type :operator)
                    (not (member value '("++" "--") :test #'string=)))
               (and (eq type :keyword)
-                   (member value *keywords-before-expression*))
+                   (member value +keywords-before-expression+))
               (and (eq type :punc)
                    (find value "[{(,.;:"))))
     (prog1 (make-token :type type :value value :line *line* :char *char*
@@ -224,11 +220,12 @@
 
   (def peek ()
     (peek-char nil stream nil))
+  
   (def next (&optional eof-error in-string)
     (let ((ch (read-char stream eof-error)))
       (when ch
         (incf position)
-        (if (find ch *line-terminators*)
+        (if (find ch +line-terminators+)
             (progn
               (setf line (1+ line) char 0)
               (unless in-string (setf newline-before t)))
@@ -237,7 +234,7 @@
 
   (def skip-whitespace ()
     (loop for ch = (peek)
-       while (and ch (find ch *whitespace-chars*))
+       while (and ch (find ch +whitespace-chars+))
        do (next)))
   (def read-while (pred)
     (with-output-to-string (*standard-output*)
@@ -266,6 +263,7 @@
 		(incf num (* digit (expt 16 pos)))
 		(error 'lexer-error)))
        finally (return num)))
+  
   (def read-escaped-char (&optional in-string)
     (let ((ch (next t in-string)))
       (case ch
@@ -281,15 +279,18 @@
 		      (next)
 		      (setf num (+ nx (* num 8))))
                  ch))))))
+  
   (def read-string ()
     (let ((quote (next)))
       (handler-case
           (token :string
                  (with-output-to-string (*standard-output*)
                    (loop (let ((ch (next t)))
-                           (cond ((eql ch #\\) (let ((ch (read-escaped-char t))) (when ch (write-char ch))))
-                                 ((find ch *line-terminators*)
-				  (error 'lexer-error ))
+                           (cond ((eql ch #\\)
+				  (let ((ch (read-escaped-char t)))
+				    (when ch (write-char ch))))
+                                 ((find ch +line-terminators+)
+				  (error 'lexer-error))
                                  ((eql ch quote) (return))
                                  (t (write-char ch)))))))
         (end-of-file () (error 'lexer-error)))))
@@ -309,25 +310,25 @@
   (def read-line-comment ()
     (next)
     (if include-comments
-        (add-comment :comment1
+        (add-comment :short-comment
                      (with-output-to-string (out)
                        (loop for ch = (next)
-                          until (or (find ch *line-terminators*) (not ch))
+                          until (or (find ch +line-terminators+) (not ch))
                           do (write-char ch out))))
         (loop for ch = (next)
-           until (or (find ch *line-terminators*) (not ch)))))
+           until (or (find ch +line-terminators+) (not ch)))))
 
   (def read-multiline-comment ()
     (next)
     (if include-comments
-        (add-comment :comment2
+        (add-comment :long-comment
                      (with-output-to-string (out)
                        (loop with star = nil
-                          for ch = (or (next) (js-parse-error "Unterminated comment."))
+                          for ch = (or (next) (error 'lexer-error))
                           until (and star (eql ch #\/))
                           do (setf star (eql ch #\*)) (write-char ch out))))
         (loop with star = nil
-           for ch = (or (next) (js-parse-error "Unterminated comment."))
+           for ch = (or (next) (error 'lexer-error))
            until (and star (eql ch #\/))
            do (setf star (eql ch #\*)))))
 
@@ -355,14 +356,14 @@
 				 (format t "\\u~4,'0X" code)))
 			   (write-char ch))))
                 (read-while #'identifier-char-p)))
-      (end-of-file () (js-parse-error "Unterminated regular expression."))))
+      (end-of-file () (error 'lexer-error))))
 
   (def read-operator (&optional start)
     (labels ((grow (str)
                (let ((bigger (concatenate 'string str (string (peek)))))
-                 (if (gethash bigger *operators*)
+                 (if (gethash bigger +operators+)
                      (progn (next) (grow bigger))
-                     (token :operator (gethash str *operators*))))))
+                     (token :operator (gethash str +operators+))))))
       (grow (or start (string (next))))))
 
   (def handle-slash ()
@@ -376,25 +377,32 @@
              (read-regexp)
              (read-operator "/")))))
 
-  (def identifier-char-p (ch) (or (and (alphanumericp ch) (not (find ch *whitespace-chars*))) (eql ch #\$) (eql ch #\_)))
+  (def identifier-char-p (ch)
+    (or (and (alphanumericp ch) (not (find ch *whitespace-chars*)))
+	(eql ch #\$)
+	(eql ch #\_)))
+
+  ;; FIXME: Add strict mode!
   (def read-word ()
     (let* ((unicode-escape nil)
            (word (with-output-to-string (*standard-output*)
                    (loop for ch = (peek) do
 			(cond ((eql ch #\\)
 			       (next)
-			       (unless (eql (next) #\u) (js-parse-error "Unrecognized escape in identifier."))
+			       (unless (eql (next) #\u) (error 'lexer-error))
 			       (write-char (code-char (hex-bytes 4 #\u)))
 			       (setf unicode-escape t))
 			      ((and ch (identifier-char-p ch)) (write-char (next)))
 			      (t (return))))))
-           (keyword (and (not unicode-escape) (gethash word *keywords*))))
+           (keyword (and (not unicode-escape) (gethash word +keywords+))))
       (cond ((and *check-for-reserved-words* (not unicode-escape)
-                  (gethash word (ecase *ecma-version* (3 *reserved-words-ecma-3*) (5 *reserved-words-ecma-5*))))
-             (js-parse-error "'~a' is a reserved word." word))
+                  (gethash word (ecase *ecma-version*
+				  (5 +reserved-words-ecma-5+)
+				  (6 +reserved-words-ecma-6+))))
+             (error 'lexer-error))
             ((not keyword) (token :name word))
-            ((gethash word *operators*) (token :operator keyword))
-            ((member keyword *atom-keywords*) (token :atom keyword))
+            ((gethash word +operators+) (token :operator keyword))
+            ((member keyword +atom-keywords+) (token :atom keyword))
             (t (token :keyword keyword)))))
 
   (def next-token (&optional force-regexp)
@@ -410,8 +418,8 @@
                   ((eql next #\.) (handle-dot))
                   ((find next "[]{}(),;:") (token :punc (next)))
                   ((eql next #\/) (handle-slash))
-                  ((find next *operator-chars*) (read-operator))
+                  ((find next +operator-chars+) (read-operator))
                   ((or (identifier-char-p next) (eql next #\\)) (read-word))
-                  (t (js-parse-error "Unexpected character '~a'." next)))))))
-
+                  (t (error 'lexer-error)))))))
   #'next-token)
+
