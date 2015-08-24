@@ -71,8 +71,9 @@
 (defmacro with-label-scope (type label &body body)
   `(let ((*label-scope* (cons (cons ,type ,label) *label-scope*))) ,@body))
 
+;;; Only version 6 is supported!
 (defun parse-js (input &key strict-semicolons (ecma-version 6) reserved-words)
-  (check-type ecma-version (member 5 6))
+  (check-type ecma-version 6)
   (let ((*ecma-version* ecma-version)
         (*check-for-reserved-words* reserved-words)
         (*line* 0)
@@ -101,18 +102,20 @@
 
   (def token-error (token control &rest args)
     (let ((*line* (token-line token)) (*char* (token-char token)))
-      (apply #'js-parse-error control args)))
+      (apply #'parser-error control args)))
   
   (def error* (control &rest args)
     (apply #'token-error token control args))
   
   (def unexpected (token)
-    (token-error token "Unexpected token '~a'." (token-id token)))
+    (token-error token "Unexpected token '~A': " (token-id token)))
 
+  ;; If the token is what we want, step forward, or signal an error.
   (def expect-token (type val)
     (if (tokenp token type val)
         (next)
-        (error* "Unexpected token '~a', expected '~a'." (token-id token) val)))
+        (error* "Unexpected token '~A', expected '~A': "
+		(token-id token) val)))
   
   (def expect (punc)
     (expect-token :punc punc))
@@ -158,8 +161,13 @@
                (t (unexpected token))))
       (:keyword
        ;; Add const and let in ECMA version 6.
+       ;; NOTE: Though now we handle strict-mode keywords as ordinary keywords
+       ;; so that they can't be variable names, we don't handle them explicitly
+       ;; for now.
+       ;; --- Augustus, 24 Aug 2015.
        (case (prog1 (token-value token) (next))
          (:break (break/cont :break))
+	 (:class (class*))
 	 (:const (prog1 (const*) (semicolon)))
          (:continue (break/cont :continue))
          (:debugger (semicolon) (as :debugger))
@@ -170,7 +178,7 @@
          (:function (function* t))
          (:if (if*))
 	 (:let (prog1 (js-let) (semicolon)))
-         (:return (unless *in-function* (error* "'return' outside of function."))
+         (:return (unless *in-function* (error* "'return' outside of function: "))
                   (as :return
                       (cond ((semicolonp) (next) nil)
                             ((can-insert-semicolon) nil)
@@ -207,15 +215,15 @@
                     (unless (loop for (ltype) in *label-scope* do
 				 (when (or (eq ltype :loop) (and (eq type :break) (eq ltype :switch)))
 				   (return t)))
-                      (error* "'~a' not inside a loop or switch." type))
+                      (error* "'~A' not inside a loop or switch: " type))
                     nil)
                    ((token-type-p token :name)
                     (let ((name (token-value token)))
                       (ecase type
                         (:break (unless (some (lambda (lb) (equal (cdr lb) name)) *label-scope*)
-                                  (error* "Labeled 'break' without matching labeled statement.")))
+                                  (error* "Labeled 'break' without matching labeled statement: ")))
                         (:continue (unless (find (cons :loop name) *label-scope* :test #'equal)
-                                     (error* "Labeled 'continue' without matching labeled loop."))))
+                                     (error* "Labeled 'continue' without matching labeled loop: "))))
                       (next) (semicolon)
                       name)))))
 
@@ -223,7 +231,7 @@
     (prog1 (as :block (loop :until (tokenp token :punc #\})
                             :collect (statement)))
       (next)))
-  
+
   (def for-in (label init lhs)
     (let ((obj (progn (next) (expression))))
       (expect #\))
@@ -236,35 +244,77 @@
       (expect #\))
       (as :for init test step (with-label-scope :loop label (statement)))))
 
+  ;; For-of loop newly defined in ECMA 6, should used as
+  ;; for (let i of ITERATOR-FUNCTION) or for (var i of XXX).
+  (def for-of (label init scope)
+    (let ((obj (progn (next) (expression))))
+      (expect #\))
+      (as :for-of init scope obj (with-label-scope :loop label (statement)))))
+
+  ;; Also add for-of loop here.
   (def for* (label)
     (expect #\()
     (cond ((semicolonp) (regular-for label nil))
           ((tokenp token :keyword :var)
            (let* ((var (progn (next) (var* t)))
                   (defs (second var)))
-             (if (and (not (cdr defs)) (tokenp token :operator :in))
-                 (for-in label var (as :name (caar defs)))
-                 (regular-for label var))))
+	     (if (not (cdr defs))
+		 (if (tokenp token :operator :in)
+		     (for-in label var (as :name (caar defs)))
+		     (if (tokenp token :operator :of)
+			 (for-of label var (as :name (caar defs)))))
+		 (regular-for label var))))
+	  ((tokenp token :keyword :let)
+	   (let* ((let-decl (progn (next) (js-let t)))
+		  (defs (second let-decl)))
+	     (if (not (cdr defs))
+		 (if (tokenp token :operator :in)
+		     (for-in label let-decl (as :name (caar defs)))
+		     (if (tokenp token :operator :of)
+			 (for-of label let-decl (as :name (caar defs)))))
+		 (regular-for label let-decl))))
           (t (let ((init (expression t t)))
                (if (tokenp token :operator :in)
                    (for-in label nil init)
                    (regular-for label init))))))
 
+  ;; New feature in version 6.
+  ;; class XXX extends YYY {
+  ;;     constructor (a, b, c, d, e) {
+  ;;         super(d, e);
+  ;;         this.a = a;
+  ;;         this.b = b;
+  ;;         this.c = c;
+  ;;     }
+  ;; }
+  (def class* ()
+    (with-defs
+	(def name (and (token-type-p token :name)
+		       (prog1 (token-value token) (next))))
+      (when (not name) (unexpected token))
+      ;; TODO: Superclass, make extends optional...
+      (expect #\{)
+      (def body (let ((*label-scope* nil))
+		  ;; How about var, let and const?
+		  (loop until (tokenp token :punc #\}) collect (function* t))))
+      (next)
+      (as :class name superclass body)))
+  
   (def function* (statement)
     (with-defs
-      (def name (and (token-type-p token :name)
-                     (prog1 (token-value token) (next))))
+	(def name (and (token-type-p token :name)
+		       (prog1 (token-value token) (next))))
       (when (and statement (not name)) (unexpected token))
       (expect #\()
-      (def argnames (loop :for first := t :then nil
-                          :until (tokenp token :punc #\))
-                          :unless first :do (expect #\,)
-                          :unless (token-type-p token :name) :do (unexpected token)
-                          :collect (prog1 (token-value token) (next))))
+      (def argnames (loop for first = t then nil
+		       until (tokenp token :punc #\))
+		       unless first do (expect #\,)
+		       unless (token-type-p token :name) do (unexpected token)
+		       collect (prog1 (token-value token) (next))))
       (next)
       (expect #\{)
       (def body (let ((*in-function* t) (*label-scope* ()))
-                  (loop :until (tokenp token :punc #\}) :collect (statement))))
+                  (loop until (tokenp token :punc #\}) collect (statement))))
       (next)
       (as (if statement :defun :function) name argnames body)))
 
@@ -285,7 +335,7 @@
     (let ((body (ensure-block)) catch finally)
       (when (tokenp token :keyword :catch)
         (next) (expect #\()
-        (unless (token-type-p token :name) (error* "Name expected."))
+        (unless (token-type-p token :name) (error* "Name expected: "))
         (let ((name (token-value token)))
           (next) (expect #\))
           (setf catch (cons name (ensure-block)))))
@@ -307,9 +357,8 @@
   (def var* (&optional no-in)
     (as :var (vardefs no-in)))
 
-  ;; I don't know whether const will appear in IN content.
-  (def const* (&optional no-in)
-    (as :const (vardefs no-in)))
+  (def const* ()
+    (as :const (vardefs t)))
 
   (def js-let (&optional no-in)
     (as :let (vardefs no-in)))
@@ -359,6 +408,7 @@
 		     (let ((name (as-property-name)))
 		       (cond ((tokenp token :punc #\:)
 			      (next) (cons name (expression nil)))
+			     ;; How about version 6?
 			     ((and (eql *ecma-version* 5) (or (equal name "get") (equal name "set")))
 			      (let ((name1 (as-property-name))
 				    (body (progn (unless (tokenp token :punc #\() (unexpected token))
@@ -394,11 +444,11 @@
           (t expr)))
 
   (def maybe-unary (allow-calls)
-    (if (and (token-type-p token :operator) (member (token-value token) *unary-prefix*))
+    (if (and (token-type-p token :operator) (member (token-value token) +unary-prefix+))
         (as :unary-prefix (prog1 (token-value token) (next)) (maybe-unary allow-calls))
         (let ((val (expr-atom allow-calls)))
           (loop while (and (token-type-p token :operator)
-			   (member (token-value token) *unary-postfix*)
+			   (member (token-value token) +unary-postfix+)
 			   (not (token-newline-before token))) do
              (setf val (as :unary-postfix (token-value token) val))
              (next))
@@ -407,7 +457,7 @@
   (def expr-op (left min-prec no-in)
     (let* ((op (and (token-type-p token :operator) (or (not no-in) (not (eq (token-value token) :in)))
                     (token-value token)))
-           (prec (and op (gethash op *precedence*))))
+           (prec (and op (gethash op +precedence+))))
       (if (and prec (> prec min-prec))
           (let ((right (progn (next) (expr-op (maybe-unary t) prec no-in))))
             (expr-op (as :binary op left right) min-prec no-in))
@@ -426,8 +476,8 @@
 
   (def maybe-assign (no-in)
     (let ((left (maybe-conditional no-in)))
-      (if (and (token-type-p token :operator) (gethash (token-value token) *assignment*))
-          (as :assign (gethash (token-value token) *assignment*) left (progn (next) (maybe-assign no-in)))
+      (if (and (token-type-p token :operator) (gethash (token-value token) +assignment+))
+          (as :assign (gethash (token-value token) +assignment+) left (progn (next) (maybe-assign no-in)))
           left)))
 
   (def expression (&optional (commas t) (no-in nil))

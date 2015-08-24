@@ -81,12 +81,13 @@
 ;;; NOTE: All constant parameters should be surronded by +.
 (defparameter +operator-chars+ "+-*&%=<>!?|~^")
 
+;;; Add arrow function.
 (defparameter +operators+
   (let ((ops (make-hash-table :test 'equal)))
     (dolist (op '(:in :instanceof :typeof :new :void :delete
 		  :++ :-- :+ :- :! :~ :& :|\|| :^ :* :/ :%
                   :>> :<< :>>> :< :> :<= :>= :== :=== :!= :!==
-		  :? := :+= :-= :/= :*= :%= :>>= :<<=
+		  :? := :+= :-= :/= :*= :%= :>>= :<<= :=>
                   :>>>= :~= :%= :|\|=| :^= :&= :&& :|\|\||))
       (setf (gethash (string-downcase (string op)) ops) op))
     ops))
@@ -100,13 +101,16 @@
   (concatenate 'string (list #\newline #\return
 			     (code-char #x2028) (code-char #x2029))))
 
+;;; For now even though strict mode is not enabled, don't enable variables like
+;;; LET or STATIC.
 (defparameter +keywords+
   (let ((keywords (make-hash-table :test 'equal)))
     (dolist (word '(:break :case :catch :class :const :continue :debugger
 		    :default :delete :do :else :export :extends :false
-		    :finally :for :function :if :import :in :instanceof :new
-		    :null :return :super :switch :this :throw :true :try
-		    :typeof :var :void :while :with :yield))
+		    :finally :for :function :if :implements :import :in
+		    :instanceof :interface :let :new :null :package :private
+		    :protected :public :return :static :super :switch :this
+		    :throw :true :try :typeof :var :void :while :with :yield))
       (setf (gethash (string-downcase (string word)) keywords) word))
     keywords))
 
@@ -114,16 +118,11 @@
   '(:return :new :delete :throw :else :case))
 
 (defparameter +keywords-strict+
-  '(:let :static :implements :interface :package :private :protected :public))
+  '(:let :static :implements :interface :package :private :protected :public
+    :yield))
 
 (defparameter +atom-keywords+
   '(:false :null :true :undefined))
-
-(defparameter +reserved-words-ecma-5+
-  (let ((words (make-hash-table :test 'equal)))
-    (dolist (word '("class" "enum" "extends" "super" "const" "export" "import"))
-      (setf (gethash word words) t))
-    words))
 
 (defparameter +reserved-words-ecma-6+
   (let ((words (make-hash-table :test 'equal)))
@@ -335,6 +334,7 @@
            until (and star (eql ch #\/))
            do (setf star (eql ch #\*)))))
 
+  ;; TODO: how about unicode string/regex?
   (def read-regexp ()
     (handler-case
         (token :regexp
@@ -386,6 +386,9 @@
 	(eql ch #\_)))
 
   ;; FIXME: Add strict mode!
+  ;; When encounter use strict, go into strict mode and get out when this
+  ;; scope ends, but how to recognize scope? Use a scope counter or what?
+  ;; --- Augustus, 24 Aug 2015.
   (def read-word ()
     (let* ((unicode-escape nil)
            (word (with-output-to-string (*standard-output*)
@@ -400,9 +403,7 @@
 			      (t (return))))))
            (keyword (and (not unicode-escape) (gethash word +keywords+))))
       (cond ((and *check-for-reserved-words* (not unicode-escape)
-                  (gethash word (ecase *ecma-version*
-				  (5 +reserved-words-ecma-5+)
-				  (6 +reserved-words-ecma-6+))))
+                  (gethash word	(6 +reserved-words-ecma-6+)))
              (lexer-error "Reserved word ~A: " word))
             ((not keyword) (token :name word))
             ((gethash word +operators+) (token :operator keyword))

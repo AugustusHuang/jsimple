@@ -38,7 +38,7 @@
 
 (defmethod print-object ((err lexer-error) stream)
   (call-next-method)
-  (format stream "lexer error char ~D at line ~D."
+  (format stream "lexer error char ~A at line ~D."
 	  (lexer-error-char err)
 	  (lexer-error-line err)))
 
@@ -47,12 +47,17 @@
   (error 'lexer-error :format-control control :format-arguments args))
 
 (define-condition parser-error (general-error)
-  ()
+  ((char :initarg :char
+	 :initform jsimple-parser:*char* :reader parser-error-char)
+   (line :initarg :line
+	 :initform jsimple-parser:*line* :reader parser-error-line))
   (:documentation "Jsimple parser error."))
 
 (defmethod print-object ((err parser-error) stream)
   (call-next-method)
-  (format stream "parser error."))
+  (format stream "parser error char ~A at line ~D."
+	  (parser-error-char err)
+	  (parser-error-line err)))
 
 (defun parser-error (control &rest args)
   (error 'parser-error :format-control control :format-arguments args))
