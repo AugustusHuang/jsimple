@@ -51,10 +51,18 @@
 	   :parse-js
 	   :parse-js-string))
 
-(defpackage :jsimple-ir
+(defpackage :jsimple-ast
   (:use :cl
 	:jsimple-error
 	:jsimple-parser)
+  (:documentation
+   "Abstract syntax tree module of jsimple.")
+  (:export))
+
+(defpackage :jsimple-ir
+  (:use :cl
+	:jsimple-error
+	:jsimple-ast)
   (:documentation
    "Intermediate representation optimizer module of jsimple.")
   (:export))

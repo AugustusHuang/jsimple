@@ -21,25 +21,6 @@
 ;;;; ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-;;;; asdf file
+;;;; Intermediate representation handling and optimizing module.
+(in-package :jsimple-ir)
 
-(in-package :asdf-user)
-
-(defsystem :jsimple
-  :version "0.0.1"
-  :licence "MIT"
-  :description "A javascript interpreter in Common Lisp to make running javascript simple."
-  :components
-  ((:module
-    :src
-    :components
-    ((:cl-source-file "packages")
-     (:cl-source-file "error" :depends-on ("packages"))
-     (:cl-source-file "lexer" :depends-on ("packages" "error"))
-     (:cl-source-file "parser" :depends-on ("packages" "error" "lexer"))
-     (:cl-source-file "ast" :depends-on ("packages" "error" "parser"))
-     (:cl-source-file "ir" :depends-on ("packages" "error" "ast"))))
-   (:static-file "LICENSE")
-   (:static-file "README.md")
-   (:static-file "HACKING.md")
-   (:static-file "IR.md")))
