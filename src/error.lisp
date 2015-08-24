@@ -31,9 +31,9 @@
 
 (define-condition lexer-error (general-error)
   ((char :initarg :char
-	 :initform *char* :reader lexer-error-char)
+	 :initform jsimple-parser:*char* :reader lexer-error-char)
    (line :initarg :line
-	 :initform *line* :reader lexer-error-line))
+	 :initform jsimple-parser:*line* :reader lexer-error-line))
   (:documentation "Jsimple lexer error."))
 
 (defmethod print-object ((err lexer-error) stream)
@@ -48,9 +48,9 @@
 
 (define-condition parser-error (general-error)
   ((char :initarg :char
-	 :initform *char* :reader parser-error-char)
+	 :initform jsimple-parser:*char* :reader parser-error-char)
    (line :initarg :line
-	 :initform *line* :reader parser-error-line))
+	 :initform jsimple-parser:*line* :reader parser-error-line))
   (:documentation "Jsimple parser error."))
 
 (defmethod print-object ((err parser-error) stream)

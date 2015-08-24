@@ -24,8 +24,7 @@
 (in-package :cl-user)
 
 (defpackage :jsimple-error
-  (:use :cl
-	:jsimple-parser)
+  (:use :cl)
   (:documentation
    "Error module of jsimple.")
   (:export :general-error
