@@ -59,8 +59,9 @@
 
 (defparameter +precedence+
   (let ((precs (make-hash-table)))
-    (loop for ops in '((:|\|\||) (:&&) (:|\||) (:^) (:&) (:== :=== :!= :!==)
-		       (:< :> :<= :>= :in :instanceof)
+    ;; The => arrow function operator is the last.
+    (loop for ops in '((:=>) (:|\|\||) (:&&) (:|\||) (:^) (:&)
+		       (:== :=== :!= :!==) (:< :> :<= :>= :in :instanceof)
 		       (:>> :<< :>>>) (:+ :-) (:* :/ :%))
        for n from 1
        do (dolist (op ops) (setf (gethash op precs) n)))
@@ -72,10 +73,8 @@
   `(let ((*label-scope* (cons (cons ,type ,label) *label-scope*))) ,@body))
 
 ;;; Only version 6 is supported!
-(defun parse-js (input &key strict-semicolons (ecma-version 6) reserved-words)
-  (check-type ecma-version 6)
-  (let ((*ecma-version* ecma-version)
-        (*check-for-reserved-words* reserved-words)
+(defun parse-js (input &key strict-semicolons reserved-words)
+  (let ((*check-for-reserved-words* reserved-words)
         (*line* 0)
         (*char* 0)
         (*position* 0))
@@ -152,7 +151,8 @@
       ((:num :string :regexp :operator :atom) (simple-statement))
       (:name (if (tokenp (peek) :punc #\:)
                  (let ((label (prog1 (token-value token) (skip 2))))
-                   (as :label label (with-label-scope :label label (statement label))))
+                   (as :label label
+		       (with-label-scope :label label (statement label))))
                  (simple-statement)))
       (:punc (case (token-value token)
                (#\{ (next) (block*))
@@ -174,9 +174,11 @@
          (:do (let ((body (with-label-scope :loop label (statement))))
                 (expect-key :while)
                 (as :do (parenthesised) body)))
+	 ;; Do we need export here?
          (:for (for* label))
          (:function (function* t))
          (:if (if*))
+	 ;; Do we need import here?
 	 (:let (prog1 (js-let) (semicolon)))
          (:return (unless *in-function* (error* "'return' outside of function: "))
                   (as :return
@@ -195,12 +197,14 @@
                            (t (unless cases (unexpected token))
                               (push (statement) (cdr (car cases))))))
                       (next)
-                      (as :switch val (loop for case in (nreverse cases) collect
-					   (cons (car case) (nreverse (cdr case))))))))
+                      (as :switch val (loop for case in (nreverse cases)
+					 collect (cons (car case)
+						       (nreverse (cdr case))))))))
          (:throw (let ((ex (expression))) (semicolon) (as :throw ex)))
          (:try (try*))
          (:var (prog1 (var*) (semicolon)))
-         (:while (as :while (parenthesised) (with-label-scope :loop label (statement))))
+         (:while (as :while (parenthesised)
+		     (with-label-scope :loop label (statement))))
          (:with (as :with (parenthesised) (statement)))
          (t (unexpected token))))
       (t (unexpected token))))
@@ -213,17 +217,21 @@
   (def break/cont (type)
     (as type (cond ((or (and (semicolonp) (next)) (can-insert-semicolon))
                     (unless (loop for (ltype) in *label-scope* do
-				 (when (or (eq ltype :loop) (and (eq type :break) (eq ltype :switch)))
+				 (when (or (eq ltype :loop)
+					   (and (eq type :break)
+						(eq ltype :switch)))
 				   (return t)))
                       (error* "'~A' not inside a loop or switch: " type))
                     nil)
                    ((token-type-p token :name)
                     (let ((name (token-value token)))
                       (ecase type
-                        (:break (unless (some (lambda (lb) (equal (cdr lb) name)) *label-scope*)
-                                  (error* "Labeled 'break' without matching labeled statement: ")))
-                        (:continue (unless (find (cons :loop name) *label-scope* :test #'equal)
-                                     (error* "Labeled 'continue' without matching labeled loop: "))))
+                        (:break
+			 (unless (some (lambda (lb) (equal (cdr lb) name)) *label-scope*)
+			   (error* "Labeled 'break' without matching labeled statement: ")))
+                        (:continue
+			 (unless (find (cons :loop name) *label-scope* :test #'equal)
+			   (error* "Labeled 'continue' without matching labeled loop: "))))
                       (next) (semicolon)
                       name)))))
 
@@ -286,26 +294,49 @@
   ;;         this.b = b;
   ;;         this.c = c;
   ;;     }
+  ;;     static method() {
+  ;;         return true;
+  ;;     }
   ;; }
   (def class* ()
-    (with-defs
+    (let ((superclass))
+      (with-defs
 	(def name (and (token-type-p token :name)
 		       (prog1 (token-value token) (next))))
-      (when (not name) (unexpected token))
-      ;; TODO: Superclass, make extends optional...
-      (expect #\{)
-      (def body (let ((*label-scope* nil))
-		  ;; How about var, let and const?
-		  (loop until (tokenp token :punc #\}) collect (function* t))))
-      (next)
-      (as :class name superclass body)))
-  
+	(when (not name) (unexpected token))
+	;; Superclass, make extends optional...
+	(next)
+	(if (tokenp token :keyword :extends)
+	    (setf superclass (and (token-type-p token :name)
+				  (prog1
+				      (token-value token)
+				    (next)
+				    (if (tokenp token :punc #\{)
+					(next)
+					(unexpected token)))))
+	    (if (tokenp token :punc #\{)
+		(next)
+		(unexpected token)))
+	(def body (let ((*label-scope* nil))
+		    ;; How about var, let and const?
+		    ;; Class definition only contains functions' definitions.
+		    (loop until (tokenp token :punc #\})
+		       collect (function* t))))
+	(next)
+	(as :class name superclass body))))
+
+  ;; FIXME: Check if function is static!
   (def function* (statement)
     (with-defs
 	(def name (and (token-type-p token :name)
 		       (prog1 (token-value token) (next))))
       (when (and statement (not name)) (unexpected token))
       (expect #\()
+      ;; FIXME: ES 6 supports default parameter value, add this feature!
+      ;; FIXME: When ordinary argument list is finished, after ... will be
+      ;; the rest parameters!
+      ;; NOTE: Spread operator looks the same, but it only appear when
+      ;; the function is called. so it won't be hard to tell them apart.
       (def argnames (loop for first = t then nil
 		       until (tokenp token :punc #\))
 		       unless first do (expect #\,)
@@ -374,7 +405,8 @@
     (cond ((tokenp token :operator :new) (next) (new*))
           ((token-type-p token :punc)
            (case (token-value token)
-             (#\( (next) (subscripts (prog1 (expression) (expect #\))) allow-calls))
+             (#\( (next) (subscripts (prog1 (expression) (expect #\)))
+				     allow-calls))
              (#\[ (next) (subscripts (array*) allow-calls))
              (#\{ (next) (subscripts (object*) allow-calls))
              (t (unexpected token))))
@@ -383,7 +415,9 @@
            (subscripts (function* nil) allow-calls))
           ((member (token-type token) '(:atom :num :string :regexp :name))
            (let ((atom (if (eq (token-type token) :regexp)
-                           (as :regexp (car (token-value token)) (cdr (token-value token)))
+                           (as :regexp
+			       (car (token-value token))
+			       (cdr (token-value token)))
                            (as (token-type token) (token-value token)))))
              (subscripts (prog1 atom (next)) allow-calls)))
           (t (unexpected token))))
@@ -392,8 +426,11 @@
     (let ((elts ()))
       (loop for first = t then nil until (tokenp token :punc closing) do
 	   (unless first (expect #\,))
-	   (when (and allow-trailing-comma (tokenp token :punc closing)) (return))
-	   (push (unless (and allow-empty (tokenp token :punc #\,)) (expression nil)) elts))
+	   (when (and allow-trailing-comma (tokenp token :punc closing))
+	     (return))
+	   (push (unless (and allow-empty
+			      (tokenp token :punc #\,))
+		   (expression nil)) elts))
       (next)
       (nreverse elts)))
 
@@ -408,12 +445,18 @@
 		     (let ((name (as-property-name)))
 		       (cond ((tokenp token :punc #\:)
 			      (next) (cons name (expression nil)))
-			     ;; How about version 6?
-			     ((and (eql *ecma-version* 5) (or (equal name "get") (equal name "set")))
+			     ;; TODO: Move them into class.
+			     ((or (equal name "get") (equal name "set"))
 			      (let ((name1 (as-property-name))
-				    (body (progn (unless (tokenp token :punc #\() (unexpected token))
-						 (function* nil))))
-				(list* name1 (if (equal name "get") :get :set) body)))
+				    (body (progn
+					    (unless (tokenp token :punc #\()
+					      (unexpected token))
+					    (function* nil))))
+				(list* name1
+				       (if (equal name "get")
+					   :get
+					   :set)
+				       body)))
 			     (t (unexpected token))))
                    finally (next))))
 
@@ -425,7 +468,8 @@
   (def as-name ()
     (case (token-type token)
       (:name (prog1 (token-value token) (next)))
-      ((:operator :keyword :atom) (prog1 (string-downcase (symbol-name (token-value token))) (next)))
+      ((:operator :keyword :atom)
+       (prog1 (string-downcase (symbol-name (token-value token))) (next)))
       (t (unexpected token))))
 
   (def subscripts (expr allow-calls)
@@ -444,8 +488,10 @@
           (t expr)))
 
   (def maybe-unary (allow-calls)
-    (if (and (token-type-p token :operator) (member (token-value token) +unary-prefix+))
-        (as :unary-prefix (prog1 (token-value token) (next)) (maybe-unary allow-calls))
+    (if (and (token-type-p token :operator)
+	     (member (token-value token) +unary-prefix+))
+        (as :unary-prefix (prog1 (token-value token) (next))
+	    (maybe-unary allow-calls))
         (let ((val (expr-atom allow-calls)))
           (loop while (and (token-type-p token :operator)
 			   (member (token-value token) +unary-postfix+)
@@ -455,7 +501,8 @@
           val)))
 
   (def expr-op (left min-prec no-in)
-    (let* ((op (and (token-type-p token :operator) (or (not no-in) (not (eq (token-value token) :in)))
+    (let* ((op (and (token-type-p token :operator)
+		    (or (not no-in) (not (eq (token-value token) :in)))
                     (token-value token)))
            (prec (and op (gethash op +precedence+))))
       (if (and prec (> prec min-prec))
@@ -476,8 +523,10 @@
 
   (def maybe-assign (no-in)
     (let ((left (maybe-conditional no-in)))
-      (if (and (token-type-p token :operator) (gethash (token-value token) +assignment+))
-          (as :assign (gethash (token-value token) +assignment+) left (progn (next) (maybe-assign no-in)))
+      (if (and (token-type-p token :operator)
+	       (gethash (token-value token) +assignment+))
+          (as :assign (gethash (token-value token) +assignment+) left
+	      (progn (next) (maybe-assign no-in)))
           left)))
 
   (def expression (&optional (commas t) (no-in nil))
@@ -486,7 +535,7 @@
           (as :seq expr (progn (next) (expression)))
           expr)))
 
-  (as :program (loop until (token-type-p token eof)
+  (as :program (loop until (token-type-p token :eof)
 		  collect (statement))))
 
 (defun parse-js-string (&rest args)

@@ -31,9 +31,9 @@
 
 (define-condition lexer-error (general-error)
   ((char :initarg :char
-	 :initform jsimple-parser:*char* :reader lexer-error-char)
+	 :initform *char* :reader lexer-error-char)
    (line :initarg :line
-	 :initform jsimple-parser:*line* :reader lexer-error-line))
+	 :initform *line* :reader lexer-error-line))
   (:documentation "Jsimple lexer error."))
 
 (defmethod print-object ((err lexer-error) stream)
@@ -48,9 +48,9 @@
 
 (define-condition parser-error (general-error)
   ((char :initarg :char
-	 :initform jsimple-parser:*char* :reader parser-error-char)
+	 :initform *char* :reader parser-error-char)
    (line :initarg :line
-	 :initform jsimple-parser:*line* :reader parser-error-line))
+	 :initform *line* :reader parser-error-line))
   (:documentation "Jsimple parser error."))
 
 (defmethod print-object ((err parser-error) stream)
@@ -76,19 +76,20 @@
 (defun runtime-error (control &rest args)
   (error 'runtime-error :format-control control :format-arguments args))
 
-(define-condition arithmetic-error (runtime-error)
-  ((operator :initarg :operator :reader arithmetic-error-operator)
-   (operands :initarg :operands :reader arithmetic-error-operands))
+;;; ARITHMETIC-ERROR is a dirty name...
+(define-condition jarithmetic-error (runtime-error)
+  ((operator :initarg :operator :reader jarithmetic-error-operator)
+   (operands :initarg :operands :reader jarithmetic-error-operands))
   (:documentation "Arithmetic error, occurs when trying to do silly arithmetic or invalid operands."))
 
-(defmethod print-object ((err arithmetic-error) stream)
+(defmethod print-object ((err jarithmetic-error) stream)
   (call-next-method)
   (format stream "arithmetic error operator ~A operands ~A."
-	  (arithmetic-error-operator err)
-	  (arithmetic-error-operands err)))
+	  (jarithmetic-error-operator err)
+	  (jarithmetic-error-operands err)))
 
-(defun arithmetic-error (control &rest args)
-  (error 'arithmetic-error :format-control control :format-arguments args))
+(defun jarithmetic-error (control &rest args)
+  (error 'jarithmetic-error :format-control control :format-arguments args))
 
 (define-condition divide-by-0-error (runtime-error)
   ()

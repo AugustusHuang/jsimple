@@ -30,13 +30,13 @@
   :licence "MIT"
   :description "A javascript interpreter in Common Lisp to make running javascript simple."
   :components
-  ((:cl-source-file "packages")
-   (:module
+  ((:module
     :src
     :components
-    ((:cl-source-file "error" :depends-on ("../packages"))
-     (:cl-source-file "lexer" :depends-on ("../packages" "error"))
-     (:cl-source-file "parser" :depends-on ("../packages" "error" "lexer"))))
+    ((:cl-source-file "packages")
+     (:cl-source-file "error" :depends-on ("packages"))
+     (:cl-source-file "lexer" :depends-on ("packages" "error"))
+     (:cl-source-file "parser" :depends-on ("packages" "error" "lexer"))))
    (:static-file "LICENSE")
    (:static-file "README.md")
    (:static-file "HACKING.md")

@@ -132,7 +132,6 @@
 
 (defparameter *check-for-reserved-words* nil)
 (defparameter *use-strict* nil)
-(defparameter *ecma-version* 6)
 
 (defun read-js-number (stream &key junk-allowed)
   (flet ((peek-1 () (peek-char nil stream nil nil))
@@ -244,7 +243,10 @@
 
   (def read-num (&optional start)
     (let ((num (or (read-js-number-1 (lambda () (if start start (peek)))
-                                     (lambda () (if start (prog1 start (setf start nil)) (next)))
+                                     (lambda ()
+				       (if start
+					   (prog1 start (setf start nil))
+					   (next)))
                                      :junk-allowed t)
                    (lexer-error "Invalid number syntax: "))))
       (token :num num)))
@@ -279,6 +281,34 @@
 		      (next)
 		      (setf num (+ nx (* num 8))))
                  ch))))))
+
+  (def read-bounded-char ()
+    (let ((ch (next t))
+	  (ch2 (next t)))
+      (if (eql ch2 #\})
+	  ch
+	  (progn
+	    (write-char #\{)
+	    (write-char ch)
+	    (write-char ch2)))))
+
+  (def read-template ()
+    ;; Eat a backquote.
+    (next)
+    (handler-case
+	(token :template
+	       (with-output-to-string (*standard-output*)
+		 (loop (let ((ch (next t)))
+			 (cond ((eql ch #\$)
+				(if (eql (next t) #\{)
+				    (let ((ch (read-bounded-char)))
+				      (when ch (write-char ch)))
+				    (write-char ch)))
+			       ;; Templates allow multiple line input.
+			       ((eql ch #\`)
+				(return))
+			       (t (write-char ch)))))))
+      (end-of-file () (lexer-error "Unterminated template: "))))
   
   (def read-string ()
     (let ((quote (next)))
@@ -345,7 +375,8 @@
 		     until (and (not backslash) (not inset) (eql ch #\/)) do
 		       (unless backslash
 			 (when (eql ch #\[) (setf inset t))
-			 (when (and inset (not backslash) (eql ch #\])) (setf inset nil)))
+			 (when (and inset (not backslash) (eql ch #\]))
+			   (setf inset nil)))
 		       (setf backslash (and (eql ch #\\) (not backslash)))
 		     ;; Handle \u sequences, since CL-PPCRE does not understand them.
 		       (if (and backslash (eql (peek) #\u))
@@ -356,7 +387,9 @@
 				  (ch (code-char code)))
 			     (if ch
 				 (write-char ch)
-				 (format t "\\u~4,'0X" code)))
+				 ;; Will be deleted on SBCL.
+					;(format t "\\u~4,'0X" code)
+				 ))
 			   (write-char ch))))
                 (read-while #'identifier-char-p)))
       (end-of-file () (lexer-error "Unterminated regex: "))))
@@ -381,7 +414,7 @@
              (read-operator "/")))))
 
   (def identifier-char-p (ch)
-    (or (and (alphanumericp ch) (not (find ch *whitespace-chars*)))
+    (or (and (alphanumericp ch) (not (find ch +whitespace-chars+)))
 	(eql ch #\$)
 	(eql ch #\_)))
 
@@ -403,7 +436,7 @@
 			      (t (return))))))
            (keyword (and (not unicode-escape) (gethash word +keywords+))))
       (cond ((and *check-for-reserved-words* (not unicode-escape)
-                  (gethash word	(6 +reserved-words-ecma-6+)))
+                  (gethash word	+reserved-words-ecma-6+))
              (lexer-error "Reserved word ~A: " word))
             ((not keyword) (token :name word))
             ((gethash word +operators+) (token :operator keyword))
@@ -420,6 +453,7 @@
             (cond ((not next) (token :eof "EOF"))
                   ((digit-char-p next) (read-num))
                   ((find next "'\"") (read-string))
+		  ((eql next #\`) (read-template))
                   ((eql next #\.) (handle-dot))
                   ((find next "[]{}(),;:") (token :punc (next)))
                   ((eql next #\/) (handle-slash))

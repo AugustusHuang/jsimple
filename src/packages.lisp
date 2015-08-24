@@ -24,20 +24,22 @@
 (in-package :cl-user)
 
 (defpackage :jsimple-error
-  (:use :cl)
+  (:use :cl
+	:jsimple-parser)
   (:documentation
    "Error module of jsimple.")
   (:export :general-error
 	   :lexer-error
 	   :parser-error
 	   :runtime-error
-	   :arithmetic-error
+	   :jarithmetic-error
 	   :divide-by-0-error
-	   :invalid-index
-	   :invalid-property
-	   :invalid-function
-	   :invalid-object
-	   :number-too-large))
+	   :invalid-index-error
+	   :invalid-property-error
+	   :invalid-function-error
+	   :invalid-object-error
+	   :invalid-class-error
+	   :number-too-large-error))
 
 (defpackage :jsimple-parser
   (:use :cl
@@ -46,12 +48,23 @@
    "Parser of jsimple.")
   (:export :*line*
 	   :*char*
-	   :*position*))
+	   :*position*
+	   :parse-js
+	   :parse-js-string))
+
+(defpackage :jsimple-ir
+  (:use :cl
+	:jsimple-error
+	:jsimple-parser)
+  (:documentation
+   "Intermediate representation optimizer module of jsimple.")
+  (:export))
 
 (defpackage :jsimple-runtime
   (:use :cl
 	:jsimple-error
-	:jsimple-parser)
+	:jsimple-parser
+	:jsimple-ir)
   (:documentation
    "Runtime environment of jsimple.")
   (:export))
@@ -59,7 +72,6 @@
 (defpackage :jsimple-test
   (:use :cl
 	:jsimple-error
-	:jsimple-parser
 	:jsimple-runtime)
   (:documentation
    "Testsuite of jsimple.")
