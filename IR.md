@@ -50,6 +50,9 @@ These are the operators I currently feel good with:
 	`geq`
 	`eq`
 	`neq`
+	`let`
+	`flet`
+	`const`
 	`set`
 	`get`
 	`and`
@@ -70,7 +73,13 @@ since javascript will take the number as another string and return a string.
 And if an integer is added with a floating number, result will be a float.  
 Still not completed! I don't know whether operators like `*=` or `-=` acts
 atomically or not in javascript, or defined by a standard to have such kind
-of restrictions.
+of restrictions.  
+`struct` may not be a good low level element, but for now include it here,
+OOP is a standard feature in ES 6 now, and the best way to implement it is to
+have a structure, with slots properties and pointers to functions.  
+`let` and `flet` are introduced because of the new standard encourages uses
+of `let` and `const` instead of `var`, since top-level `let` means global,
+it seems no need to use `var`.
 
 ## opcodes
 We won't compile the IR into raw assembly codes, so it seems no need to assign
