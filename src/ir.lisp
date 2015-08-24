@@ -22,5 +22,13 @@
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
 ;;;; Intermediate representation handling and optimizing module.
+;;;; After parsing we get a list of abstract syntax tree whose CAR is :js,
+;;;; now we need to translate this AST into an intermediate representation
+;;;; of functional style. Then do some early optimization to the IR and get
+;;;; to the final stage: compile the IR into optimized Lisp code (with type
+;;;; and optimize level) and evaluate to result.
 (in-package :jsimple-ir)
+
+;;; XXX: How about stick to the DEF way? Or use normal DEFMACRO/DEFUN way to
+;;; implement IR module?
 

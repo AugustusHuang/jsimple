@@ -535,8 +535,8 @@
           (as :seq expr (progn (next) (expression)))
           expr)))
 
-  (as :program (loop until (token-type-p token :eof)
-		  collect (statement))))
+  (as :js (loop until (token-type-p token :eof)
+	     collect (statement))))
 
 (defun parse-js-string (&rest args)
   (apply 'parse-js args))

@@ -94,3 +94,14 @@ The whole IR of a javascript input will be a list of form
 ## Virtual machine
 The IR will be assumed to run on a Lisp virtual machine. It has a linear memory
 and the unit objects will be nodes.
+
+## Idea scratch pad
+Do we need high level IR forms like `loop` or `for`? But then the number of
+arguments may change, since `for` may need a container, a step, a scope and
+also a form to apply something, even more if we are facing a complex one.  
+When to do type inference? In the first pass we won't know a lot, since we
+only have the local information about a variable (Really?).  
+How to represent different data types, like class or function, use es standard
+way or use Lisp-ish way? I prefer the later, so a class with a constructor
+will become a structure, and a function will be a function noted by its number
+of arguments.
