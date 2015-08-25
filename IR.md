@@ -81,27 +81,21 @@ have a structure, with slots properties and pointers to functions.
 of `let` and `const` instead of `var`, since top-level `let` means global,
 it seems no need to use `var`.
 
-## opcodes
-We won't compile the IR into raw assembly codes, so it seems no need to assign
-a RISC-like binary code structure to IR.
+## Node types (ideas from CMUCL/SBCL IR1)
+`node` should be a general wrapper of some elements of the whole program.  
+In an AST, leaf node will be something like a local variable declaration, a
+function definition, and they will be packed into `leaf-node`.  
+Likewise, conditionals, function calls, templates will also have their unique
+node type, maybe `cond-node`, `call-node`, `temp-node` or something.  
+All fix argument function call or something alike will have their argument
+shown in the `node` directly (maybe in a list form), if the argument number is
+not determined until runtime, use a different extension of `leaf-node`,
+maybe `rest-node`.
 
-## Format
-The whole IR of a javascript input will be a list of form
-`(operator operand1 operand2 operand3)`, here the number of arguments vary from
-0 to 3. Every form should be called a **node**. A node structure will be made
-(I borrow this name from **CMUCL**).
-
-## Virtual machine
-The IR will be assumed to run on a Lisp virtual machine. It has a linear memory
-and the unit objects will be nodes.
-
-## Idea scratch pad
-Do we need high level IR forms like `loop` or `for`? But then the number of
-arguments may change, since `for` may need a container, a step, a scope and
-also a form to apply something, even more if we are facing a complex one.  
-When to do type inference? In the first pass we won't know a lot, since we
-only have the local information about a variable (Really?).  
-How to represent different data types, like class or function, use es standard
-way or use Lisp-ish way? I prefer the later, so a class with a constructor
-will become a structure, and a function will be a function noted by its number
-of arguments.
+## Phases
+1. Make different types of `node` and prepare to generate seperated `piece`.  
+2. Traverse the abstract syntax tree and generate node array (or list),
+and then fill them into different pieces (maybe store them in hash-table).  
+3. Find linked pieces and use a most-spread algorithm.  
+4. Go through multiple passes and delete unused codes, determine variable
+types, adjust entries and exits...
