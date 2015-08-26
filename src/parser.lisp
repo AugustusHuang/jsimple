@@ -258,7 +258,7 @@
     (let ((obj (progn (next) (expression))))
       (expect #\))
       (as :for-of init scope obj (with-label-scope :loop label (statement)))))
-
+  
   ;; Also add for-of loop here.
   (def for* (label)
     (expect #\()
@@ -266,21 +266,24 @@
           ((tokenp token :keyword :var)
            (let* ((var (progn (next) (var* t)))
                   (defs (second var)))
-	     (if (not (cdr defs))
-		 (if (tokenp token :operator :in)
-		     (for-in label var (as :name (caar defs)))
-		     (if (tokenp token :operator :of)
-			 (for-of label var (as :name (caar defs)))))
-		 (regular-for label var))))
+	     (if (and (not (cdr defs))
+		      (tokenp token :operator :in))
+		 (for-in label var (as :name (caar defs)))
+		 (if (and (not (cdr defs))
+			  (tokenp token :operator :of))
+		     (for-of label var (as :name (caar defs)))
+		     (regular-for label var)))))
 	  ((tokenp token :keyword :let)
 	   (let* ((let-decl (progn (next) (js-let t)))
 		  (defs (second let-decl)))
-	     (if (not (cdr defs))
-		 (if (tokenp token :operator :in)
-		     (for-in label let-decl (as :name (caar defs)))
-		     (if (tokenp token :operator :of)
-			 (for-of label let-decl (as :name (caar defs)))))
-		 (regular-for label let-decl))))
+	     (if (and (not (cdr defs))
+		      (tokenp token :operator :in))
+		 (for-in label let-decl (as :name (caar defs)))
+		 (if (and (not (cdr defs))
+			  (tokenp token :operator :of))
+		     (for-of label let-decl (as :name (caar defs)))
+		     (regular-for label let-decl)))))
+	  ;; Do we need OF here?
           (t (let ((init (expression t t)))
                (if (tokenp token :operator :in)
                    (for-in label nil init)
@@ -391,6 +394,7 @@
   (def const* ()
     (as :const (vardefs t)))
 
+  ;; FIXME: can have let [a, b] = XXX; Change it to fit this!
   (def js-let (&optional no-in)
     (as :let (vardefs no-in)))
   

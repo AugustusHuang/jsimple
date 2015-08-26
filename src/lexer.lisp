@@ -81,10 +81,10 @@
 ;;; NOTE: All constant parameters should be surronded by +.
 (defparameter +operator-chars+ "+-*&%=<>!?|~^")
 
-;;; Add arrow function.
+;;; Add arrow function and OF operator.
 (defparameter +operators+
   (let ((ops (make-hash-table :test 'equal)))
-    (dolist (op '(:in :instanceof :typeof :new :void :delete
+    (dolist (op '(:in :instanceof :of :typeof :new :void :delete
 		  :++ :-- :+ :- :! :~ :& :|\|| :^ :* :/ :%
                   :>> :<< :>>> :< :> :<= :>= :== :=== :!= :!==
 		  :? := :+= :-= :/= :*= :%= :>>= :<<= :=>

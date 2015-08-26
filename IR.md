@@ -1,4 +1,4 @@
-# Intermediate Representation of jsimple (ljsp)
+# Intermediate Representation of jsimple
 I decide to design the IR of jsimple base on webassembly. Since webassembly
 is a brand new project, this IR will update when needed, but since it lies
 between Javascript and Common Lisp, it will be simpler than webassembly, which
@@ -93,9 +93,25 @@ not determined until runtime, use a different extension of `leaf-node`,
 maybe `rest-node`.
 
 ## Phases
-1. Make different types of `node` and prepare to generate seperated `piece`.  
-2. Traverse the abstract syntax tree and generate node array (or list),
-and then fill them into different pieces (maybe store them in hash-table).  
-3. Find linked pieces and use a most-spread algorithm.  
-4. Go through multiple passes and delete unused codes, determine variable
-types, adjust entries and exits...
+
+    1. Make different types of `node` and prepare to generate seperated `piece`.
+    2. Traverse the abstract syntax tree and generate node array (or list),
+	and then fill them into different pieces (maybe store them in hash-table).
+    3. Find linked pieces and use a most-spread algorithm.
+    4. Go through multiple passes and delete unused codes, determine variable
+	types, adjust entries and exits...
+
+## Detailed design
+Traverse from form `(:js XXX)`, depth first, every step either push a new `1`
+to the end of the counter list, or increment an existing element of the list
+by 1, the counter list will be later stored into the corresponding node, e.g.
+a node with counter `(2 3 4)` means it's in the fourth form of the third form
+of the second one in the top-level form. If the form begins with
+`(:function XXX)`, then make a new function node, if the form begins with
+`(:binary XXX)` or `(:unary-prefix XXX)` or `(:const XXX)`,
+make a new constant node, if the form begins with `(:let XXX)` or `(:var XXX)`
+make a new variable node, if the form begins with `(:assign XXX)`, make
+a new set node (here we don't tell the differences between SETF and SETQ),
+if the form begins with `(:for XXX)`, `(:for-in XXX)` or `(:for-of XXX)`,
+make a new loop node. If the form begins with `(:block XXX)`, make a new block
+node.
