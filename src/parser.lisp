@@ -388,15 +388,32 @@
           (progn (next) (cons (cons name val) (vardefs no-in)))
           (list (cons name val)))))
 
+  (def letdefs (no-in)
+    (if (token-type-p token :name)
+	(let ((name (token-value token)) val)
+	  (next)
+	  (when (tokenp token :operator :=)
+	    (next) (setf val (expression nil no-in)))
+	  (if (tokenp token :punc #\,)
+	      (progn (next) (cons (cons name val) (letdefs no-in)))
+	      (list (cons name val))))
+	;; We are facing destructuring.
+	(if (tokenp token :punc #\[)
+	    (progn (next) (array*))
+	    (if (tokenp token :punc #\{)
+		(progn (next) (object*))
+		(unexpected token)))))
+  
   (def var* (&optional no-in)
     (as :var (vardefs no-in)))
 
   (def const* ()
     (as :const (vardefs t)))
 
-  ;; FIXME: can have let [a, b] = XXX; Change it to fit this!
+  ;; FIXME: Can have let [a, b] = XXX; or let [, a] = XXX.
+  ;; Change it to fit this!
   (def js-let (&optional no-in)
-    (as :let (vardefs no-in)))
+    (as :let (letdefs no-in)))
   
   (def new* ()
     (let ((newexp (expr-atom nil)))
@@ -438,6 +455,10 @@
       (next)
       (nreverse elts)))
 
+  ;; In order to implement this new feature...
+  (def destructure ()
+    )
+  
   (def array* ()
     (as :array (expr-list #\] t t)))
 
