@@ -95,31 +95,342 @@
   ;; can null out this slot.
   (tail-p nil :type boolean))
 
-;;; XXX: Do we need a special print function?
-;;; LEAF-NODE is created when facing a leaf object, like 
-(defstruct (leaf-node
-	     (:include node))
-  )
+;;;; LEAF structures
+
+;;; Variables, constants and functions are all represented by LEAF
+;;; structures. A reference to a LEAF is indicated by a REF node. This
+;;; allows us to easily substitute one for the other without actually
+;;; hacking the flow graph.
+(defstruct leaf
+  ;; the name of LEAF as it appears in the source, e.g. 'FOO or '(SETF
+  ;; FOO) or 'N or '*Z*, or the special .ANONYMOUS. value if there's
+  ;; no name for this thing in the source (as can happen for
+  ;; FUNCTIONALs, e.g. for anonymous LAMBDAs or for functions for
+  ;; top-level forms; and can also happen for anonymous constants) or
+  ;; perhaps also if the match between the name and the thing is
+  ;; skewed enough (e.g. for macro functions or method functions) that
+  ;; we don't want to have that name affect compilation
+  ;;
+  ;; (We use .ANONYMOUS. here more or less the way we'd ordinarily use
+  ;; NIL, but we're afraid to use NIL because it's a symbol which could
+  ;; be the name of a leaf, if only the constant named NIL.)
+  ;;
+  ;; The value of this slot in can affect ordinary runtime behavior,
+  ;; e.g. of special variables and known functions, not just debugging.
+  ;;
+  ;; See also the LEAF-DEBUG-NAME function and the
+  ;; FUNCTIONAL-%DEBUG-NAME slot.
+  (source-name nil
+   ;; I guess we state the type this way to avoid calling
+   ;; LEGAL-FUN-NAME-P unless absolutely necessary,
+   ;; but this seems a bit of a premature optimization.
+   :type (or null symbol (and cons (satisfies legal-fun-name-p)))
+   :read-only t)
+  ;; the type which values of this leaf must have
+  (type :undefined :type +js-type+)
+  ;; the type which values of this leaf have last been defined to have
+  ;; (but maybe won't have in future, in case of redefinition)
+  (defined-type :undefined :type +js-type+)
+  ;; where the TYPE information came from (in order from strongest to weakest):
+  ;;  :DECLARED, from a declaration.
+  ;;  :DEFINED-HERE, from examination of the definition in the same file.
+  ;;  :DEFINED, from examination of the definition elsewhere.
+  ;;  :DEFINED-METHOD, implicit, piecemeal declarations from CLOS.
+  ;;  :ASSUMED, from uses of the object.
+  (where-from :assumed :type (member :declared :assumed :defined-here :defined :defined-method))
+  ;; list of the REF nodes for this leaf
+  (refs () :type list)
+  ;; true if there was ever a REF or SET node for this leaf. This may
+  ;; be true when REFS and SETS are null, since code can be deleted.
+  (ever-used nil :type boolean)
+  ;; is it declared dynamic-extent, or truly-dynamic-extent?
+  (extent nil :type (member nil :maybe-dynamic :always-dynamic :indefinite))
+  ;; some kind of info used by the back end
+  (info nil))
+
+;;; The CONSTANT structure is used to represent known constant values.
+;;; Since the same constant leaf may be shared between named and anonymous
+;;; constants, SOURCE-NAME is never used.
+(defstruct (constant-leaf
+	     (:constructor make-constant (value
+					  &aux
+					  (type (type-of value))
+					  (source-name '.anonymous.)
+					  (where-from :defined)))
+	     (:include leaf))
+  ;; the value of the constant
+  (value nil)
+  ;; Boxed TN for this constant, if any.
+  (boxed-tn nil :type (or null tn)))
+
+;;; We default the WHERE-FROM and TYPE slots to :DEFINED and FUNCTION.
+;;; We don't normally manipulate function types for defined functions,
+;;; but if someone wants to know, an approximation is there.
+(defstruct (functional-leaf
+	     (:include leaf
+		       (source-name '.anonymous.)
+		       (where-from :defined)
+		       (type (specifier-type 'function))))
+  ;; the name of FUNCTIONAL for debugging purposes, or NIL if we
+  ;; should just let the SOURCE-NAME fall through
+  ;;
+  ;; Unlike the SOURCE-NAME slot, this slot's value should never
+  ;; affect ordinary code behavior, only debugging/diagnostic behavior.
+  ;;
+  ;; E.g. for the function which implements (DEFUN FOO ...), we could
+  ;; have
+  ;;   %SOURCE-NAME=FOO
+  ;;   %DEBUG-NAME=NIL
+  ;; for the function which implements the top level form
+  ;; (IN-PACKAGE :FOO) we could have
+  ;;   %SOURCE-NAME=NIL
+  ;;   %DEBUG-NAME=(TOP-LEVEL-FORM (IN-PACKAGE :FOO)
+  ;; for the function which implements FOO in
+  ;;   (DEFUN BAR (...) (FLET ((FOO (...) ...)) ...))
+  ;; we could have
+  ;;   %SOURCE-NAME=FOO
+  ;;   %DEBUG-NAME=(FLET FOO)
+  ;; and for the function which implements FOO in
+  ;;   (DEFMACRO FOO (...) ...)
+  ;; we could have
+  ;;   %SOURCE-NAME=FOO (or maybe .ANONYMOUS.?)
+  ;;   %DEBUG-NAME=(MACRO-FUNCTION FOO)
+  (debug-name nil
+	      :type (or null (not (satisfies legal-fun-name-p)))
+	      :read-only t)
+  ;; some information about how this function is used. These values
+  ;; are meaningful:
+  ;;    NIL
+  ;;    an ordinary function, callable using local call
+  ;;    :LET
+  ;;    a lambda that is used in only one local call, and has in
+  ;;    effect been substituted directly inline. The return node is
+  ;;    deleted, and the result is computed with the actual result
+  ;;    lvar for the call.
+  ;;    :MV-LET
+  ;;    Similar to :LET (as per FUNCTIONAL-LETLIKE-P), but the call
+  ;;    is an MV-CALL.
+  ;;    :ASSIGNMENT
+  ;;    similar to a LET (as per FUNCTIONAL-SOMEWHAT-LETLIKE-P), but
+  ;;    can have other than one call as long as there is at most
+  ;;    one non-tail call.
+  ;;    :OPTIONAL
+  ;;    a lambda that is an entry point for an OPTIONAL-DISPATCH.
+  ;;    Similar to NIL, but requires greater caution, since local call
+  ;;    analysis may create new references to this function. Also, the
+  ;;    function cannot be deleted even if it has *no* references. The
+  ;;    OPTIONAL-DISPATCH is in the LAMDBA-OPTIONAL-DISPATCH.
+  ;;    :EXTERNAL
+  ;;    an external entry point lambda. The function it is an entry
+  ;;    for is in the ENTRY-FUN slot.
+  ;;    :TOPLEVEL
+  ;;    a top level lambda, holding a compiled top level form.
+  ;;    Compiled very much like NIL, but provides an indication of
+  ;;    top level context. A :TOPLEVEL lambda should have *no*
+  ;;    references. Its ENTRY-FUN is a self-pointer.
+  ;;    :TOPLEVEL-XEP
+  ;;    After a component is compiled, we clobber any top level code
+  ;;    references to its non-closure XEPs with dummy FUNCTIONAL
+  ;;    structures having this kind. This prevents the retained
+  ;;    top level code from holding onto the IR for the code it
+  ;;    references.
+  ;;    :ESCAPE
+  ;;    :CLEANUP
+  ;;    special functions used internally by CATCH and UNWIND-PROTECT.
+  ;;    These are pretty much like a normal function (NIL), but are
+  ;;    treated specially by local call analysis and stuff. Neither
+  ;;    kind should ever be given an XEP even though they appear as
+  ;;    args to funny functions. An :ESCAPE function is never actually
+  ;;    called, and thus doesn't need to have code generated for it.
+  ;;    :DELETED
+  ;;    This function has been found to be uncallable, and has been
+  ;;    marked for deletion.
+  ;;    :ZOMBIE
+  ;;    Effectless [MV-]LET; has no BIND node.
+  ;; TODO: Some of them are not valid semantic in js, remove them.
+  (kind nil :type (member nil :optional :deleted :external :toplevel
+                          :escape :cleanup :let :mv-let :assignment
+                          :zombie :toplevel-xep))
+  ;; Is this a function that some external entity (e.g. the fasl dumper)
+  ;; refers to, so that even when it appears to have no references, it
+  ;; shouldn't be deleted? In the old days (before
+  ;; sbcl-0.pre7.37.flaky5.2) this was sort of implicitly true when
+  ;; KIND was :TOPLEVEL. Now it must be set explicitly, both for
+  ;; :TOPLEVEL functions and for any other kind of functions that we
+  ;; want to dump or return from #'CL:COMPILE or whatever.
+  (has-external-references-p nil)
+  ;; In a normal function, this is the external entry point (XEP)
+  ;; lambda for this function, if any. Each function that is used
+  ;; other than in a local call has an XEP, and all of the
+  ;; non-local-call references are replaced with references to the
+  ;; XEP.
+  ;;
+  ;; In an XEP lambda (indicated by the :EXTERNAL kind), this is the
+  ;; function that the XEP is an entry-point for. The body contains
+  ;; local calls to all the actual entry points in the function. In a
+  ;; :TOPLEVEL lambda (which is its own XEP) this is a self-pointer.
+  ;;
+  ;; With all other kinds, this is null.
+  (entry-fun nil :type (or functional null))
+  ;; the value of any inline/notinline declaration for a local
+  ;; function (or NIL in any case if no inline expansion is available)
+  (inlinep nil :type inlinep)
+  ;; If we have a lambda that can be used as in inline expansion for
+  ;; this function, then this is it. If there is no source-level
+  ;; lambda corresponding to this function then this is null (but then
+  ;; INLINEP will always be NIL as well.)
+  (inline-expansion nil :type list)
+  ;; the original function or macro lambda list, or :UNSPECIFIED if
+  ;; this is a compiler created function
+  (arg-documentation nil :type (or list (member :unspecified)))
+  ;; Node, allocating closure for this lambda. May be NIL when we are
+  ;; sure that no closure is needed.
+  (allocator nil :type (or null combination))
+  ;; various rare miscellaneous info that drives code generation & stuff
+  (plist () :type list)
+  ;; xref information for this functional (only used for functions with an
+  ;; XEP)
+  (xref () :type list)
+  ;; True if this functional was created from an inline expansion. This
+  ;; is either T, or the GLOBAL-VAR for which it is an expansion.
+  (inline-expanded nil))
+
+;;; The LAMBDA only deals with required lexical arguments. Special,
+;;; optional, keyword and rest arguments are handled by transforming
+;;; into simpler stuff.
+(defstruct (lambda-leaf
+	     (:include functional))
+  ;; list of LAMBDA-VAR descriptors for arguments
+  (vars nil :type list :read-only t)
+  ;; If this function was ever a :OPTIONAL function (an entry-point
+  ;; for an OPTIONAL-DISPATCH), then this is that OPTIONAL-DISPATCH.
+  ;; The optional dispatch will be :DELETED if this function is no
+  ;; longer :OPTIONAL.
+  (optional-dispatch nil :type (or optional-dispatch null))
+  ;; the BIND node for this LAMBDA. This node marks the beginning of
+  ;; the lambda, and serves to explicitly represent the lambda binding
+  ;; semantics within the flow graph representation. This is null in
+  ;; deleted functions, and also in LETs where we deleted the call and
+  ;; bind (because there are no variables left), but have not yet
+  ;; actually deleted the LAMBDA yet.
+  (bind nil :type (or bind null))
+  ;; the RETURN node for this LAMBDA, or NIL if it has been
+  ;; deleted. This marks the end of the lambda, receiving the result
+  ;; of the body. In a LET, the return node is deleted, and the body
+  ;; delivers the value to the actual lvar. The return may also be
+  ;; deleted if it is unreachable.
+  (return nil :type (or return-node null))
+  ;; If this CLAMBDA is a LET, then this slot holds the LAMBDA whose
+  ;; LETS list we are in, otherwise it is a self-pointer.
+  (home nil :type (or lambda-leaf null))
+  ;; all the lambdas that have been LET-substituted in this lambda.
+  ;; This is only non-null in lambdas that aren't LETs.
+  (lets nil :type list)
+  ;; all the ENTRY nodes in this function and its LETs, or null in a LET
+  (entries nil :type list)
+  ;; CLAMBDAs which are locally called by this lambda, and other
+  ;; objects (closed-over LAMBDA-VARs and XEPs) which this lambda
+  ;; depends on in such a way that DFO shouldn't put them in separate
+  ;; components.
+  ;; FIXME: We don't implement sparse-set here, remove it or replace it.
+  (calls-or-closes (make-sset) :type (or null sset))
+  ;; the TAIL-SET that this LAMBDA is in. This is null during creation.
+  (tail-set nil :type (or tail-set null))
+  ;; list of embedded lambdas
+  (children nil :type list)
+  (parent nil :type (or lambda-leaf null)))
+
+;;; The OPTIONAL-DISPATCH leaf is used to represent hairy lambdas. It
+;;; is a FUNCTIONAL, like LAMBDA. Each legal number of arguments has a
+;;; function which is called when that number of arguments is passed.
+;;; The function is called with all the arguments actually passed. If
+;;; additional arguments are legal, then the LEXPR style MORE-ENTRY
+;;; handles them. The value returned by the function is the value
+;;; which results from calling the OPTIONAL-DISPATCH.
+;;;
+;;; The theory is that each entry-point function calls the next entry
+;;; point tail-recursively, passing all the arguments passed in and
+;;; the default for the argument the entry point is for. The last
+;;; entry point calls the real body of the function. In the presence
+;;; of SUPPLIED-P args and other hair, things are more complicated. In
+;;; general, there is a distinct internal function that takes the
+;;; SUPPLIED-P args as parameters. The preceding entry point calls
+;;; this function with NIL filled in for the SUPPLIED-P args, while
+;;; the current entry point calls it with T in the SUPPLIED-P
+;;; positions.
+;;;
+;;; Note that it is easy to turn a call with a known number of
+;;; arguments into a direct call to the appropriate entry-point
+;;; function, so functions that are compiled together can avoid doing
+;;; the dispatch.
+(defstruct (optional-dispatch
+	     (:include functional))
+  ;; the original parsed argument list, for anyone who cares
+  (arglist nil :type list)
+  ;; true if &ALLOW-OTHER-KEYS was supplied
+  (allowp nil :type boolean)
+  ;; true if &KEY was specified (which doesn't necessarily mean that
+  ;; there are any &KEY arguments..)
+  (keyp nil :type boolean)
+  ;; the number of required arguments. This is the smallest legal
+  ;; number of arguments.
+  (min-args 0 :type unsigned-byte)
+  ;; the total number of required and optional arguments. Args at
+  ;; positions >= to this are &REST, &KEY or illegal args.
+  (max-args 0 :type unsigned-byte)
+  ;; list of the (maybe delayed) LAMBDAs which are the entry points
+  ;; for non-rest, non-key calls. The entry for MIN-ARGS is first,
+  ;; MIN-ARGS+1 second, ... MAX-ARGS last. The last entry-point always
+  ;; calls the main entry; in simple cases it may be the main entry.
+  (entry-points nil :type list)
+  ;; an entry point which takes MAX-ARGS fixed arguments followed by
+  ;; an argument context pointer and an argument count. This entry
+  ;; point deals with listifying rest args and parsing keywords. This
+  ;; is null when extra arguments aren't legal.
+  (more-entry nil :type (or lambda-leaf null))
+  ;; the main entry-point into the function, which takes all arguments
+  ;; including keywords as fixed arguments. The format of the
+  ;; arguments must be determined by examining the arglist. This may
+  ;; be used by callers that supply at least MAX-ARGS arguments and
+  ;; know what they are doing.
+  (main-entry nil :type (or lambda-leaf null)))
 
 (defstruct (value-node
 	     (:include node))
   (derived-type :undefined :type +js-type+)
   (lvar nil :type (or lvar null)))
 
+;;; A REF represents a reference to a LEAF. REF-REOPTIMIZE is
+;;; initially (and forever) NIL, since REFs don't receive any values
+;;; and don't have any IR1 optimizer.
+(defstruct (ref
+	     (:include valued-node (reoptimize nil))
+	     (:constructor make-ref
+			   (leaf
+			    &optional (%source-name '.anonymous.)
+			    &aux (leaf-type (leaf-type leaf))
+			    (derived-type
+			     (make-single-value-type leaf-type)))))
+  ;; The leaf referenced.
+  (leaf nil :type leaf)
+  ;; CONSTANT nodes are always anonymous, since we wish to coalesce named and
+  ;; unnamed constants that are equivalent, we need to keep track of the
+  ;; reference name for XREF.
+  (source-name nil :type (or null symbol) :read-only t))
+
 (defstruct (cond-node
 	     (:include node))
-  )
+  ;; LVAR for the predicate
+  (test nil :type (or null lvar))
+  ;; the blocks that we execute next in true and false case,
+  ;; respectively (may be the same)
+  (consequent nil :type (or block-node null))
+  (consequent-constraints nil :type (or null t))
+  (alternative nil :type (or block-node null))
+  (alternative-constraints nil :type (or null t)))
 
 (defstruct (funcall-node
 	     (:include node))
-  )
-
-(defstruct (var-node
-	     (:include leaf-node))
-  )
-
-(defstruct (func-node
-	     (:include leaf-node))
   )
 
 (defstruct (block-node
@@ -156,11 +467,12 @@
   ;; next block in the loop.
   (loop-next nil :type (or null block-node))
   ;; the component this block is in, or NIL temporarily during IR1
-  ;; conversion and in deleted blocks
-  (component (progn
-               (aver-live-component *current-component*)
-               *current-component*)
-             :type (or component null))
+  ;; conversion and in deleted blocks.
+  ;; FIXME: change it into PIECE and change related functions.
+  (piece (progn
+	   (aver-live-component *current-component*)
+	   *current-component*)
+	 :type (or piece null))
   ;; a flag used by various graph-walking code to determine whether
   ;; this block has been processed already or what. We make this
   ;; initially NIL so that FIND-INITIAL-DFO doesn't have to scan the
@@ -206,6 +518,28 @@
 	     (:include node))
   )
 
+;;; An TAIL-SET structure is used to accumulate information about
+;;; tail-recursive local calls. The "tail set" is effectively the
+;;; transitive closure of the "is called tail-recursively by"
+;;; relation.
+;;;
+;;; All functions in the same tail set share the same TAIL-SET
+;;; structure. Initially each function has its own TAIL-SET, but when
+;;; IR1-OPTIMIZE-RETURN notices a tail local call, it joins the tail
+;;; sets of the called function and the calling function.
+;;;
+;;; The tail set is somewhat approximate, because it is too early to
+;;; be sure which calls will be tail-recursive. Any call that *might*
+;;; end up tail-recursive causes TAIL-SET merging.
+(defstruct tail-set
+  ;; a list of all the LAMBDAs in this tail set
+  (funs nil :type list)
+  ;; our current best guess of the type returned by these functions.
+  ;; This is the union across all the functions of the return node's
+  ;; RESULT-TYPE, excluding local calls.
+  (type :undefined :type +js-type+))
+
+;;; FIXME: Move it to the piece module, and remove some unused slots.
 ;;; A COMPONENT structure provides a handle on a connected piece of
 ;;; the flow graph. Most of the passes in the compiler operate on
 ;;; COMPONENTs rather than on the entire flow graph.
