@@ -46,7 +46,7 @@
 
 ;;; Now javascript has a new 6th version standard, adjust PARSE-JS lib,
 ;;; make it compatible with new features. Also make some modifications
-;;; on the coding style.
+;;; on the coding style. More comments.
 (defmacro with-defs (&body body)
   (loop for form in body
      if (and (eq (car form) 'def) (< (length form) 4))
@@ -131,8 +131,8 @@
     words))
 
 (defparameter *check-for-reserved-words* nil)
-(defparameter *use-strict* nil)
 
+;;; Wrapper of READ-JS-NUMBER-1, read a number with specific radix.
 (defun read-js-number (stream &key junk-allowed)
   (flet ((peek-1 () (peek-char nil stream nil nil))
          (next-1 () (read-char stream nil nil)))

@@ -174,13 +174,14 @@
          (:do (let ((body (with-label-scope :loop label (statement))))
                 (expect-key :while)
                 (as :do (parenthesised) body)))
-	 ;; Do we need export here?
+	 (:export (export*))
          (:for (for* label))
          (:function (function* t))
          (:if (if*))
-	 ;; Do we need import here?
+	 (:import (import*))
 	 (:let (prog1 (js-let) (semicolon)))
-         (:return (unless *in-function* (error* "'return' outside of function: "))
+         (:return (unless *in-function*
+		    (error* "'return' outside of function: "))
                   (as :return
                       (cond ((semicolonp) (next) nil)
                             ((can-insert-semicolon) nil)
@@ -403,7 +404,8 @@
 	    (if (tokenp token :punc #\{)
 		(progn (next) (object*))
 		(unexpected token)))))
-  
+
+  ;; FIXME: var [a, b] = XXX; is also valid in ES6.
   (def var* (&optional no-in)
     (as :var (vardefs no-in)))
 
@@ -414,6 +416,12 @@
   ;; Change it to fit this!
   (def js-let (&optional no-in)
     (as :let (letdefs no-in)))
+
+  (def export* ()
+    )
+
+  (def import* ()
+    )
   
   (def new* ()
     (let ((newexp (expr-atom nil)))
