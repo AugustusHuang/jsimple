@@ -21,28 +21,58 @@
 ;;;; ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-;;;; asdf file
+;;;; Utilities used in IR transform and optimize stage.
+(in-package :jsimple-ir)
 
-(in-package :asdf-user)
+;;; The general macro to translate a form with CAR in js content into
+;;; a node or methods applied to nodes.
+(defmacro ir-translate (operator (operations entry next exit) &body body)
+  )
 
-(defsystem :jsimple
-  :version "0.0.1"
-  :licence "MIT"
-  :description "A javascript interpreter in Common Lisp to make running javascript simple."
-  :components
-  ((:module
-    :src
-    :components
-    ((:cl-source-file "packages")
-     (:cl-source-file "error" :depends-on ("packages"))
-     (:cl-source-file "lexer" :depends-on ("packages" "error"))
-     (:cl-source-file "parser" :depends-on ("packages" "error" "lexer"))
-;     (:cl-source-file "ir-util" :depends-on ("packages" "error" "parser"))
-;     (:cl-source-file "node" :depends-on ("packages" "error" "parser"))
-;     (:cl-source-file "piece" :depends-on ("packages" "error" "parser" "node"))
-;     (:cl-source-file "ir-opt" :depends-on ("packages" "error" "node" "piece"))
-     ))
-   (:static-file "LICENSE")
-   (:static-file "README.md")
-   (:static-file "HACKING.md")
-   (:static-file "IR.md")))
+;;; Every js form will have its own translate function, made by IR-TRANSLATE.
+;;; BODY will contain specific operations needed to complete a translation.
+(ir-translate block ((&rest operations) entry next exit)
+	      )
+
+(ir-translate if ((test then &rest else) entry next exit)
+	      )
+
+(ir-translate function
+	      )
+
+(ir-translate binary
+	      )
+
+(ir-translate unary
+	      )
+
+(ir-translate let
+	      )
+
+(ir-translate var
+	      )
+
+(ir-translate const
+	      )
+
+(ir-translate switch
+	      )
+
+(ir-translate catch
+	      )
+
+(ir-translate throw
+	      )
+
+(ir-translate class
+	      )
+
+(ir-translate array
+	      )
+
+(ir-translate object
+	      )
+
+(ir-translate string
+	      )
+
