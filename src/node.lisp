@@ -31,6 +31,9 @@
 
 ;;; FIXME: Shall we move this to piece module?
 ;;; CONTROL TRANSFER structure directly lended from SBCL.
+;;; NOTE: CTRAN acts like a counter, and NODE is the road it walks upon.
+;;; Every CTRAN can have its own way, but the road underlying will only
+;;; change if some of the blocks can merge or with code elimination.
 (defstruct ctran
   ;; an indication of the way that this continuation is currently used.
   ;; :UNUSED
@@ -58,15 +61,19 @@
 
 (defstruct lvar
   ;; The node which receives this value. NIL only temporarily.
+  ;; NOTE: If the LVAR is a direct computation with no explicit exit,
+  ;; I suppose the DEST is the current node.
   (dest nil :type (or node null))
   ;; cached type of this lvar's value. Default will be UNDEFINED.
+  ;; NOTE: When a LVAR is generated and determined, we can tell the type
+  ;; somehow...
   (derived-type :undefined :type +js-type+)
   ;; the node (if unique) or a list of nodes where this lvar is used.
   (uses nil :type (or node list))
   ;; set to true when something about this lvar's value has changed.
   (reoptimize t :type boolean)
   ;; Cached type which is checked by DEST. If NIL, then this must be
-  ;; recomputed: see LVAR-EXTERNALLY-CHECKABLE-TYPE.
+  ;; recomputed.
   (externally-checkable-type :undefined :type +js-type+))
 
 ;;; NODE will be the generic interface of all different type of nodes,
@@ -101,7 +108,13 @@
 ;;; structures. A reference to a LEAF is indicated by a REF node. This
 ;;; allows us to easily substitute one for the other without actually
 ;;; hacking the flow graph.
+;;; NOTE: LEAF is the concrete (genuine) variables, and REF only acts like
+;;; a pointer, so we don't need to change nodes, only change LEAF underlying
+;;; REF nodes.
 (defstruct leaf
+  ;; FIXME: JS is different! There will be global and local variables,
+  ;; constants, local functions, lambdas and global functions.
+  ;;
   ;; the name of LEAF as it appears in the source, e.g. 'FOO or '(SETF
   ;; FOO) or 'N or '*Z*, or the special .ANONYMOUS. value if there's
   ;; no name for this thing in the source (as can happen for
@@ -117,9 +130,6 @@
   ;;
   ;; The value of this slot in can affect ordinary runtime behavior,
   ;; e.g. of special variables and known functions, not just debugging.
-  ;;
-  ;; See also the LEAF-DEBUG-NAME function and the
-  ;; FUNCTIONAL-%DEBUG-NAME slot.
   (source-name nil
    ;; I guess we state the type this way to avoid calling
    ;; LEGAL-FUN-NAME-P unless absolutely necessary,
@@ -144,23 +154,24 @@
   ;; be true when REFS and SETS are null, since code can be deleted.
   (ever-used nil :type boolean)
   ;; is it declared dynamic-extent, or truly-dynamic-extent?
-  (extent nil :type (member nil :maybe-dynamic :always-dynamic :indefinite))
-  ;; some kind of info used by the back end
-  (info nil))
+  ;; XXX: What is dynamic-extent counterpart in JS?
+  (extent nil :type (member nil :maybe-dynamic :always-dynamic :indefinite)))
 
-;;; The CONSTANT structure is used to represent known constant values.
-;;; Since the same constant leaf may be shared between named and anonymous
-;;; constants, SOURCE-NAME is never used.
+;;; The CONSTANT-LEAF structure is used to represent known constant values.
+;;; Constant will be effectively made to evaluate to itself,
+;;; so it will always be ANONYMOUS.
 (defstruct (constant-leaf
-	     (:constructor make-constant (value
-					  &aux
-					  (type (type-of value))
-					  (source-name '.anonymous.)
-					  (where-from :defined)))
+	     (:constructor make-constant-leaf (value
+					       &aux
+					       ;; No, obey JS rule.
+					       (type (type-of value))
+					       (source-name '.anonymous.)
+					       (where-from :defined)))
 	     (:include leaf))
-  ;; the value of the constant
+  ;; The value of the constant.
   (value nil)
   ;; Boxed TN for this constant, if any.
+  ;; XXX: What's this?
   (boxed-tn nil :type (or null tn)))
 
 ;;; We default the WHERE-FROM and TYPE slots to :DEFINED and FUNCTION.
@@ -170,6 +181,7 @@
 	     (:include leaf
 		       (source-name '.anonymous.)
 		       (where-from :defined)
+		       ;; No, obey JS rule.
 		       (type (specifier-type 'function))))
   ;; the name of FUNCTIONAL for debugging purposes, or NIL if we
   ;; should just let the SOURCE-NAME fall through
@@ -179,22 +191,22 @@
   ;;
   ;; E.g. for the function which implements (DEFUN FOO ...), we could
   ;; have
-  ;;   %SOURCE-NAME=FOO
-  ;;   %DEBUG-NAME=NIL
+  ;;   SOURCE-NAME=FOO
+  ;;   DEBUG-NAME=NIL
   ;; for the function which implements the top level form
   ;; (IN-PACKAGE :FOO) we could have
-  ;;   %SOURCE-NAME=NIL
-  ;;   %DEBUG-NAME=(TOP-LEVEL-FORM (IN-PACKAGE :FOO)
+  ;;   SOURCE-NAME=NIL
+  ;;   DEBUG-NAME=(TOP-LEVEL-FORM (IN-PACKAGE :FOO)
   ;; for the function which implements FOO in
   ;;   (DEFUN BAR (...) (FLET ((FOO (...) ...)) ...))
   ;; we could have
-  ;;   %SOURCE-NAME=FOO
-  ;;   %DEBUG-NAME=(FLET FOO)
+  ;;   SOURCE-NAME=FOO
+  ;;   DEBUG-NAME=(FLET FOO)
   ;; and for the function which implements FOO in
   ;;   (DEFMACRO FOO (...) ...)
   ;; we could have
-  ;;   %SOURCE-NAME=FOO (or maybe .ANONYMOUS.?)
-  ;;   %DEBUG-NAME=(MACRO-FUNCTION FOO)
+  ;;   SOURCE-NAME=FOO (or maybe .ANONYMOUS.?)
+  ;;   DEBUG-NAME=(MACRO-FUNCTION FOO)
   (debug-name nil
 	      :type (or null (not (satisfies legal-fun-name-p)))
 	      :read-only t)
@@ -247,14 +259,10 @@
   ;;    marked for deletion.
   ;;    :ZOMBIE
   ;;    Effectless [MV-]LET; has no BIND node.
-  ;; TODO: Some of them are not valid semantic in js, remove them.
+  ;; TODO: Some of them are not valid semantic in JS, remove them.
   (kind nil :type (member nil :optional :deleted :external :toplevel
                           :escape :cleanup :let :mv-let :assignment
                           :zombie :toplevel-xep))
-  ;; Is this a function that some external entity (e.g. the fasl dumper)
-  ;; refers to, so that even when it appears to have no references, it
-  ;; shouldn't be deleted? In the old days (before
-  ;; sbcl-0.pre7.37.flaky5.2) this was sort of implicitly true when
   ;; KIND was :TOPLEVEL. Now it must be set explicitly, both for
   ;; :TOPLEVEL functions and for any other kind of functions that we
   ;; want to dump or return from #'CL:COMPILE or whatever.
