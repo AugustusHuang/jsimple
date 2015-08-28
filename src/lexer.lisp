@@ -124,11 +124,9 @@
 (defparameter +atom-keywords+
   '(:false :null :true :undefined))
 
+;;; There won't be too many reserved words in ECMA 6, use list instead.
 (defparameter +reserved-words-ecma-6+
-  (let ((words (make-hash-table :test 'equal)))
-    (dolist (word '("enum" "await"))
-      (setf (gethash word words) t))
-    words))
+  '(:enum :await))
 
 (defparameter *check-for-reserved-words* nil)
 

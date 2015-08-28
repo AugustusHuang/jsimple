@@ -62,6 +62,18 @@
 (defun parser-error (control &rest args)
   (error 'parser-error :format-control control :format-arguments args))
 
+(define-condition ir-error (general-error)
+  ((tree-pos :initarg :tree-pos :reader :ir-error-tree-pos))
+  (:documentation "Jsimple IR error."))
+
+(defmethod print-object ((err ir-error) stream)
+  (call-next-method)
+  (format stream "ir error in js tree ~A."
+	  (ir-error-tree-pos err)))
+
+(defun ir-error (control &rest args)
+  (error 'ir-error :format-control control :format-arguments args))
+
 ;;; Since this is a really simple interpreter, don't expect too much optimize,
 ;;; and almost all error will be reported as runtime error since it may not
 ;;; be modified.
