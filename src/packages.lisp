@@ -51,10 +51,19 @@
 	   :parse-js
 	   :parse-js-string))
 
+(defpackage :jsimple-builtin
+  (:use :cl
+	:jsimple-error)
+  (:documentation
+   "Builtin function package of Javascript 6.")
+  ;; Will be a long list...
+  (:export))
+
 (defpackage :jsimple-ir
   (:use :cl
 	:jsimple-error
-	:jsimple-parser)
+	:jsimple-parser
+	:jsimple-builtin)
   (:documentation
    "Intermediate representation optimizer module of jsimple.")
   (:export))
@@ -63,6 +72,7 @@
   (:use :cl
 	:jsimple-error
 	:jsimple-parser
+	:jsimple-builtin
 	:jsimple-ir)
   (:documentation
    "Runtime environment of jsimple.")

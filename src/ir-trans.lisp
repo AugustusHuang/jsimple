@@ -37,23 +37,6 @@
 (declaim (type (or piece null) *current-piece*))
 (defvar *current-piece* nil)
 
-;;; In order to avoid re-definition of global functions and variables,
-;;; make a hashtable to store those already created, and check every time
-;;; when we have to define a global one instead of a scoped one.
-;;; Since ES/JS know upper and lowercase, use STRING= instead of EQL or EQUAL.
-(defvar *global-names*
-  (make-hash-table :test 'string=))
-
-;;; Avoid redefinition of previously defined functions/variables and
-;;; built-in functions/variables, like 'this', 'constructor', etc..
-(defvar *builtin-names*
-  (let ((names (make-hash-table :test 'string=)))
-    (dolist (name '())
-      ;; How about simulating some maybe-effective built-in functions?
-      ;; Then we can have the key function name and the value Lisp function.
-      (setf (gethash name names) name))
-    names))
-
 ;;; Call PUSH-OR-GO with T means do the former, else do the later.
 (defun push-or-go (which)
   (declare (type boolean which))

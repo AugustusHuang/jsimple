@@ -25,10 +25,6 @@
 ;;;; NODE is the minimal element of IR.
 (in-package :jsimple-ir)
 
-(defparameter +js-type+
-  '(member :js-int32 :js-double :js-null :js-boolean :js-array :js-string
-    :js-object :js-undefined))
-
 ;;; FIXME: Shall we move this to piece module?
 ;;; CONTROL TRANSFER structure directly lended from SBCL.
 ;;; NOTE: CTRAN acts like a counter, and NODE is the road it walks upon.
