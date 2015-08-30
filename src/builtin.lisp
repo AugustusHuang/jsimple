@@ -105,7 +105,7 @@
    (gethash "Array" *well-known-objects*)
    '(js-array-build)
    (gethash "ArrayBuffer" *well-known-objects*)
-   '(js-arraybuffer-build)
+   '(js-array-buffer-build)
    (gethash "Boolean" *well-known-objects*)
    '(js-boolean-build)
    (gethash "DataView" *well-known-objects*)
@@ -134,14 +134,14 @@
    (gethash "Math" *well-known-objects*)
    '(js-math-build)
    (gethash "Number" *well-known-objects*)
-   '(js-number-build)
+   '(js-number-build js-is-integer js-is-safe-integer)
    (gethash "Object" *well-known-objects*)
    '(js-object-build
      js-assign js-create js-define-properties js-define-property js-freeze
      js-get-own-property-descriptor js-get-own-property-names
      js-get-own-property-symbols js-get-property-of js-is
-     js-object-is-extensible js-is-frozen js-is-sealed js-keys
-     js-prevent-extensions js-object-seal js-set-prototype-of)
+     js--is-extensible js-is-frozen js-is-sealed js-keys
+     js-prevent-extensions js-seal js-set-prototype-of)
    (gethash "Proxy" *well-known-objects*)
    '(js-proxy-build)
    (gethash "Promise" *well-known-objects*)
@@ -197,127 +197,138 @@
    ;; The length property is implied.
    ;; XXX: Use CLOS or not? If use CLOS, simplify the function names...
    (gethash "Array.prototype" *well-known-objects*)
-   '(js-array-concat js-array-copy-within js-array-entries
-     js-array-every js-array-fill js-array-filter js-array-find
-     js-array-find-index js-array-for-each js-array-index-of
-     js-array-join js-array-keys js-array-last-index-of
-     js-array-map js-array-pop js-array-push js-array-reduce
-     js-array-reduce-right js-array-reverse js-array-shift
-     js-array-slice js-array-some js-array-sort js-array-splice
-     js-array-to-locale-string js-array-to-string js-array-unshift
-     js-array-values)
+   '(js-concat js-copy-within js-entries js-every js-fill js-filter js-find
+     js-find-index js-for-each js-index-of js-join js-keys js-last-index-of
+     js-map js-pop js-push js-reduce js-reduce-right js-reverse js-shift
+     js-slice js-some js-sort js-splice js-to-locale-string js-to-string
+     js-unshift js-values)
    (gethash "ArrayBuffer.prototype" *well-known-objects*)
-   '(js-array-buffer-byte-length js-array-buffer-slice)
+   '(js-byte-length js-slice)
    (gethash "Boolean.prototype" *well-known-objects*)
-   '(js-boolean-to-string)
+   '(js-to-string)
    (gethash "DataView.prototype" *well-known-objects*)
-   '(js-data-view-buffer js-data-view-byte-length js-data-view-byte-offset
-     js-data-view-get-float32 js-data-view-get-float64 js-data-view-get-int8
-     js-data-view-get-int16 js-data-view-get-int32 js-data-view-get-uint8
-     js-data-view-get-uint16 js-data-view-get-uint32 js-data-view-set-float32
-     js-data-view-set-float64 js-data-view-set-int8 js-data-view-set-int16
-     js-data-view-set-int32 js-data-view-set-uint8 js-data-view-set-uint16
-     js-data-view-set-uint32)
+   '(js-buffer js-byte-length js-byte-offset js-get-float32 js-get-float64
+     js-get-int8 js-get-int16 js-get-int32 js-get-uint8 js-get-uint16
+     js-get-uint32 js-set-float32 js-set-float64 js-set-int8 js-set-int16
+     js-set-int32 js-set-uint8 js-set-uint16 js-set-uint32)
    (gethash "Date.prototype" *well-known-objects*)
-   '(js-date-get-date js-date-get-day js-date-get-hours
-     js-date-get-milliseconds js-date-get-minutes js-date-get-month
-     js-date-get-seconds js-date-get-time js-date-get-timezone-offset
-     js-date-get-utc-date js-date-get-utc-day js-date-get-utc-full-year
-     js-date-get-utc-hours js-date-get-utc-milliseconds
-     js-date-get-utc-minutes js-date-get-utc-month
-     js-date-get-utc-seconds js-date-set-date
-     js-date-set-full-year js-date-set-hours js-date-set-milliseconds
-     js-date-set-minutes js-date-set-month js-date-set-seconds
-     js-date-set-time js-date-set-utc-date js-date-set-utc-full-year
-     js-date-set-utc-hours js-date-set-utc-milliseconds
-     js-date-set-utc-minutes js-date-set-utc-month
-     js-date-set-utc-seconds js-date-to-date-string
-     js-date-to-iso-string js-date-to-json js-date-to-locale-date-string
-     js-date-to-locale-string js-date-to-locale-time-string
-     js-date-to-string js-date-to-time-string js-date-to-utc-string
-     js-date-value-of)
+   '(js-get-date js-get-day js-get-hours js-get-milliseconds js-get-minutes
+     js-get-month js-get-seconds js-get-time js-get-timezone-offset
+     js-get-utc-date js-get-utc-day js-get-utc-full-year js-get-utc-hours
+     js-get-utc-milliseconds js-get-utc-minutes js-get-utc-month
+     js-get-utc-seconds js-set-date js-set-full-year js-set-hours
+     js-set-milliseconds js-set-minutes js-set-month js-set-seconds
+     js-set-time js-set-utc-date js-set-utc-full-year js-set-utc-hours
+     js-set-utc-milliseconds js-set-utc-minutes js-set-utc-month
+     js-set-utc-seconds js-to-date-string js-to-iso-string js-to-json
+     js-to-locale-date-string js-to-locale-string js-to-locale-time-string
+     js-to-string js-to-time-string js-to-utc-string js-value-of)
    (gethash "EvalError.prototype" *well-known-objects*)
-   '(js-eval-error-message js-eval-error-name js-eval-error-to-string)
+   '(js-message js-name js-to-string)
    (gethash "Error.prototype" *well-known-objects*)
-   '(js-error-message js-error-name js-error-to-string)
+   '(js-message js-name js-to-string)
    (gethash "Float32Array.prototype" *well-known-objects*)
+   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
+     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
+     js-join js-keys js-last-index-of js-length js-map js-reduce
+     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
+     js-to-locale-string js-to-string js-values)
    (gethash "Float64Array.prototype" *well-known-objects*)
+   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
+     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
+     js-join js-keys js-last-index-of js-length js-map js-reduce
+     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
+     js-to-locale-string js-to-string js-values)
    (gethash "Function.prototype" *well-known-objects*)
-   '(js-function-apply js-function-bind js-function-call js-function-to-string)
+   '(js-apply js-bind js-call js-to-string)
    (gethash "Int8Array.prototype" *well-known-objects*)
-   '(js-int8-array-buffer js-int8-array-byte-length
-     js-int8-array-byte-offset js-int8-array-copy-within
-     js-int8-array-entries js-int8-array-every js-int8-array-fill
-     js-int8-array-filter js-int8-array-find js-int8-array-find-index
-     js-int8-array-for-each js-int8-array-index-of js-int8-array-join
-     js-int8-array-keys js-int8-array-last-index-of js-int8-array-length
-     js-int8-array-map js-int8-array-reduce js-int8-array-reduce-right
-     js-int8-array-reverse js-int8-array-set js-int8-array-slice
-     js-int8-array-some js-int8-array-sort js-int8-array-subarray
-     js-int8-array-to-locale-string js-int8-array-to-string
-     js-int8-array-values)
+   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
+     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
+     js-join js-keys js-last-index-of js-length js-map js-reduce
+     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
+     js-to-locale-string js-to-string js-values)
    (gethash "Int16Array.prototype" *well-known-objects*)
+   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
+     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
+     js-join js-keys js-last-index-of js-length js-map js-reduce
+     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
+     js-to-locale-string js-to-string js-values)
    (gethash "Int32Array.prototype" *well-known-objects*)
+   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
+     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
+     js-join js-keys js-last-index-of js-length js-map js-reduce
+     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
+     js-to-locale-string js-to-string js-values)
    (gethash "Map.prototype" *well-known-objects*)
-   '(js-map-clear js-map-delete js-map-entries js-map-for-each
-     js-map-get js-map-has js-map-keys js-map-set js-map-size js-map-values)
+   '(js-clear js-delete js-entries js-for-each js-get js-has js-keys js-set
+     js-size js-values)
    (gethash "Math.prototype" *well-known-objects*)
-   '(js-math-abs js-math-acos js-math-acosh js-math-asin js-math-asinh
-     js-math-atan js-math-atanh js-math-atan2 js-math-cbrt js-math-ceil
-     js-math-clz32 js-math-cos js-math-cosh js-math-exp js-math-expm1
-     js-math-floor js-math-fround js-math-hypot js-math-imul js-math-log
-     js-math-log1p js-math-log10 js-math-log2 js-math-max js-math-min
-     js-math-pow js-math-random js-math-round js-math-sign js-math-sin
-     js-math-sinh js-math-sqrt js-math-tan js-math-tanh js-math-trunc)
+   '(js-abs js-acos js-acosh js-asin js-asinh js-atan js-atanh js-atan2
+     js-cbrt js-ceil js-clz32 js-cos js-cosh js-exp js-expm1 js-floor
+     js-fround js-hypot js-imul js-log js-log1p js-log10 js-log2 js-max js-min
+     js-pow js-random js-round js-sign js-sin js-sinh js-sqrt js-tan js-tanh
+     js-trunc)
    (gethash "Number.prototype" *well-known-objects*)
-   '(js-number-to-exponential js-number-to-fixed
-     js-number-to-locale-string js-number-to-precision
-     js-number-to-string js-number-value-of)
+   '(js-to-exponential js-to-fixed js-to-locale-string js-to-precision
+     js-to-string js-value-of)
    (gethash "Object.prototype" *well-known-objects*)
-   '(js-object-has-own-property js-object-is-prototype-of
-     js-object-property-is-enumerable js-object-to-locale-string
-     js-object-to-string js-object-value-of)
+   '(js-has-own-property js-is-prototype-of js-property-is-enumerable
+     js-to-locale-string js-to-string js-value-of)
    (gethash "Promise.prototype" *well-known-objects*)
-   '(js-promise-catch js-promise-then)
+   '(js-catch js-then)
    (gethash "RangeError.prototype" *well-known-objects*)
-   '(js-range-error-message js-range-error-name js-range-error-to-string)
+   '(js-message js-name js-to-string)
    (gethash "ReferenceError.prototype" *well-known-objects*)
-   '(js-reference-error-message js-reference-error-name
-     js-reference-error-to-string)
+   '(js-message js-name js-to-string)
    (gethash "RegExp.prototype" *well-known-objects*)
-   '(js-regexp-exec js-regexp-flags js-regexp-global
-     js-regexp-ignore-case js-regexp-multiline js-regexp-source
-     js-regexp-sticky js-regexp-test js-regexp-to-string
-     js-regexp-unicode)
+   '(js-exec js-flags js-global js-ignore-case js-multiline js-source
+     js-sticky js-test js-to-string js-unicode)
    (gethash "Set.prototype" *well-known-objects*)
-   '(js-set-add js-set-clear js-set-delete js-set-entries js-set-for-each
-     js-set-has js-set-keys js-set-size js-set-values)
+   '(js-add js-clear js-delete js-entries js-for-each js-has js-keys js-size
+     js-values)
    (gethash "String.prototype" *well-known-objects*)
-   '(js-string-char-at js-string-char-code-at js-string-code-point-at
-     js-string-concat js-string-ends-with js-string-includes
-     js-string-index-of js-string-last-index-of js-string-local-compare
-     js-string-match js-string-normalize js-string-repeat
-     js-string-replace js-string-search js-string-slice js-string-split
-     js-string-starts-with js-string-substring
-     js-string-to-locale-lower-case js-string-to-locale-upper-case
-     js-string-to-lower-case js-string-to-string js-string-to-upper-case
-     js-string-trim js-string-value-of)
+   '(js-char-at js-char-code-at js-code-point-at js-concat js-ends-with
+     js-includes js-index-of js-last-index-of js-local-compare js-match
+     js-normalize js-repeat js-replace js-search js-slice js-split
+     js-starts-with js-substring js-to-locale-lower-case
+     js-to-locale-upper-case js-to-lower-case js-to-string js-to-upper-case
+     js-trim js-value-of)
    (gethash "Symbol.prototype" *well-known-objects*)
-   '(js-symbol-to-string js-symbol-value-of)
+   '(js-to-string js-value-of)
    (gethash "SyntaxError.prototype" *well-known-objects*)
-   '(js-syntax-error-message js-syntax-error-name js-syntax-error-to-string)
+   '(js-message js-name js-to-string)
    (gethash "TypeError.prototype" *well-known-objects*)
-   '(js-type-error-message js-type-error-name js-type-error-to-string)
+   '(js-message js-name js-to-string)
    (gethash "Uint8Array.prototype" *well-known-objects*)
+   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
+     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
+     js-join js-keys js-last-index-of js-length js-map js-reduce
+     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
+     js-to-locale-string js-to-string js-values)
    (gethash "Uint8ClampedArray.prototype" *well-known-objects*)
+   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
+     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
+     js-join js-keys js-last-index-of js-length js-map js-reduce
+     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
+     js-to-locale-string js-to-string js-values)
    (gethash "Uint16Array.prototype" *well-known-objects*)
+   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
+     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
+     js-join js-keys js-last-index-of js-length js-map js-reduce
+     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
+     js-to-locale-string js-to-string js-values)
    (gethash "Uint32Array.prototype" *well-known-objects*)
+   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
+     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
+     js-join js-keys js-last-index-of js-length js-map js-reduce
+     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
+     js-to-locale-string js-to-string js-values)
    (gethash "URIError.prototype" *well-known-objects*)
-   '(js-uri-error-message js-uri-error-name js-uri-error-to-string)
+   '(js-message js-name js-to-string)
    (gethash "WeakMap.prototype" *well-known-objects*)
-   '(js-weak-map-delete js-weak-map-get js-weak-map-has js-weak-map-set)
+   '(js-delete js-get js-has js-set)
    (gethash "WeakSet.prototype" *well-known-objects*)
-   '(js-weak-set-add js-weak-set-delete js-weak-set-has)
+   '(js-add js-delete js-has)
    ))
 
 ;;; Integer index is a canonical numeric string value in [0, 2^53-1],
@@ -329,6 +340,8 @@
 (defconstant +number-max-value+ most-positive-double-float)
 (defconstant +number-min-safe-integer+ (- (- (expt 2 53) 1)))
 (defconstant +number-min-value+ least-positive-double-float)
+;;; XXX
+(defconstant +number-epsilon+ (* 2 double-float-epsilon))
 
 (defconstant +math-e+ (exp 1.0d0))
 (defconstant +math-ln10+ (log 10.0d0))

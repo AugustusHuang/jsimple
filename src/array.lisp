@@ -148,8 +148,8 @@
    (resizeable :accessor resizable :initform nil))
   (:metaclass numeric-array-class)
   (:element-type double-float)
-  (:minval nil)
-  (:maxval nil))
+  (:min-val nil)
+  (:max-val nil))
 
 (defmacro def-array-class (type direct-superclasses &key 
 						      (element-type)
@@ -170,7 +170,7 @@
 	       `((:min-val ,(if (symbolp min-val)
 				(symbol-value min-val) min-val))))
        ,@(when max-val
-	       `((:max-val ,(if (symbolp maxval)
+	       `((:max-val ,(if (symbolp max-val)
 				(symbol-value max-val) max-val)))))))
 
 (def-array-class js-array ()
@@ -215,19 +215,19 @@
   :minval 0
   :maxval #.(- (expt 2 32) 1))
 
-(def-array-class js-int8-array (integer-matrix)
+(def-array-class js-int8-array (js-integer-array)
   :element-type (signed-byte 8)
   :accumulator-type (signed-byte 32)
   :minval #.(- (expt 2 7))
   :maxval #.(- (expt 2 7) 1))
 
-(def-array-class js-int16-array (integer-matrix)
+(def-array-class js-int16-array (js-integer-array)
   :element-type (signed-byte 16)
   :accumulator-type (signed-byte 32)
   :minval #.(- (expt 2 15))
   :maxval #.(- (expt 2 15) 1))
 
-(def-array-class js-int32-array (integer-matrix)
+(def-array-class js-int32-array (js-integer-array)
   :element-type (signed-byte 32)
   :accumulator-type (signed-byte 32)
   :minval #.(- (expt 2 31))
@@ -248,8 +248,9 @@
   :maxval most-positive-double-float)
 
 ;;; All internal ECMA utility functions on arrays.
+;;; FIXME: VALUES can't be passed this way.
 (defun js-array-build (&rest values)
-  (make-instance 'js-array values))
+  (make-instance 'js-array :array values))
 
 (defun js-int8-array-build (&rest values)
   (make-instance 'js-int8-array values))
