@@ -24,6 +24,12 @@
 ;;;; Utilities of metaclass.
 (in-package :jsimple-builtin)
 
+(declaim (inline delistify))
+(defun delistify (list)
+  (if (and (listp list) (null (cdr list)))
+      (car list)
+      list))
+
 (defun remove-keyword-arg (arglist akey)
   (let ((lst arglist)
 	(out ()))
@@ -36,18 +42,12 @@
       (pop-arg lst))
     out))
 
-;;; XXX: Do we need this?
-(declaim (inline delistify-dsd))
-(defun delistify-dsd (list)
-  (if (and (listp list) (null (cdr list)))
-      (car list)
-      list))
-
 (defun insert-before (new old list)
   (labels ((build-list (old c &optional newlist)
 	     (if c
 		 (if (eq old (car c))
-		     (append (reverse (cdr c)) (cons (car c) (cons new newlist)))
+		     (append (reverse (cdr c))
+			     (cons (car c) (cons new newlist)))
 		     (build-list old (cdr c) (cons (car c) newlist)))
 		 (cons new newlist))))
     (reverse (build-list old list))))

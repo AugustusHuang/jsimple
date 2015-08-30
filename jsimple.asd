@@ -37,6 +37,13 @@
      (:cl-source-file "error" :depends-on ("packages"))
      (:cl-source-file "lexer" :depends-on ("packages" "error"))
      (:cl-source-file "parser" :depends-on ("packages" "error" "lexer"))
+;     (:cl-source-file "meta-util" :depends-on ("packages"))
+;     (:cl-source-file "array" :depends-on ("packages" "error" "meta-util"))
+;     (:cl-source-file "string" :depends-on ("packages" "error" "meta-util"))
+;     (:cl-source-file "object" :depends-on ("packages" "error" "meta-util"))
+;     (:cl-source-file "builtin" :depends-on ("packages" "error" "array"
+;							"string" "object"))
+;     (:cl-source-file "ir-trans" :depends-on ("packages" "error" "builtin"))
 ;     (:cl-source-file "ir-util" :depends-on ("packages" "error" "parser"))
 ;     (:cl-source-file "node" :depends-on ("packages" "error" "parser"))
 ;     (:cl-source-file "piece" :depends-on ("packages" "error" "parser" "node"))

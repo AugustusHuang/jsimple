@@ -81,14 +81,14 @@
 ;;; NOTE: All constant parameters should be surronded by +.
 (defparameter +operator-chars+ "+-*&%=<>!?|~^")
 
-;;; Add arrow function and OF operator.
+;;; Add arrow function, OF operator and ... spread operator.
 (defparameter +operators+
   (let ((ops (make-hash-table :test 'equal)))
     (dolist (op '(:in :instanceof :of :typeof :new :void :delete
 		  :++ :-- :+ :- :! :~ :& :|\|| :^ :* :/ :%
                   :>> :<< :>>> :< :> :<= :>= :== :=== :!= :!==
 		  :? := :+= :-= :/= :*= :%= :>>= :<<= :=>
-                  :>>>= :~= :%= :|\|=| :^= :&= :&& :|\|\||))
+                  :>>>= :~= :%= :|\|=| :^= :&= :&& :|\|\|| :...))
       (setf (gethash (string-downcase (string op)) ops) op))
     ops))
 

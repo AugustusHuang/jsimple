@@ -323,7 +323,6 @@
 ;;; Integer index is a canonical numeric string value in [0, 2^53-1],
 ;;; array index is an integer index in [0, 2^32-1>. -- ECMA V6.
 (deftype integer-index-numeric () `(integer 0 ,(- (expt 2 53) 1)))
-(deftype array-index-numeric () `(integer 0 ,(- (expt 2 32) 2)))
 
 ;;; In SBCL 32-bit version, it's OK.
 (defconstant +number-max-safe-integer+ (- (expt 2 53) 1))
