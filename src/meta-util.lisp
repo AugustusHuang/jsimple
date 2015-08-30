@@ -21,11 +21,41 @@
 ;;;; ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
+;;;; Utilities of metaclass.
 (in-package :jsimple-builtin)
 
-;;; String related builtin functions.
+(defun remove-keyword-arg (arglist akey)
+  (let ((lst arglist)
+	(out ()))
+    (labels ((pop-arg (alist)
+	       (let ((arg (pop alist))
+		     (val (pop alist)))
+		 (unless (equal arg akey)
+		   (setf out (append (list arg val) out)))
+		 (when alist (pop-arg alist)))))
+      (pop-arg lst))
+    out))
 
-;;; General string metaclass.
-;;; XXX: Do we need a general string class?
-(defclass general-string-class (standard-class)
-  )
+;;; XXX: Do we need this?
+(declaim (inline delistify-dsd))
+(defun delistify-dsd (list)
+  (if (and (listp list) (null (cdr list)))
+      (car list)
+      list))
+
+(defun insert-before (new old list)
+  (labels ((build-list (old c &optional newlist)
+	     (if c
+		 (if (eq old (car c))
+		     (append (reverse (cdr c)) (cons (car c) (cons new newlist)))
+		     (build-list old (cdr c) (cons (car c) newlist)))
+		 (cons new newlist))))
+    (reverse (build-list old list))))
+
+(defun fill-slot-from-ancestor (slot class)
+  (let ((ancestor (find-if #'(lambda (an)
+			       (when (slot-exists-p an slot)
+				 (slot-boundp an slot)))
+			   (cdr (compute-class-precedence-list class)))))
+    (when ancestor
+      (setf (slot-value class slot) (slot-value ancestor slot)))))

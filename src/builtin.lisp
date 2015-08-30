@@ -29,12 +29,16 @@
 
 (defparameter +js-type+
   '(member :js-int8 :js-uint8 :js-int16 :js-uint16 :js-int32 :js-uint32
-    :js-float :js-double :js-null :js-boolean :js-array :js-string :js-symbol
+    :js-float :js-double :js-null :js-boolean :js-int8-array :js-uint8-array
+    :js-int16-array :js-uint16-array :js-int32-array :js-uint32-array
+    :js-float-array :js-double-array :js-string :js-symbol
     :js-object :js-function :js-undefined))
 
 ;;; Well known symbols are built-in symbol values are typically used
 ;;; as the keys of properties. -- ECMA V6.
 ;;; At very early stage, all WELL-KNOWN-SYMBOLS are undefined.
+;;; These symbols will correspond to every object, and every object will
+;;; has its specific typed symbol function of them.
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *well-known-symbols*
     (let ((symbols (make-hash-table :test 'string=)))
@@ -99,178 +103,221 @@
    ;; is the default constructor.
    ;; TODO: Add object functions...
    (gethash "Array" *well-known-objects*)
-   '(#'js-array)
+   '(js-array)
    (gethash "ArrayBuffer" *well-known-objects*)
-   '(#'js-arraybuffer)
+   '(js-arraybuffer)
    (gethash "Boolean" *well-known-objects*)
-   '(#'js-boolean)
+   '(js-boolean)
    (gethash "DataView" *well-known-objects*)
-   '(#'js-data-view)
+   '(js-data-view)
    (gethash "Date" *well-known-objects*)
-   '(#'js-date)
+   '(js-date)
    (gethash "Error" *well-known-objects*)
-   '(#'js-error)
+   '(js-error)
    (gethash "EvalError" *well-known-objects*)
-   '(#'js-eval-error)
+   '(js-eval-error)
    (gethash "Float32Array" *well-known-objects*)
-   '(#'js-float32-array)
+   '(js-float32-array)
    (gethash "Float64Array" *well-known-objects*)
-   '(#'js-float64-array)
+   '(js-float64-array)
    ;; This is the function constructor, not the function declaration.
    (gethash "Function" *well-known-objects*)
-   '(#'js-function)
+   '(js-function)
    (gethash "Int8Array" *well-known-objects*)
-   '(#'js-int8-array)
+   '(js-int8-array)
    (gethash "Int16Array" *well-known-objects*)
-   '(#'js-int16-array)
+   '(js-int16-array)
    (gethash "Int32Array" *well-known-objects*)
-   '(#'js-int32-array)
+   '(js-int32-array)
    (gethash "Map" *well-known-objects*)
-   '(#'js-map)
+   '(js-map)
    (gethash "Math" *well-known-objects*)
-   '(#'js-math)
+   '(js-math)
    (gethash "Number" *well-known-objects*)
-   '(#'js-number)
+   '(js-number)
    (gethash "Object" *well-known-objects*)
-   '(#'js-object)
+   '(js-object)
    (gethash "Proxy" *well-known-objects*)
-   '(#'js-proxy)
+   '(js-proxy)
    (gethash "Promise" *well-known-objects*)
-   '(#'js-promise)
+   '(js-promise)
    (gethash "RangeError" *well-known-objects*)
-   '(#'js-range-error)
+   '(js-range-error)
    (gethash "ReferenceError" *well-known-objects*)
-   '(#'js-reference-error)
+   '(js-reference-error)
    (gethash "RegExp" *well-known-objects*)
-   '(#'js-reg-exp)
+   '(js-reg-exp)
    (gethash "Set" *well-known-objects*)
-   '(#'js-set)
+   '(js-set)
    (gethash "String" *well-known-objects*)
-   '(#'js-string)
+   '(js-string)
    (gethash "Symbol" *well-known-objects*)
-   '(#'js-symbol)
+   '(js-symbol)
    (gethash "SyntaxError" *well-known-objects*)
-   '(#'js-syntax-error)
+   '(js-syntax-error)
    (gethash "TypeError" *well-known-objects*)
-   '(#'js-type-error)
+   '(js-type-error)
    (gethash "Uint8Array" *well-known-objects*)
-   '(#'js-uint8-array)
+   '(js-uint8-array)
    (gethash "Uint16Array" *well-known-objects*)
-   '(#'js-uint16-array)
+   '(js-uint16-array)
    (gethash "Uint32Array" *well-known-objects*)
-   '(#'js-uint32-array)
+   '(js-uint32-array)
    (gethash "URIError" *well-known-objects*)
-   '(#'js-uri-error)
+   '(js-uri-error)
    (gethash "WeakMap" *well-known-objects*)
-   '(#'js-weak-map)
+   '(js-weak-map)
    (gethash "WeakSet" *well-known-objects*)
-   '(#'js-weak-set)
+   '(js-weak-set)
    ;; And builtin functions.
-   (gethash "isFinite" *well-known-objects*) #'js-is-finite
-   (gethash "isNaN" *well-known-objects*) #'js-is-nan
-   (gethash "parseFloat" *well-known-objects*) #'js-parse-float
-   (gethash "parseInt" *well-known-objects*) #'js-parse-int
-   (gethash "decodeURI" *well-known-objects*) #'js-decode-uri
-   (gethash "encodeURI" *well-known-objects*) #'js-encode-uri
+   (gethash "isFinite" *well-known-objects*)
+   '(js-is-finite)
+   (gethash "isNaN" *well-known-objects*)
+   '(js-is-nan)
+   (gethash "parseFloat" *well-known-objects*)
+   '(js-parse-float)
+   (gethash "parseInt" *well-known-objects*)
+   '(js-parse-int)
+   (gethash "decodeURI" *well-known-objects*)
+   '(js-decode-uri)
+   (gethash "encodeURI" *well-known-objects*)
+   '(js-encode-uri)
    (gethash "decodeURIComponent" *well-known-objects*)
-   #'js-decode-uri-component
+   '(js-decode-uri-component)
    (gethash "encodeURIComponent" *well-known-objects*)
-   #'js-encode-uri-component
+   '(js-encode-uri-component)
    ;; And builtin prototypes. Value will be a list of functions.
    ;; The length property is implied.
    ;; XXX: Use CLOS or not? If use CLOS, simplify the function names...
    (gethash "Array.prototype" *well-known-objects*)
-   '(#'js-array-concat #'js-array-copy-within #'js-array-entries
-     #'js-array-every #'js-array-fill #'js-array-filter #'js-array-find
-     #'js-array-find-index #'js-array-for-each #'js-array-index-of
-     #'js-array-join #'js-array-keys #'js-array-last-index-of
-     #'js-array-map #'js-array-pop #'js-array-push #'js-array-reduce
-     #'js-array-reduce-right #'js-array-reverse #'js-array-shift
-     #'js-array-slice #'js-array-some #'js-array-sort #'js-array-splice
-     #'js-array-to-locale-string #'js-array-to-string #'js-array-unshift
-     #'js-array-values)
+   '(js-array-concat js-array-copy-within js-array-entries
+     js-array-every js-array-fill js-array-filter js-array-find
+     js-array-find-index js-array-for-each js-array-index-of
+     js-array-join js-array-keys js-array-last-index-of
+     js-array-map js-array-pop js-array-push js-array-reduce
+     js-array-reduce-right js-array-reverse js-array-shift
+     js-array-slice js-array-some js-array-sort js-array-splice
+     js-array-to-locale-string js-array-to-string js-array-unshift
+     js-array-values)
    (gethash "ArrayBuffer.prototype" *well-known-objects*)
+   '(js-array-buffer-byte-length js-array-buffer-slice)
    (gethash "Boolean.prototype" *well-known-objects*)
-   '(#'js-boolean-to-string)
+   '(js-boolean-to-string)
+   (gethash "DataView.prototype" *well-known-objects*)
+   '(js-data-view-buffer js-data-view-byte-length js-data-view-byte-offset
+     js-data-view-get-float32 js-data-view-get-float64 js-data-view-get-int8
+     js-data-view-get-int16 js-data-view-get-int32 js-data-view-get-uint8
+     js-data-view-get-uint16 js-data-view-get-uint32 js-data-view-set-float32
+     js-data-view-set-float64 js-data-view-set-int8 js-data-view-set-int16
+     js-data-view-set-int32 js-data-view-set-uint8 js-data-view-set-uint16
+     js-data-view-set-uint32)
    (gethash "Date.prototype" *well-known-objects*)
-   '(#'js-date-get-date #'js-date-get-day #'js-date-get-hours
-     #'js-date-get-milliseconds #'js-date-get-minutes #'js-date-get-month
-     #'js-date-get-seconds #'js-date-get-time #'js-date-get-timezone-offset
-     #'js-date-get-utc-date #'js-date-get-utc-day #'js-date-get-utc-full-year
-     #'js-date-get-utc-hours #'js-date-get-utc-milliseconds
-     #'js-date-get-utc-minutes #'js-date-get-utc-month
-     #'js-date-get-utc-seconds #'js-date-set-date
-     #'js-date-set-full-year #'js-date-set-hours #'js-date-set-milliseconds
-     #'js-date-set-minutes #'js-date-set-month #'js-date-set-seconds
-     #'js-date-set-time #'js-date-set-utc-date #'js-date-set-utc-full-year
-     #'js-date-set-utc-hours #'js-date-set-utc-milliseconds
-     #'js-date-set-utc-minutes #'js-date-set-utc-month
-     #'js-date-set-utc-seconds #'js-date-to-date-string
-     #'js-date-to-iso-string #'js-date-to-json #'js-date-to-locale-date-string
-     #'js-date-to-locale-string #'js-date-to-locale-time-string
-     #'js-date-to-string #'js-date-to-time-string #'js-date-to-utc-string
-     #'js-date-value-of)
+   '(js-date-get-date js-date-get-day js-date-get-hours
+     js-date-get-milliseconds js-date-get-minutes js-date-get-month
+     js-date-get-seconds js-date-get-time js-date-get-timezone-offset
+     js-date-get-utc-date js-date-get-utc-day js-date-get-utc-full-year
+     js-date-get-utc-hours js-date-get-utc-milliseconds
+     js-date-get-utc-minutes js-date-get-utc-month
+     js-date-get-utc-seconds js-date-set-date
+     js-date-set-full-year js-date-set-hours js-date-set-milliseconds
+     js-date-set-minutes js-date-set-month js-date-set-seconds
+     js-date-set-time js-date-set-utc-date js-date-set-utc-full-year
+     js-date-set-utc-hours js-date-set-utc-milliseconds
+     js-date-set-utc-minutes js-date-set-utc-month
+     js-date-set-utc-seconds js-date-to-date-string
+     js-date-to-iso-string js-date-to-json js-date-to-locale-date-string
+     js-date-to-locale-string js-date-to-locale-time-string
+     js-date-to-string js-date-to-time-string js-date-to-utc-string
+     js-date-value-of)
    (gethash "EvalError.prototype" *well-known-objects*)
-   '(#'js-eval-error-message #'js-eval-error-name #'js-eval-error-to-string)
+   '(js-eval-error-message js-eval-error-name js-eval-error-to-string)
    (gethash "Error.prototype" *well-known-objects*)
-   '(#'js-error-message #'js-error-name #'js-error-to-string)
+   '(js-error-message js-error-name js-error-to-string)
+   (gethash "Float32Array.prototype" *well-known-objects*)
+   (gethash "Float64Array.prototype" *well-known-objects*)
    (gethash "Function.prototype" *well-known-objects*)
-   '(#'js-function-apply #'js-function-bind #'js-function-call
-     #'js-function-to-string)
+   '(js-function-apply js-function-bind js-function-call js-function-to-string)
+   (gethash "Int8Array.prototype" *well-known-objects*)
+   '(js-int8-array-buffer js-int8-array-byte-length
+     js-int8-array-byte-offset js-int8-array-copy-within
+     js-int8-array-entries js-int8-array-every js-int8-array-fill
+     js-int8-array-filter js-int8-array-find js-int8-array-find-index
+     js-int8-array-for-each js-int8-array-index-of js-int8-array-join
+     js-int8-array-keys js-int8-array-last-index-of js-int8-array-length
+     js-int8-array-map js-int8-array-reduce js-int8-array-reduce-right
+     js-int8-array-reverse js-int8-array-set js-int8-array-slice
+     js-int8-array-some js-int8-array-sort js-int8-array-subarray
+     js-int8-array-to-locale-string js-int8-array-to-string
+     js-int8-array-values)
+   (gethash "Int16Array.prototype" *well-known-objects*)
+   (gethash "Int32Array.prototype" *well-known-objects*)
+   (gethash "Map.prototype" *well-known-objects*)
+   '(js-map-clear js-map-delete js-map-entries js-map-for-each
+     js-map-get js-map-has js-map-keys js-map-set js-map-size js-map-values)
    (gethash "Math.prototype" *well-known-objects*)
-   '(#'js-math-abs #'js-math-acos #'js-math-acosh #'js-math-asin
-     #'js-math-asinh #'js-math-atan #'js-math-atanh #'js-math-atan2
-     #'js-math-cbrt #'js-math-ceil #'js-math-clz32 #'js-math-cos
-     #'js-math-cosh #'js-math-exp #'js-math-expm1 #'js-math-floor
-     #'js-math-fround #'js-math-hypot #'js-math-imul #'js-math-log
-     #'js-math-log1p #'js-math-log10 #'js-math-log2 #'js-math-max
-     #'js-math-min #'js-math-pow #'js-math-random #'js-math-round
-     #'js-math-sign #'js-math-sin #'js-math-sinh #'js-math-sqrt
-     #'js-math-tan #'js-math-tanh #'js-math-trunc)
+   '(js-math-abs js-math-acos js-math-acosh js-math-asin js-math-asinh
+     js-math-atan js-math-atanh js-math-atan2 js-math-cbrt js-math-ceil
+     js-math-clz32 js-math-cos js-math-cosh js-math-exp js-math-expm1
+     js-math-floor js-math-fround js-math-hypot js-math-imul js-math-log
+     js-math-log1p js-math-log10 js-math-log2 js-math-max js-math-min
+     js-math-pow js-math-random js-math-round js-math-sign js-math-sin
+     js-math-sinh js-math-sqrt js-math-tan js-math-tanh js-math-trunc)
    (gethash "Number.prototype" *well-known-objects*)
-   '(#'js-number-to-exponential #'js-number-to-fixed
-     #'js-number-to-locale-string #'js-number-to-precision
-     #'js-number-to-string #'js-number-value-of)
+   '(js-number-to-exponential js-number-to-fixed
+     js-number-to-locale-string js-number-to-precision
+     js-number-to-string js-number-value-of)
    (gethash "Object.prototype" *well-known-objects*)
-   '(#'js-object-assign #'js-object-create #'js-object-define-properties
-     #'js-object-define-property #'js-object-freeze
-     #'js-object-get-own-property-descriptor #'js-object-get-own-property-names
-     #'js-object-get-own-property-symbols #'js-object-get-property-of
-     #'js-object-is #'js-object-is-extensible #'js-object-is-frozen
-     #'js-object-is-sealed #'js-object-keys #'js-object-prevent-extensions
-     #'js-object-seal #'js-object-set-prototype-of
-     #'js-object-has-own-property #'js-object-is-prototype-of
-     #'js-object-property-is-enumerable #'js-object-to-locale-string
-     #'js-object-to-string #'js-object-value-of)
+   '(js-object-assign js-object-create js-object-define-properties
+     js-object-define-property js-object-freeze
+     js-object-get-own-property-descriptor js-object-get-own-property-names
+     js-object-get-own-property-symbols js-object-get-property-of
+     js-object-is js-object-is-extensible js-object-is-frozen
+     js-object-is-sealed js-object-keys js-object-prevent-extensions
+     js-object-seal js-object-set-prototype-of
+     js-object-has-own-property js-object-is-prototype-of
+     js-object-property-is-enumerable js-object-to-locale-string
+     js-object-to-string js-object-value-of)
+   (gethash "Promise.prototype" *well-known-objects*)
+   '(js-promise-catch js-promise-then)
    (gethash "RangeError.prototype" *well-known-objects*)
-   '(#'js-range-error-message #'js-range-error-name #'js-range-error-to-string)
+   '(js-range-error-message js-range-error-name js-range-error-to-string)
    (gethash "ReferenceError.prototype" *well-known-objects*)
-   '(#'js-reference-error-message #'js-reference-error-name
-     #'js-reference-error-to-string)
+   '(js-reference-error-message js-reference-error-name
+     js-reference-error-to-string)
    (gethash "RegExp.prototype" *well-known-objects*)
-   '(#'js-regexp-exec #'js-regexp-flags #'js-regexp-global
-     #'js-regexp-ignore-case #'js-regexp-multiline #'js-regexp-source
-     #'js-regexp-sticky #'js-regexp-test #'js-regexp-to-string
-     #'js-regexp-unicode)
+   '(js-regexp-exec js-regexp-flags js-regexp-global
+     js-regexp-ignore-case js-regexp-multiline js-regexp-source
+     js-regexp-sticky js-regexp-test js-regexp-to-string
+     js-regexp-unicode)
+   (gethash "Set.prototype" *well-known-objects*)
+   '(js-set-add js-set-clear js-set-delete js-set-entries js-set-for-each
+     js-set-has js-set-keys js-set-size js-set-values)
    (gethash "String.prototype" *well-known-objects*)
-   '(#'js-string-char-at #'js-string-char-code-at #'js-string-code-point-at
-     #'js-string-concat #'js-string-ends-with #'js-string-includes
-     #'js-string-index-of #'js-string-last-index-of #'js-string-local-compare
-     #'js-string-match #'js-string-normalize #'js-string-repeat
-     #'js-string-replace #'js-string-search #'js-string-slice #'js-string-split
-     #'js-string-starts-with #'js-string-substring
-     #'js-string-to-locale-lower-case #'js-string-to-locale-upper-case
-     #'js-string-to-lower-case #'js-string-to-string #'js-string-to-upper-case
-     #'js-string-trim #'js-string-value-of)
+   '(js-string-char-at js-string-char-code-at js-string-code-point-at
+     js-string-concat js-string-ends-with js-string-includes
+     js-string-index-of js-string-last-index-of js-string-local-compare
+     js-string-match js-string-normalize js-string-repeat
+     js-string-replace js-string-search js-string-slice js-string-split
+     js-string-starts-with js-string-substring
+     js-string-to-locale-lower-case js-string-to-locale-upper-case
+     js-string-to-lower-case js-string-to-string js-string-to-upper-case
+     js-string-trim js-string-value-of)
    (gethash "Symbol.prototype" *well-known-objects*)
-   '(#'js-symbol-to-string #'js-symbol-value-of)
+   '(js-symbol-to-string js-symbol-value-of)
    (gethash "SyntaxError.prototype" *well-known-objects*)
-   '(#'js-syntax-error-message #'js-syntax-error-name
-     #'js-syntax-error-to-string)
+   '(js-syntax-error-message js-syntax-error-name js-syntax-error-to-string)
    (gethash "TypeError.prototype" *well-known-objects*)
-   '(#'js-type-error-message #'js-type-error-name #'js-type-error-to-string)
+   '(js-type-error-message js-type-error-name js-type-error-to-string)
+   (gethash "Uint8Array.prototype" *well-known-objects*)
+   (gethash "Uint8ClampedArray.prototype" *well-known-objects*)
+   (gethash "Uint16Array.prototype" *well-known-objects*)
+   (gethash "Uint32Array.prototype" *well-known-objects*)
    (gethash "URIError.prototype" *well-known-objects*)
-   '(#'js-uri-error-message #'js-uri-error-name #'js-uri-error-to-string)
+   '(js-uri-error-message js-uri-error-name js-uri-error-to-string)
+   (gethash "WeakMap.prototype" *well-known-objects*)
+   '(js-weak-map-delete js-weak-map-get js-weak-map-has js-weak-map-set)
+   (gethash "WeakSet.prototype" *well-known-objects*)
+   '(js-weak-set-add js-weak-set-delete js-weak-set-has)
    ))
 
 ;;; Integer index is a canonical numeric string value in [0, 2^53-1],
