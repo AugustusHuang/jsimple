@@ -248,3 +248,32 @@
   :maxval most-positive-double-float)
 
 ;;; All internal ECMA utility functions on arrays.
+(defun js-array-build (&rest values)
+  (make-instance 'js-array values))
+
+(defun js-int8-array-build (&rest values)
+  (make-instance 'js-int8-array values))
+
+(defun js-int16-array-build (&rest values)
+  (make-instance 'js-int16-array values))
+
+(defun js-int32-array-build (&rest values)
+  (make-instance 'js-int32-array values))
+
+(defun js-float32-array-build (&rest values)
+  (make-instance 'js-float32-array values))
+
+(defun js-float64-array-build (&rest values)
+  (make-instance 'js-float64-array values))
+
+(defun js-uint8-array-build (&rest values)
+  (make-instance 'js-uint8-array values))
+
+(defun js-uint8-clamped-array-build (&rest values)
+  (make-instance 'js-uint8-clamped-array values))
+
+(defun js-uint16-array-build (&rest values)
+  (make-instance 'js-uint16-array values))
+
+(defun js-uint32-array-build (&rest values)
+  (make-instance 'js-uint32-array values))
