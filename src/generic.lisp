@@ -97,13 +97,21 @@ Array, TypedArray"))
 (defgeneric js-define-properties (obj properties)
   (:documentation "XXX.defineProperties function. Candidate: Object"))
 
-(defgeneric js-define-property (obj property attributes)
+(defgeneric js-define-property (this property attributes)
   (:documentation "XXX.defineProperty function. Candidate: Object"))
+
+(defgeneric js-define-property (this target property-key attributes)
+  (:documentation "XXX.defineProperty(target,propertyKey,attributes).
+Candidate: Reflect"))
 
 ;;; key and value.
 (defgeneric js-delete (this key)
   (:documentation "XXX.prototype.delete(key). Candidate: Map, Set, WeakMap,
 WeakSet"))
+
+(defgeneric js-delete-property (this target property-key)
+  (:documentation "XXX.deleteProperty(target,propertyKey). Candidate:
+Reflect"))
 
 (defgeneric js-ends-with (target search)
   (:documentation "XXX.prototype.endsWith function. Candidate: String"))
@@ -111,6 +119,9 @@ WeakSet"))
 (defgeneric js-entries (this)
   (:documentation "XXX.prototype.entries(). Candidate: Array, TypedArray,
 Map, Set"))
+
+(defgeneric js-enumerate (this target)
+  (:documentation "XXX.enumerate(target). Candidate: Reflect"))
 
 (defgeneric js-every (this callback &optional arg)
   (:documentation "XXX.prototype.every(callbackfn[,thisArg]). Candidate: Array,
@@ -161,6 +172,10 @@ TypedArray"))
 (defgeneric js-get (this key)
   (:documentation "XXX.prototype.get(key). Candidate: Map, WeakMap"))
 
+(defgeneric js-get (this target property-key &optional receiver)
+  (:documentation "XXX.get(target,propertyKey[,receiver]). Candidate:
+Reflect"))
+
 (defgeneric js-get-float32 (this offset &optional endian)
   (:documentation "XXX.prototype.getFloat32(byteOffset[,littleEndian]).
 Candidate: DataView"))
@@ -179,6 +194,19 @@ Candidate: DataView"))
 (defgeneric js-get-int32 (this offset &optional endian)
   (:documentation "XXX.prototype.getInt32(byteOffset[,littleEndian]).
 Candidate: DataView"))
+
+(defgeneric js-get-own-property-descriptor (obj property)
+  (:documentation "XXX.getOwnPropertyDescriptor function. Candidate: Object,
+Reflect"))
+
+(defgeneric js-get-own-property-names (obj)
+  (:documentation "XXX.getOwnPropertyNames function. Candidate: Object"))
+
+(defgeneric js-get-own-property-symbols (obj)
+  (:documentation "XXX.getOwnPropertySymbols function. Candidate: Object"))
+
+(defgeneric js-get-prototype-of (target)
+  (:documentation "XXX.getPrototypeOf function. Candidate: Object, Reflect"))
 
 (defgeneric js-get-uint8 (this offset)
   (:documentation "XXX.prototype.getUInt8(byteOffset[,littleEndian]).
@@ -212,6 +240,9 @@ Candidate: DataView"))
   (:documentation "XXX.prototype.has(key). Candidate: Map, Set, WeakMap,
 WeakSet"))
 
+(defgeneric js-has (target property-key)
+  (:documentation "XXX.has(target,propertyKey). Candidate: Reflect"))
+
 (defgeneric js-has-own-property (obj value)
   (:documentation "XXX.prototype.hasOwnProperty function. Candidate: Object"))
 
@@ -234,8 +265,8 @@ Array, TypedArray"))
 (defgeneric js-is-array (target)
   (:documentation "XXX.isArray(arg). Candidate: Array"))
 
-(defgeneric js-is-extensible (obj)
-  (:documentation "XXX.isExtensible function. Candidate: Object"))
+(defgeneric js-is-extensible (target)
+  (:documentation "XXX.isExtensible(target). Candidate: Object, Reflect"))
 
 (defgeneric js-is-frozen (obj)
   (:documentation "XXX.isFrozen function. Candidate: Object"))
@@ -296,14 +327,17 @@ TypedArray"))
 (defgeneric js-of (this &rest items)
   (:documentation "XXX.of(...items). Candidate: Array, TypedArray"))
 
+(defgeneric js-own-keys (target)
+  (:documentation "XXX.ownKeys(target). Candidate: Reflect"))
+
 (defgeneric js-parse (this text &optional reviver)
   (:documentation "XXX.parse(text[,reviver]). Candidate: JSON"))
 
 (defgeneric js-pop (this)
   (:documentation "XXX.prototype.pop(). Candidate: Array"))
 
-(defgeneric js-prevent-extensions (this)
-  (:documentation "XXX.preventExtensions. Candidate: Object"))
+(defgeneric js-prevent-extensions (target)
+  (:documentation "XXX.preventExtensions(target). Candidate: Object, Reflect"))
 
 (defgeneric js-property-is-enumerable (this value)
   (:documentation "XXX.prototype.propertyIsEnumerable function. Candidate: Object"))
@@ -343,6 +377,9 @@ Candidate: Array, TypedArray"))
 (defgeneric js-reverse (this)
   (:documentation "XXX.prototype.reverse(). Candidate: Array, TypedArray"))
 
+(defgeneric js-revocable (target handler)
+  (:documentation "XXX.revocable(target,handler). Candidate: Proxy"))
+
 (defgeneric js-seal (obj)
   (:documentation "XXX.seal function. Candidate: Object"))
 
@@ -357,6 +394,10 @@ TypedArray"))
 
 (defgeneric js-set (this key value)
   (:documentation "XXX.prototype.set(key,value). Candidate: Map, WeakMap"))
+
+(defgeneric js-set (target property-key v &optional receiver)
+  (:documentation "XXX.set(target,propertyKey,V[,receiver]). Candidate:
+Reflect"))
 
 (defgeneric js-set-float32 (this offset value &optional endian)
   (:documentation "XXX.prototype.setFloat32(byteOffset,value[,littleEndian]).
@@ -378,6 +419,10 @@ Candidate: DataView"))
   (:documentation "XXX.prototype.setInt32(byteOffset,value[,littleEndian]).
 Candidate: DataView"))
 
+(defgeneric js-set-prototype-of (target proto)
+  (:documentation "XXX.setPrototypeOf(target,proto). Candidate: Object,
+Reflect"))
+
 (defgeneric js-set-uint8 (this offset value)
   (:documentation "XXX.prototype.setUInt8(byteOffset,value). Candidate:
 DataView"))
@@ -392,9 +437,6 @@ Candidate: DataView"))
 
 (defgeneric js-shift (this)
   (:documentation "XXX.prototype.shift(). Candidate: Array"))
-
-(defgeneric js-set-prototype-of (obj proto)
-  (:documentation "XXX.setPrototypeOf function. Candidate: Object"))
 
 (defgeneric js-size (this)
   (:documentation "get XXX.prototype.size. Candidate: Map, Set"))

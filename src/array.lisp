@@ -248,8 +248,7 @@
   :maxval most-positive-double-float)
 
 ;;; All internal ECMA utility functions on arrays.
-;;; FIXME: VALUES can't be passed this way.
-(defun js-array-build (&rest values)
+(defun js-array-build-0 ()
   (make-instance 'js-array :array values))
 
 (defun js-int8-array-build (&rest values)
