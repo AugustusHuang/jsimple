@@ -76,7 +76,7 @@
 	:jsimple-ir)
   (:documentation
    "Runtime environment of jsimple.")
-  (:export))
+  (:export :top-level))
 
 (defpackage :jsimple-test
   (:use :cl
