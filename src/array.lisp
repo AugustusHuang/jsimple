@@ -26,31 +26,31 @@
 ;;; Array related builtin functions.
 (deftype array-index-numeric () `(integer 0 ,(- (expt 2 32) 2)))
 
-;;; Numeric array metaclass, all typed array will be a subclass of it.
+;;; array prototype metaclass, all typed array will be a subclass of it.
 ;;; Ideas from CLEM package by Cyrus Harmon.
-(defclass numeric-array-class (standard-class)
+(defclass array-prototype-class (standard-class)
   ((element-type :initarg :element-type)
    (min-val :initarg :min-val)
    (max-val :initarg :max-val)
    (accumulator-type :initarg :accumulator-type)))
 
-(let ((gac (find-class 'numeric-array-class)))
-  (defun numeric-array-class-p (class)
+(let ((gac (find-class 'array-prototype-class)))
+  (defun array-prototype-class-p (class)
     (subtypep (class-of class) 'gac)))
 
-(defun fill-numeric-array-class-slots-from-ancestors (class &rest all-keys)
+(defun fill-array-prototype-class-slots-from-ancestors (class &rest all-keys)
   (mapcar #'(lambda (x)
               (let ((name (slot-definition-name x))
                     (initargs (slot-definition-initargs x)))
                 (unless (getf (car all-keys) (car initargs))
                   (fill-slot-from-ancestor name class))))
-          (numeric-array-class-slots class)))
+          (array-prototype-class-slots class)))
 
-(defun numeric-array-class-precedence-list (class)
-  (remove-if-not #'(lambda (x) (numeric-array-class-p x))
+(defun array-prototype-class-precedence-list (class)
+  (remove-if-not #'(lambda (x) (array-prototype-class-p x))
 		 (class-precedence-list class)))
 
-(defun numeric-array-class-slots (class)
+(defun array-prototype-class-slots (class)
   (let ((slots) (slot-names))
     (mapcar #'(lambda (x)
                 (mapcar #'(lambda (y)
@@ -60,34 +60,33 @@
                               (push (slot-definition-name y)
                                     slot-names)))
                         (class-direct-slots (class-of x))))
-            (numeric-array-class-precedence-list class))
+            (array-prototype-class-precedence-list class))
     slots))
 
 (defgeneric element-type (class)
-  (:documentation "Numeric array class element type accessor."))
-
-(defmethod element-type ((class numeric-array-class))
+  (:documentation "Array prototype class element type accessor."))
+(defmethod element-type ((class array-prototype-class))
   (car (slot-value class 'element-type)))
 
 (defgeneric accumulator-type (class)
-  (:documentation "Numeric array class function type accessor."))
-(defmethod accumulator-type ((class numeric-array-class))
+  (:documentation "Array prototype class function type accessor."))
+(defmethod accumulator-type ((class array-prototype-class))
   (car (slot-value class 'accumulator-type)))
 
 (defgeneric min-val (class)
-  (:documentation "General array class minimal value accessor."))
-(defmethod min-val ((class numeric-array-class))
+  (:documentation "Array prototype class minimal value accessor."))
+(defmethod min-val ((class array-prototype-class))
   (car (slot-value class 'min-val)))
 
 (defgeneric max-val (class)
-  (:documentation "General array class maximal value accessor."))
-(defmethod maxval ((class numeric-array-class))
+  (:documentation "Array prototype class maximal value accessor."))
+(defmethod maxval ((class array-prototype-class))
   (car (slot-value class 'maxval)))
 
-(defmethod validate-superclass ((c1 numeric-array-class) (c2 standard-class))
+(defmethod validate-superclass ((c1 array-prototype-class) (c2 standard-class))
   t)
 
-(defmethod validate-superclass ((c1 standard-class) (c2 numeric-array-class))
+(defmethod validate-superclass ((c1 standard-class) (c2 array-prototype-class))
   t)
 
 (defun add-root-class (root-class direct-superclasses)
@@ -98,12 +97,12 @@
 		     direct-superclasses)))
 
 ;;; FIXME: TYPED-MIXIN is useless here... So what to do?
-(defmethod initialize-instance :around ((class numeric-array-class)
+(defmethod initialize-instance :around ((class array-prototype-class)
 					&rest all-keys
 					&key direct-superclasses
 					  &allow-other-keys)
   (let ((root-class (find-class 'typed-mixin))
-	(mc (find-class 'numeric-array-class)))
+	(mc (find-class 'array-prototype-class)))
     (if (and root-class (not (equal class root-class)))
 	(if (member-if #'(lambda (super)
 			   (eq (class-of super) mc)) direct-superclasses)
@@ -114,15 +113,15 @@
                    (remove-keyword-arg all-keys :direct-superclasses)))
 	(call-next-method)))
   (finalize-inheritance class)
-  (fill-numeric-array-class-slots-from-ancestors class all-keys)
+  (fill-array-prototype-class-slots-from-ancestors class all-keys)
   class)
 
-(defmethod reinitialize-instance :around ((class numeric-array-class)
+(defmethod reinitialize-instance :around ((class array-prototype-class)
 					  &rest all-keys
 					  &key direct-superclasses
 					    &allow-other-keys)
   (let ((root-class (find-class 'typed-mixin))
-	(mc (find-class 'numeric-array-class)))
+	(mc (find-class 'array-prototype-class)))
     (if (and root-class (not (equal class root-class)))
 	(if (member-if #'(lambda (super)
 			   (eq (class-of super) mc)) direct-superclasses)
@@ -133,7 +132,7 @@
 		   (remove-keyword-arg all-keys :direct-superclasses)))
 	(call-next-method)))
   (finalize-inheritance class)
-  (fill-numeric-array-class-slots-from-ancestors class all-keys)
+  (fill-array-prototype-class-slots-from-ancestors class all-keys)
   class)
 
 ;;; And there should be typed array definitions and methods.
@@ -144,9 +143,9 @@
    (initial-element :accessor initial-element
 		    :initarg :initial-element :initform 0d0)
    ;; Enable those two by default?
-   (adjustable :accessor adjustable :initarg :adjustable :initform nil)
-   (resizeable :accessor resizable :initform nil))
-  (:metaclass numeric-array-class)
+   (adjustable :accessor adjustable :initarg :adjustable :initform t)
+   (resizeable :accessor resizable :initform t))
+  (:metaclass array-prototype-class)
   (:element-type double-float)
   (:min-val nil)
   (:max-val nil))
@@ -161,7 +160,7 @@
      (defclass ,type ,direct-superclasses
        ((initial-element :accessor initial-element
                          :initarg :initial-element :initform ,initial-element))
-       (:metaclass numeric-array-class)
+       (:metaclass array-prototype-class)
        ,@(when element-type
 	       `((:element-type ,(delistify element-type))))
        ,@(when accumulator-type
@@ -249,7 +248,15 @@
 
 ;;; All internal ECMA utility functions on arrays.
 (defun js-array-build-0 ()
-  (make-instance 'js-array :array values))
+  (make-instance 'js-array))
+
+(defun js-array-build-1 (len)
+  (make-instance 'js-array :length len))
+
+(defun js-array-build-rest (&rest items)
+  (let ((len (length items)))
+    (make-instance 'js-array :array (make-array len :initial-contents items)
+		   :length len)))
 
 (defun js-int8-array-build (&rest values)
   (make-instance 'js-int8-array values))
@@ -277,3 +284,6 @@
 
 (defun js-uint32-array-build (&rest values)
   (make-instance 'js-uint32-array values))
+
+(defmethod js-from ((this js-array) items &optional (mapfn #'identity) (arg nil))
+  )
