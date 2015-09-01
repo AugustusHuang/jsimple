@@ -72,6 +72,23 @@
 (defmacro with-label-scope (type label &body body)
   `(let ((*label-scope* (cons (cons ,type ,label) *label-scope*))) ,@body))
 
+;;; FIXME: Print more elegantly...
+(define-condition parser-error (general-error)
+  ((char :initarg :char
+	 :initform jsimple-parser:*char* :reader parser-error-char)
+   (line :initarg :line
+	 :initform jsimple-parser:*line* :reader parser-error-line))
+  (:documentation "Jsimple parser error."))
+
+(defmethod print-object ((err parser-error) stream)
+  (call-next-method)
+  (format stream "parser error char ~A at line ~D."
+	  (parser-error-char err)
+	  (parser-error-line err)))
+
+(defun parser-error (control &rest args)
+  (error 'parser-error :format-control control :format-arguments args))
+
 ;;; Only version 6 is supported!
 (defun parse-js (input &key strict-semicolons reserved-words)
   (let ((*check-for-reserved-words* reserved-words)

@@ -34,6 +34,10 @@
     :js-float-array :js-double-array :js-string :js-symbol
     :js-object :js-function :js-undefined))
 
+(defparameter +js-primitive-type+
+  '(member :js-undefined :js-null :js-boolean
+    :js-number :js-symbol :js-string))
+
 ;;; Well known symbols are built-in symbol values are typically used
 ;;; as the keys of properties. -- ECMA V6.
 ;;; At very early stage, all WELL-KNOWN-SYMBOLS are undefined.
@@ -334,23 +338,6 @@
 ;;; Integer index is a canonical numeric string value in [0, 2^53-1],
 ;;; array index is an integer index in [0, 2^32-1>. -- ECMA V6.
 (deftype integer-index-numeric () `(integer 0 ,(- (expt 2 53) 1)))
-
-;;; In SBCL 32-bit version, it's OK.
-(defconstant +number-max-safe-integer+ (- (expt 2 53) 1))
-(defconstant +number-max-value+ most-positive-double-float)
-(defconstant +number-min-safe-integer+ (- (- (expt 2 53) 1)))
-(defconstant +number-min-value+ least-positive-double-float)
-;;; XXX
-(defconstant +number-epsilon+ (* 2 double-float-epsilon))
-
-(defconstant +math-e+ (exp 1.0d0))
-(defconstant +math-ln10+ (log 10.0d0))
-(defconstant +math-ln2+ (log 2.0d0))
-(defconstant +math-log10e+ (log +math-e+ 10))
-(defconstant +math-log2e+ (log +math-e+ 2))
-(defconstant +math-pi+ pi)
-(defconstant +math-sqrt-1/2 (sqrt (/ 1.0d0 2.0d0)))
-(defconstant +math-sqrt-2 (sqrt 2.0d0))
 
 ;;; In order to avoid re-definition of global functions and variables,
 ;;; make a hashtable to store those already created, and check every time

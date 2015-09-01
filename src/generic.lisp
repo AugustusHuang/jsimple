@@ -31,6 +31,7 @@
 ;;; EvalError, RangeError, ReferenceError, SyntaxError, TypeError, URIError.
 
 ;;; NOTE: Some of them will be removed if candidate is not a class.
+;;; Numbers won't be implemented as classes, remove them all. -- Sept 1 2015
 (defgeneric js-add (this value)
   (:documentation "XXX.prototype.add(value). Candidate: Set, WeakSet"))
 
@@ -309,13 +310,13 @@ TypedArray"))
 (defgeneric js-match (target regexp)
   (:documentation "XXX.prototype.match function. Candidate: String"))
 
-(defgeneric js-message (error-name)
+(defgeneric js-message (this)
   (:documentation "XXX.prototype.message function. Candidate: Error"))
 
 (defgeneric js-multiline (target)
   (:documentation "get XXX.prototype.multiline. Candidate: RegExp"))
 
-(defgeneric js-name (error-name)
+(defgeneric js-name (this)
   (:documentation "XXX.prototype.name function. Candidate: Error"))
 
 (defgeneric js-normalize (target &optional form)
@@ -485,12 +486,6 @@ Array"))
   (:documentation "XXX.prototype.then(onFulfilled,onRejected). Candidate:
 Promise"))
 
-(defgeneric js-to-exponential (num fraction-digits)
-  (:documentation "XXX.prototype.toExponential function. Candidate: Number"))
-
-(defgeneric js-to-fixed (num fraction-digits)
-  (:documentation "XXX.prototype.toFixed function. Candidate: Number"))
-
 (defgeneric js-to-json (date key)
   (:documentation "XXX.prototype.toJSON function. Candidate: Date"))
 
@@ -502,7 +497,7 @@ Promise"))
 
 (defgeneric js-to-locale-string (this &optional reserved1 reserved2)
   (:documentation "XXX.prototype.toLocaleString([reserved1[,reserved2]]).
-Candidate: Object, Number, Date, Array, TypedArray"))
+Candidate: Object, Date, Array, TypedArray"))
 
 (defgeneric js-to-lower-case (target)
   (:documentation "XXX.prototype.toLowerCase(). Candidate: String"))
@@ -510,13 +505,9 @@ Candidate: Object, Number, Date, Array, TypedArray"))
 (defgeneric js-to-upper-case (target)
   (:documentation "XXX.prototype.toUpperCase(). Candidate: String"))
 
-(defgeneric js-to-precision (num precision)
-  (:documentation "XXX.prototype.toPrecision function. Candidate: Number"))
-
-;;; Number.prototype.toString(radix).
 (defgeneric js-to-string (this)
   (:documentation "XXX.prototype.toString(). Candidate: Object, Function,
-Boolean, Symbol, Error, Number, Date, String, RegExp, Array, TypedArray"))
+Boolean, Symbol, Error, Date, String, RegExp, Array, TypedArray"))
 
 (defgeneric js-trim (target)
   (:documentation "XXX.prototype.trim(). Candidate: String"))
@@ -536,5 +527,5 @@ Set"))
 
 (defgeneric js-value-of (this)
   (:documentation "XXX.prototype.valueOf(). Candidate: Object, Boolean,
-Symbol, Number, Date, String"))
+Symbol, Date, String"))
 

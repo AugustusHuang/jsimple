@@ -78,6 +78,23 @@
 (defvar *char*)
 (defvar *position*)
 
+(define-condition lexer-error (general-error)
+  ((char :initarg :char
+	 :initform jsimple-parser:*char* :reader lexer-error-char)
+   (line :initarg :line
+	 :initform jsimple-parser:*line* :reader lexer-error-line))
+  (:documentation "Jsimple lexer error."))
+
+(defmethod print-object ((err lexer-error) stream)
+  (call-next-method)
+  (format stream "lexer error char ~A at line ~D."
+	  (lexer-error-char err)
+	  (lexer-error-line err)))
+
+;;; Every error will have a wrapper function to make it specific.
+(defun lexer-error (control &rest args)
+  (error 'lexer-error :format-control control :format-arguments args))
+
 ;;; NOTE: All constant parameters should be surronded by +.
 (defparameter +operator-chars+ "+-*&%=<>!?|~^")
 

@@ -25,6 +25,50 @@
 
 ;;;; Error related definitions and methods.
 
-(defclass js-error ()
+(defclass js-error-prototype ()
+  ((message :initarg :message :type string :initform "" :accessor message)
+   (name :initarg :name :type string :initform "Error" :accessor name))
+  (:documentation "Error prototype, will be the superclass of all errors."))
+
+(defmethod js-message ((this js-error-prototype))
+  (slot-value this 'message))
+
+(defmethod js-name ((this js-error-prototype))
+  (slot-value this 'name))
+
+(defmethod js-to-string ((this js-error-prototype))
+  (concatenate 'string (js-name this) ": " (js-message this)))
+
+;;; Now we handle all kinds of errors the same way. But it can be merged
+;;; into Lisp style condition system. Someday it will do.
+(defclass js-error (js-error-prototype)
   ()
-  (:documentation "General js internal error."))
+  (:documentation "Internal general error."))
+
+(defclass js-eval-error (js-error)
+  ()
+  (:documentation "Evaluation error. Currently not used."))
+
+(defclass js-range-error (js-error)
+  ()
+  (:documentation "Range error. Indicates a value that is not in the set or
+range of allowable values."))
+
+(defclass js-reference-error (js-error)
+  ()
+  (:documentation "Reference error. Indicates that an invalid reference value
+has been detected."))
+
+(defclass js-syntax-error (js-error)
+  ()
+  (:documentation "Syntax error. Indicates that a parsing error has occured."))
+
+(defclass js-type-error (js-error)
+  ()
+  (:documentation "Type error. Indicates the actual type of an operand is
+different than the expected type."))
+
+(defclass js-uri-error (js-error)
+  ()
+  (:documentation "URI error. Indicates that one of the global URI handling
+functions was used in a way that is incompatible with its definition."))
