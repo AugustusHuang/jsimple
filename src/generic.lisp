@@ -32,6 +32,9 @@
 
 ;;; NOTE: Some of them will be removed if candidate is not a class.
 ;;; Numbers won't be implemented as classes, remove them all. -- Sept 1 2015
+(defgeneric js-intern-data (this)
+  (:documentation "Helper function to access prototype's internal data."))
+
 (defgeneric js-add (this value)
   (:documentation "XXX.prototype.add(value). Candidate: Set, WeakSet"))
 

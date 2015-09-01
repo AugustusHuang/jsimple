@@ -42,6 +42,36 @@
 (defconstant +math-sqrt-1/2 (sqrt (/ 1.0d0 2.0d0)))
 (defconstant +math-sqrt-2 (sqrt 2.0d0))
 
-(defun js-number-build (argument)
-  "Default constructor of number, corresponding Number(argument) in ES."
-  )
+(deftype js-number-raw ()
+  `(and double-float (member :nan :infinity :-infinity)))
+
+(defclass js-number (js-object)
+  ((constructor :reader constructor :type function
+		:initarg :constructor :initform #'js-number-constructor)
+   (data :accessor data :type js-number-raw
+	 :initarg :data :initform 0.0d0))
+  (:documentation "Builtin Number prototype."))
+
+(defmethod js-intern-data ((this js-number))
+  (slot-value this 'data))
+
+(defun js-number-constructor (value)
+  (typecase value
+    (js-undefined
+     (make-instance 'js-number :data :nan))
+    (js-null
+     (make-instance 'js-number :data 0.0d0))
+    (js-boolean
+     (make-instance 'js-number :data (if (js-boolean-data value)
+					 1.0d0
+					 0.0d0)))
+    (js-number
+     (make-instance 'js-number :data (js-intern-data value)))
+    (js-string
+     (make-instance 'js-number :data (js-string-to-number
+				      (js-intern-data value))))
+    (js-symbol
+     (error 'js-type-error))
+    (js-object
+     ())))
+

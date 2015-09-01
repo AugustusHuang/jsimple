@@ -21,21 +21,12 @@
 ;;;; ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-;;;; Builtin string type definitions.
 (in-package :jsimple-builtin)
 
-(deftype js-string-raw ()
-  )
+(defclass js-boolean-proto ()
+  ()
+  (:documentation "Builtin Boolean prototype."))
 
-(defclass js-string (js-object)
-  ((constructor :reader constructor :type function
-		:initarg :constructor :initform #'js-string-constructor)
-   (data :accessor data :type js-string-raw
-	 :initarg :data :initform ""))
-  (:documentation "Builtin string prototype."))
-
-(defmethod js-intern-data ((this js-string))
-  (slot-value this 'data))
-
-(defun js-string-constructor ()
-  )
+(defclass js-boolean (js-boolean-proto)
+  ()
+  (:documentation "Standard Boolean type."))

@@ -21,21 +21,45 @@
 ;;;; ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-;;;; Builtin string type definitions.
+;;;; Boolean builtin type definitions.
 (in-package :jsimple-builtin)
 
-(deftype js-string-raw ()
-  )
+(deftype js-boolean-raw ()
+  `(member :false :true))
 
-(defclass js-string (js-object)
+(defclass js-boolean (js-object)
   ((constructor :reader constructor :type function
-		:initarg :constructor :initform #'js-string-constructor)
-   (data :accessor data :type js-string-raw
-	 :initarg :data :initform ""))
-  (:documentation "Builtin string prototype."))
+		:initarg :constructor :initform #'js-boolean-constructor)
+   (data :accessor data :type js-boolean-raw
+	 :initarg :data :initform :false))
+  (:documentation "Builtin Boolean prototype."))
 
-(defmethod js-intern-data ((this js-string))
+(defmethod js-intern-data ((this js-boolean))
   (slot-value this 'data))
 
-(defun js-string-constructor ()
+(defun js-boolean-constructor (value)
+  (typecase value
+    (js-undefined
+     (make-instance 'js-boolean :data :false))
+    (js-null
+     (make-instance 'js-boolean :data :false))
+    (js-boolean
+     (make-instance 'js-boolean :data (js-intern-data value)))
+    (js-number
+     ;; When DATA is 0 or NaN, return FALSE.
+     (make-instance 'js-boolean :data (if (or (eql (js-intern-data value) :nan)
+					      (= (js-intern-data value) 0))
+					  :false
+					  :true)))
+    (js-string
+     (make-instance 'js-boolean :data :true))
+    (js-symbol
+     (make-instance 'js-boolean :data :true))
+    (js-object
+     (make-instance 'js-boolean :data :true))))
+
+(defmethod js-to-string ((this js-boolean))
+  )
+
+(defmethod js-value-of ((this js-boolean))
   )

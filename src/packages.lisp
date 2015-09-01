@@ -55,7 +55,7 @@
   (:use :cl
 	:jsimple-error)
   (:documentation
-   "Builtin function package of Javascript 6.")
+   "Builtin feature package of Javascript 6.")
   ;; Will be a long list...
   (:export))
 

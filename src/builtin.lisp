@@ -25,18 +25,26 @@
 ;;;; since these functions will be functions belong to prototypes,
 ;;;; they are typed functions, so they will be efficient and don't need
 ;;;; further optimization.
-(in-package :jsimple-ir)
+(in-package :jsimple-builtin)
+
+;;;; JS-UNDEFINED, JS-NULL are trivial, use the keywords.
+(defun js-undefined-p (value)
+  (eql value :js-undefined))
+(deftype js-undefined ()
+  `(satisfies js-undefined-p))
+
+(defun js-null-p (value)
+  (eql value :js-null))
+(deftype js-null ()
+  `(satisfies js-null-p))
 
 (defparameter +js-type+
-  '(member :js-int8 :js-uint8 :js-int16 :js-uint16 :js-int32 :js-uint32
-    :js-float :js-double :js-null :js-boolean :js-int8-array :js-uint8-array
-    :js-int16-array :js-uint16-array :js-int32-array :js-uint32-array
-    :js-float-array :js-double-array :js-string :js-symbol
-    :js-object :js-function :js-undefined))
+  (or js-undefined js-null js-boolean js-number
+      js-symbol js-string js-object))
 
-(defparameter +js-primitive-type+
-  '(member :js-undefined :js-null :js-boolean
-    :js-number :js-symbol :js-string))
+(defparameter +js-primitive-value+
+  (or js-undefined js-null js-boolean js-number
+      js-symbol js-string))
 
 ;;; Well known symbols are built-in symbol values are typically used
 ;;; as the keys of properties. -- ECMA V6.
@@ -44,6 +52,19 @@
 ;;; These symbols will correspond to every object, and every object will
 ;;; has its specific typed symbol function of them.
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  (defstruct data-property
+    (value :js-undefined :type +js-type+)
+    ;; XXX: JS-BOOLEAN is a object, so :FALSE won't work.
+    (writable :false :type js-boolean-raw)
+    (enumerable :false :type js-boolean-raw)
+    (configurable :false :type js-boolean-raw))
+
+  (defstruct accessor-property
+    (get :js-undefined :type (or js-undefined js-object))
+    (set :js-undefined :type (or js-undefined js-object))
+    (enumerable :false :type js-boolean-raw)
+    (configurable :false :type js-boolean-raw))
+  
   (defvar *well-known-symbols*
     (let ((symbols (make-hash-table :test 'string=)))
       (dolist (name '("hasInstance" "isConcatSpreadable" "iterator" "match"
@@ -346,3 +367,45 @@
 (defvar *global-names*
   (make-hash-table :test 'string=))
 
+;;; Essential internal methods, generic or some?
+(defun js-get-prototype-of (obj)
+  )
+
+(defun js-set-prototype-of (obj proto)
+  )
+
+(defun js-is-extensible (obj)
+  )
+
+(defun js-prevent-extensions (obj key)
+  )
+
+(defun js-get-own-property (obj key)
+  )
+
+(defun js-has-property (obj)
+  )
+
+(defun js-get (obj key receiver)
+  )
+
+(defun js-set (obj key value receiver)
+  )
+
+(defun js-delete (obj key)
+  )
+
+(defun js-define-own-property (obj key descriptor)
+  )
+
+(defun js-enumerate (obj)
+  )
+
+(defun js-own-property-keys (obj)
+  )
+
+(defun js-call (obj args)
+  )
+
+(defun js-construct (obj args)
+  )

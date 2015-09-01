@@ -8,10 +8,8 @@ them.
 *string* and *symbol*. To implement **primitive value**, define a global value
 that contains all of them.  
 **Object** is a collection of properties, has a single prototype object, which
-may be null. To implement **object**, define a prototype class and a object
-class, here the object class will be the subclass of the prototype class, and
-all properties slots in the object class or prototype class, depends on whether
-the property belongs to specific object or prototype.  
+may be null. To implement **object**, define a prototype class which contains
+all slots.  
 **Constructor** is a function object that creates and initializes objects,
 the value of a constructor's prototype property is a prototype object that is
 used to implement inheritance and shared properties. To implement
@@ -26,7 +24,7 @@ explicitly specified prototype by using the `Object.create` function.
 To implement **prototype**, for every class, no matter user defined or builtin,
 make a prototype class and make a object class to be the subclass of it. e.g.
 User defined a class `a` and `b extends a`, then we should get classes
-`a-proto`, `a` and `b`. Here `b` has prototype `a`, and `a` has `a-proto`.  
+`a` and `b`. Here `b` has prototype `a`.  
 **Ordinary object** is object that has the default behaviour for the essential
 internal methods that must be supported by all objects. It will only be a
 definition rather than a concrete type.  
