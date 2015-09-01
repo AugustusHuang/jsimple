@@ -25,26 +25,22 @@
 
 ;;;; Error related definitions and methods.
 
-(defclass js-error-prototype ()
+(defclass js-error ()
   ((message :initarg :message :type string :initform "" :accessor message)
    (name :initarg :name :type string :initform "Error" :accessor name))
   (:documentation "Error prototype, will be the superclass of all errors."))
 
-(defmethod js-message ((this js-error-prototype))
+(defmethod js-message ((this js-error))
   (slot-value this 'message))
 
-(defmethod js-name ((this js-error-prototype))
+(defmethod js-name ((this js-error))
   (slot-value this 'name))
 
-(defmethod js-to-string ((this js-error-prototype))
+(defmethod js-to-string ((this js-error))
   (concatenate 'string (js-name this) ": " (js-message this)))
 
 ;;; Now we handle all kinds of errors the same way. But it can be merged
 ;;; into Lisp style condition system. Someday it will do.
-(defclass js-error (js-error-prototype)
-  ()
-  (:documentation "Internal general error."))
-
 (defclass js-eval-error (js-error)
   ()
   (:documentation "Evaluation error. Currently not used."))

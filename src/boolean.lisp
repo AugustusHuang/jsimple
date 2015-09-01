@@ -27,9 +27,9 @@
 (deftype js-boolean-raw ()
   `(member :false :true))
 
-(defclass js-boolean (js-object)
-  ((constructor :reader constructor :type function
-		:initarg :constructor :initform #'js-boolean-constructor)
+(defclass js-boolean ()
+  ((constructor :reader constructor :type js-function-raw
+		:initarg :constructor :initform 
    (data :accessor data :type js-boolean-raw
 	 :initarg :data :initform :false))
   (:documentation "Builtin Boolean prototype."))
@@ -59,7 +59,14 @@
      (make-instance 'js-boolean :data :true))))
 
 (defmethod js-to-string ((this js-boolean))
-  )
+  (if (eql (js-intern-data this) :true)
+      "true"
+      "false"))
+
+(defmethod js-to-locale-string ((this js-boolean))
+  (if (eql (js-intern-data this) :true)
+      "true"
+      "false"))
 
 (defmethod js-value-of ((this js-boolean))
-  )
+  (js-intern-data this))
