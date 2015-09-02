@@ -21,30 +21,26 @@
 ;;;; ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-;;;; Builtin string type definitions.
+;;;; Builtin symbol type definitions.
 (in-package :jsimple-builtin)
 
-(deftype string-raw ()
-  'string)
+(deftype symbol-raw ()
+  'symbol)
 
-(defclass -string ()
-  ((constructor :reader constructor :type function
-		:initarg :constructor :initform #'-new-string
-		:allocation class)
-   (data :accessor data :type string-raw
-	 :initarg :data :initform ""))
-  (:documentation "Builtin string prototype."))
+(defclass -symbol ()
+  ()
+  (:documentation "Builtin symbol prototype."))
 
-(defun -new-string (value)
-  (-new-object-string value))
+(defun -new-symbol (value)
+  (-new-object-symbol value))
 
-(defun -to-string (value)
+(defun -to-symbol (value)
   )
 
-(defmethod to-string ((this -string))
+(defmethod to-string ((this -symbol))
   )
 
-(defmethod to-locale-string ((this -string))
+(defmethod to-locale-string ((this -symbol))
   )
 
 (defmethod value-of ((this -string))

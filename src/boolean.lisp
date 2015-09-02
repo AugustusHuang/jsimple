@@ -28,8 +28,8 @@
   `(member :false :true))
 
 (defclass -boolean ()
-  ((constructor :reader constructor :type string
-		:initarg :constructor :initform "Boolean"
+  ((constructor :reader constructor :type function
+		:initarg :constructor :initform #'-new-boolean
 		:allocation class)
    (data :accessor data :type boolean-raw
 	 :initarg :data :initform :false))
@@ -43,11 +43,10 @@
 
 ;;; new Boolean() constructs a object with [[PrimitiveValue]]: true.
 ;;; While Boolean() converts some thing to a boolean.
-(defun -boolean-constructor (value)
-  (-to-boolean value))
-
-(defun new-boolean (value)
-  (-object-constructor value))
+;;; so new Boolean will be translated to -NEW-BOOLEAN and Boolean
+;;; to -TO-BOOLEAN.
+(defun -new-boolean (value)
+  (-new-object-boolean value))
 
 (defun -to-boolean (value)
   "Abstract operation of some-type to boolean conversion."

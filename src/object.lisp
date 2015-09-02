@@ -70,6 +70,18 @@
 	    (setf assoc-list (acons key property assoc-list)))))
     (make-instance '-object :properties assoc-list)))
 
+(defun -new-object-boolean (value)
+  )
+
+(defun -new-object-number (value)
+  )
+
+(defun -new-object-string (value)
+  )
+
+(defun -new-object-symbol (value)
+  )
+
 ;;; We need PRINT-OBJECT methods for all mixins and original object type.
 ;;; Object style: <Object: <a: 1> <b: 2>>
 ;;; Boolean object style: <Boolean: <primitive-value: true>>
@@ -114,9 +126,6 @@
   (format stream "<Symbol: <symbol-data: ~A>"
 	  (slot-value this 'symbol-data))
   this)
-
-(defun -object-constructor (&optional value)
-  (to-object value))
 
 ;;; To make string slots properties.
 (defun string-to-object-properties (string)
