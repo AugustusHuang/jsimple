@@ -42,7 +42,9 @@ writter (if you defined an interface, export them instead), copier function
 and its name, then it will be totally exported and used normally.
 Only when necessary, use structure instead of class. Export all useful global
 variables (or why you make it global?), but parameters, don't export them
-unless it's globally useful.
+unless it's globally useful.  
+NOTE: All suchStyleFunction will be converted into such-style-function, and
+SuchStyleFunction will be !such-style-function. Variables will be the same.
 
 ### Error handling
 If needed, add `assert` and `check-type`. Maybe set a debug output variable

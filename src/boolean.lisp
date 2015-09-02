@@ -24,49 +24,52 @@
 ;;;; Boolean builtin type definitions.
 (in-package :jsimple-builtin)
 
-(deftype js-boolean-raw ()
+(deftype boolean-raw ()
   `(member :false :true))
 
-(defclass js-boolean ()
-  ((constructor :reader constructor :type js-function-raw
-		:initarg :constructor :initform 
-   (data :accessor data :type js-boolean-raw
+(defclass -boolean ()
+  ((constructor :reader constructor :type string
+		:initarg :constructor :initform "Boolean"
+   (data :accessor data :type boolean-raw
 	 :initarg :data :initform :false))
   (:documentation "Builtin Boolean prototype."))
 
-(defmethod js-intern-data ((this js-boolean))
+(defmethod intern-data ((this -boolean))
   (slot-value this 'data))
 
-(defun js-boolean-constructor (value)
+(defun -boolean-constructor (value)
+  (to-boolean (value)))
+
+(defun to-boolean (value)
   (typecase value
-    (js-undefined
-     (make-instance 'js-boolean :data :false))
-    (js-null
-     (make-instance 'js-boolean :data :false))
-    (js-boolean
-     (make-instance 'js-boolean :data (js-intern-data value)))
-    (js-number
+    (-undefined
+     (make-instance '-boolean :data :false))
+    (-null
+     (make-instance '-boolean :data :false))
+    (-boolean
+     (make-instance '-boolean :data (intern-data value)))
+    (-number
      ;; When DATA is 0 or NaN, return FALSE.
-     (make-instance 'js-boolean :data (if (or (eql (js-intern-data value) :nan)
-					      (= (js-intern-data value) 0))
-					  :false
-					  :true)))
-    (js-string
-     (make-instance 'js-boolean :data :true))
-    (js-symbol
-     (make-instance 'js-boolean :data :true))
-    (js-object
-     (make-instance 'js-boolean :data :true))))
+     (make-instance '-boolean :data (if (or (eql (intern-data value) :nan)
+					      (= (intern-data value) 0))
+					:false
+					:true)))
+    (-string
+     (make-instance '-boolean :data :true))
+    (-symbol
+     (make-instance '-boolean :data :true))
+    (-object
+     (make-instance '-boolean :data :true))))
 
-(defmethod js-to-string ((this js-boolean))
-  (if (eql (js-intern-data this) :true)
+(defmethod to-string ((this -boolean))
+  (if (eql (intern-data this) :true)
       "true"
       "false"))
 
-(defmethod js-to-locale-string ((this js-boolean))
-  (if (eql (js-intern-data this) :true)
+(defmethod to-locale-string ((this -boolean))
+  (if (eql (intern-data this) :true)
       "true"
       "false"))
 
-(defmethod js-value-of ((this js-boolean))
-  (js-intern-data this))
+(defmethod value-of ((this -boolean))
+  (intern-data this))

@@ -26,45 +26,26 @@
 ;;; Every function has its own symbol, once created, store it into a global
 ;;; hashtable in order to prevent duplicates. (Since naming style is quite
 ;;; different in Lisp and ES, functions like Another and another will be the
-;;; same... But they are different, if all use thisIsAFunctionStyle, it will
-;;; be parsed into this-is-a-function-style in Lisp, and the problem will
-;;; be trivial...
+;;; same... But they are different, if use thisIsAFunctionStyle, it will
+;;; be parsed into this-is-a-function-style in Lisp, and if use ThisType,
+;;; it will be parsed into !this-type, and then the problem will be trivial...
+;;; See builtin-util.lisp
 
-;;; NOTE: An assoc list will be better, but now we use this.
-(defparameter *functions-table*
-  (let ((funcs (make-hash-table :test 'equal)))
-    (dolist (name '("Function" "Object" "Number" "Boolean" "String"
-		    "Symbol" "Error" "Int8Array" "Int16Array" "Int32Array"
-		    "Uint8Array" "Uint8ClampedArray" "Uint16Array"
-		    "Uint32Array" "Float32Array" "Float64Array" "URI"
-		    "EvalError" "RangeError" "ReferenceError" "SyntaxError"
-		    "TypeError" "URIError" "Array" "ArrayBuffer" "Date"
-		    "DataView" "JSON" "Map" "Math" "RegExp" "Set" "WeakMap"
-		    "WeakSet"))
-      (setf (gethash name funcs) t))
-    funcs))
-
-(defun not-duplicate (name)
-  (gethash name *functions-table*))
-		    
-(deftype js-function-raw ()
-  `(and string (satisfies not-duplicate)))
-
-(defclass js-function ()
-  ((constructor :reader constructor :type js-function-raw
-		:initarg :constructor :initform 'function)
-   (data :accessor data :type js-function-raw
-	 :initarg :data :initform 'anonymous))
+(defclass -function ()
+  ((constructor :reader constructor :type string
+		:initarg :constructor :initform "Function")
+   (data :accessor data :type string
+	 :initarg :data :initform "Anonymous"))
   (:documentation "Builtin function prototype."))
 
-(defun js-function-constructor (name &rest args definition)
+(defun -function-constructor (name &rest args definition)
   )
 
-(defmethod js-to-string ((this js-function))
+(defmethod to-string ((this -function))
   )
 
-(defmethod js-to-locale-string ((this js-function))
+(defmethod to-locale-string ((this -function))
   )
 
-(defmethod js-value-of ((this js-function))
+(defmethod value-of ((this -function))
   )
