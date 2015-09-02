@@ -24,3 +24,59 @@
 (in-package :jsimple-builtin)
 
 ;;; Object related builtin functions.
+(defclass -object ()
+  ((constructor :reader constructor :type string
+		:initarg :constructor :initform "Object"
+		:allocation class)
+   ;; Keys will be strings or symbols, values will be DATA-PROPERTY or
+   ;; ACCESSOR-PROPERTY.
+   (properties :accessor properties :type (or list null)
+	       :initarg :properties :initform nil))
+  (:documentation "Builtin object prototype."))
+
+(defun object-properties (object)
+  (slot-value object 'properties))
+
+;;; VALUE is a form ((KEY1 :TYPE1 VALUE1) (KEY2 :TYPE2 VALUE2)).
+(defun -new-object (&optional value)
+  (let ((assoc-list ()))
+    (dolist (key-value value)
+      (let* ((key (first key-value))
+	     (value (third key-value))
+	     (property (make-property :value value)))
+	;; If we found a defined property, replace it with a new CDR.
+	;; Else push a new property onto ASSOC-LIST.
+	(if (cdr (assoc key assoc-list))
+	    (rplacd (assoc key assoc-list) property)
+	    (setf assoc-list (acons key property assoc-list)))))
+    (make-instance '-object :properties assoc-list)))
+
+(defmethod print-object ((this -object) stream)
+  ;; ALIST looks like ((a . b) (c . d) (e . f)).
+  ;; Make it into form ((a b) (c d) (e f)). Sequence doesn't matter.
+  (labels ((pair-out (lst)
+	     (let ((result ()))
+	       (loop for pair in lst do
+		    (push (list (car pair) (cdr pair)) result))
+	       result)))
+    (format stream "<Object:~:{ <~S: ~S>~}>"
+	    (pair-out (object-properties object)))
+    this))
+
+(defun -object-constructor (&optional value)
+  (to-object value))
+
+(defun to-object (value)
+  (typecase value
+    (-undefined
+     )
+    (-null
+     )
+    (-boolean
+     )
+    (-number
+     )
+    (-string
+     )
+    (-symbol
+     )))

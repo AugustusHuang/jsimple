@@ -38,6 +38,15 @@
 	 :initarg :data :initform "Anonymous"))
   (:documentation "Builtin function prototype."))
 
+(defmethod intern-data ((this -function))
+  )
+
+(defmethod print-object ((this -function) stream)
+  )
+
+(defun -new-function ()
+  )
+
 (defun -function-constructor (name &rest args definition)
   )
 

@@ -27,24 +27,22 @@
 ;;;; further optimization.
 (in-package :jsimple-builtin)
 
-;;;; JS-UNDEFINED, JS-NULL are trivial, use the keywords.
-(defun js-undefined-p (value)
-  (eql value :js-undefined))
-(deftype js-undefined ()
-  `(satisfies js-undefined-p))
+;;;; -UNDEFINED, -NULL are trivial, use the keywords.
+(defun undefined-p (value)
+  (eql value :undefined))
+(deftype -undefined ()
+  `(satisfies undefined-p))
 
-(defun js-null-p (value)
-  (eql value :js-null))
-(deftype js-null ()
-  `(satisfies js-null-p))
+(defun null-p (value)
+  (eql value :null))
+(deftype -null ()
+  `(satisfies null-p))
 
-(defparameter +js-type+
-  (or js-undefined js-null js-boolean js-number
-      js-symbol js-string js-object))
+(deftype +js-types+ ()
+  `(or -undefined -null -boolean -number -symbol -string -object))
 
-(defparameter +js-primitive-value+
-  (or js-undefined js-null js-boolean js-number
-      js-symbol js-string))
+(deftype +js-primitive-value+ ()
+  `(or -undefined -null -boolean -number -symbol -string))
 
 ;;; Well known symbols are built-in symbol values are typically used
 ;;; as the keys of properties. -- ECMA V6.
@@ -53,17 +51,17 @@
 ;;; has its specific typed symbol function of them.
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defstruct data-property
-    (value :js-undefined :type +js-type+)
+    (value :undefined :type +js-type+)
     ;; XXX: JS-BOOLEAN is a object, so :FALSE won't work.
-    (writable :false :type js-boolean-raw)
-    (enumerable :false :type js-boolean-raw)
-    (configurable :false :type js-boolean-raw))
+    (writable :false :type boolean-raw)
+    (enumerable :false :type boolean-raw)
+    (configurable :false :type boolean-raw))
 
   (defstruct accessor-property
-    (get :js-undefined :type (or js-undefined js-object))
-    (set :js-undefined :type (or js-undefined js-object))
-    (enumerable :false :type js-boolean-raw)
-    (configurable :false :type js-boolean-raw))
+    (get :undefined :type (or -undefined -object))
+    (set :undefined :type (or -undefined -object))
+    (enumerable :false :type boolean-raw)
+    (configurable :false :type boolean-raw))
   
   (defvar *well-known-symbols*
     (let ((symbols (make-hash-table :test 'string=)))

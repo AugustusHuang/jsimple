@@ -27,9 +27,8 @@
   (:use :cl)
   (:documentation
    "Error module of jsimple.")
+  ;; Those error functions should be wrapped by ES errors.
   (:export :general-error
-	   :lexer-error
-	   :parser-error
 	   :runtime-error
 	   :jarithmetic-error
 	   :divide-by-0-error
@@ -45,9 +44,11 @@
 	:jsimple-error)
   (:documentation
    "Parser of jsimple.")
-  (:export :*line*
-	   :*char*
+  (:export :*char*
+	   :*line*
 	   :*position*
+	   :lexer-error
+	   :parser-error
 	   :parse-js
 	   :parse-js-string))
 
@@ -57,7 +58,9 @@
   (:documentation
    "Builtin feature package of Javascript 6.")
   ;; Will be a long list...
-  (:export))
+  (:export :camel-to-hyphen
+	   :hyphen-to-camel
+	   ))
 
 (defpackage :jsimple-ir
   (:use :cl

@@ -30,6 +30,7 @@
 (defclass -boolean ()
   ((constructor :reader constructor :type string
 		:initarg :constructor :initform "Boolean"
+		:allocation class)
    (data :accessor data :type boolean-raw
 	 :initarg :data :initform :false))
   (:documentation "Builtin Boolean prototype."))
@@ -37,8 +38,19 @@
 (defmethod intern-data ((this -boolean))
   (slot-value this 'data))
 
+(defmethod print-object ((this -boolean) stream)
+  (format stream (if (eql (intern-data this) :true)
+		     "true"
+		     "false"))
+  this)
+
+;;; new Boolean() constructs a object with [[PrimitiveValue]]: true.
+;;; While Boolean() converts some thing to a boolean.
 (defun -boolean-constructor (value)
-  (to-boolean (value)))
+  (to-boolean value))
+
+(defun new-boolean (value)
+  (-object-constructor value))
 
 (defun to-boolean (value)
   (typecase value
