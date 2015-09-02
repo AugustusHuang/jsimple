@@ -44,25 +44,35 @@
 (deftype +js-primitive-value+ ()
   `(or -undefined -null -boolean -number -symbol -string))
 
+;;; In an object, property list is an associative list with CARs keys (symbols
+;;; or strings) and CDRs property structures.
+(defstruct property
+  ;; The value retrieved by a get access of the property.
+  (value :undefined :type +js-type+)
+  ;; If not :UNDEFINED must be a function object, in this implementation,
+  ;; function is an object, but has parallel status, so there's no way to
+  ;; be both function and object. The function's [[Call]] method is called
+  ;; with an empty argument list to retrieve the property value each time
+  ;; a get access of the property is performed.
+  (get :undefined :type (or -undefined -function))
+  ;; If not :UNDEFINED must be a function object, the function's [[Call]]
+  ;; method is called with an argument list containing assigned value,
+  ;; assigns the property with this argument.
+  (set :undefined :type (or -undefined -function))
+  ;; If :FALSE, attempts to change [[Value]] attribute using [[Set]] failes.
+  (writable :false :type boolean-raw)
+  ;; If :TRUE, the property will be enumerable by a for-in.
+  (enumerable :false :type boolean-raw)
+  ;; If :FALSE, attempts to delete the property, change the property to be
+  ;; an accessor property, or change its attributes will fail.
+  (configurable :false :type boolean-raw))
+
 ;;; Well known symbols are built-in symbol values are typically used
 ;;; as the keys of properties. -- ECMA V6.
 ;;; At very early stage, all WELL-KNOWN-SYMBOLS are undefined.
 ;;; These symbols will correspond to every object, and every object will
 ;;; has its specific typed symbol function of them.
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defstruct data-property
-    (value :undefined :type +js-type+)
-    ;; XXX: JS-BOOLEAN is a object, so :FALSE won't work.
-    (writable :false :type boolean-raw)
-    (enumerable :false :type boolean-raw)
-    (configurable :false :type boolean-raw))
-
-  (defstruct accessor-property
-    (get :undefined :type (or -undefined -object))
-    (set :undefined :type (or -undefined -object))
-    (enumerable :false :type boolean-raw)
-    (configurable :false :type boolean-raw))
-  
   (defvar *well-known-symbols*
     (let ((symbols (make-hash-table :test 'string=)))
       (dolist (name '("hasInstance" "isConcatSpreadable" "iterator" "match"

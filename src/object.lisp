@@ -25,8 +25,8 @@
 
 ;;; Object related builtin functions.
 (defclass -object ()
-  ((constructor :reader constructor :type string
-		:initarg :constructor :initform "Object"
+  ((constructor :reader constructor :type function
+		:initarg :constructor :initform #'-new-object
 		:allocation class)
    ;; Keys will be strings or symbols, values will be DATA-PROPERTY or
    ;; ACCESSOR-PROPERTY.
@@ -34,8 +34,27 @@
 	       :initarg :properties :initform nil))
   (:documentation "Builtin object prototype."))
 
-(defun object-properties (object)
-  (slot-value object 'properties))
+;;; In ECMA-262, internal slots are not object properties and they are not
+;;; inherited, and they are allocated as part of the process of creating an
+;;; object and may not be dynamically added to an object.
+;;; So choose mixin as the specific instance created in a object way.
+;;; It is misleading, but we don't need the slots provided by specific class
+;;; or they will be redundant, when we need to cast the type, fetch the value.
+(defclass -object-boolean (-object)
+  ((boolean-data :initarg :data :type boolean-raw :initform :false))
+  (:documentation "Object type constructed by new Boolean()."))
+
+(defclass -object-number (-object)
+  ((number-data :initarg :data :type number-raw :initform 0))
+  (:documentation "Object type constructed by new Number()."))
+
+(defclass -object-string (-object)
+  ((string-data :initarg :data :type string-raw :initform ""))
+  (:documentation "Object type constructed by new String()."))
+
+(defclass -object-symbol (-object)
+  ((symbol-data :initarg :data :type symbol-raw))
+  (:documentation "Object type constructed by new Symbol()."))
 
 ;;; VALUE is a form ((KEY1 :TYPE1 VALUE1) (KEY2 :TYPE2 VALUE2)).
 (defun -new-object (&optional value)
@@ -51,32 +70,83 @@
 	    (setf assoc-list (acons key property assoc-list)))))
     (make-instance '-object :properties assoc-list)))
 
+;;; We need PRINT-OBJECT methods for all mixins and original object type.
+;;; Object style: <Object: <a: 1> <b: 2>>
+;;; Boolean object style: <Boolean: <primitive-value: true>>
+;;; Number object style: <Number: <primitive-value: 3>>
+;;; String object style:
+;;; <String: <0: "s"> <1: "t"> <2: "r"> <length: 3> <primitive-value: "str">>
+;;; Symbol object style: <Symbol: <primitive-value: 'sym>>.
 (defmethod print-object ((this -object) stream)
   ;; ALIST looks like ((a . b) (c . d) (e . f)).
-  ;; Make it into form ((a b) (c d) (e f)). Sequence doesn't matter.
+  ;; Make it into form ((a b) (c d) (e f)).
   (labels ((pair-out (lst)
 	     (let ((result ()))
 	       (loop for pair in lst do
 		    (push (list (car pair) (cdr pair)) result))
 	       result)))
     (format stream "<Object:~:{ <~S: ~S>~}>"
-	    (pair-out (object-properties object)))
-    this))
+	    (pair-out (properties object))))
+  this)
+
+(defmethod print-object ((this -object-boolean) stream)
+  (format stream "<Boolean: <boolean-data: ~A>"
+	  (slot-value this 'boolean-data))
+  this)
+
+(defmethod print-object ((this -object-number) stream)
+  (format stream "<Number: <number-data: ~A>"
+	  (slot-value this 'number-data))
+  this)
+
+(defmethod print-object ((this -object-string) stream)
+  (labels ((pair-out (lst)
+	     (let ((result ()))
+	       (loop for pair in lst do
+		    (push (list (car pair) (cdr pair)) result))
+	       result)))
+    (format stream "<String:~:{ <~S: ~S>~} <string-data: ~A>>"
+	    (pair-out (properties this))
+	    (slot-value this 'string-data)))
+  this)
+
+(defmethod print-object ((this -object-symbol) stream)
+  (format stream "<Symbol: <symbol-data: ~A>"
+	  (slot-value this 'symbol-data))
+  this)
 
 (defun -object-constructor (&optional value)
   (to-object value))
 
-(defun to-object (value)
+;;; To make string slots properties.
+(defun string-to-object-properties (string)
+  "Converts a string to an assoc-list with keys indices and values chars, followed with length of string."
+  (let ((alist ())
+	(len (length string)))
+    (loop for i from 0 to (1- len) do
+	 ;; There's no raw chars in ES, make chars strings instead.
+	 (setf alist
+	       (acons (write-to-string i) (string (char string i)) alist)))
+    (setf alist (acons "length" len alist))
+    (reverse alist)))
+
+(defun -to-object (value)
+  "Abstract operation of some-type to object conversion."
   (typecase value
     (-undefined
-     )
+     (error '-type-error))
     (-null
-     )
+     (error '-type-error))
     (-boolean
-     )
+     (make-instance '-object-boolean :boolean-data (data value)))
     (-number
-     )
+     (make-instance '-object-number :number-data (data value)))
     (-string
-     )
+     (make-instance '-object-string
+		    :properties (string-to-object-properties (data value))
+		    :string-data (data value)))
     (-symbol
-     )))
+     (make-instance '-object-symbol :symbol-data (data value)))
+    ;; Won't be here.
+    (t
+     (error '-type-error))))

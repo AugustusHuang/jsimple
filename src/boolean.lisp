@@ -35,11 +35,8 @@
 	 :initarg :data :initform :false))
   (:documentation "Builtin Boolean prototype."))
 
-(defmethod intern-data ((this -boolean))
-  (slot-value this 'data))
-
 (defmethod print-object ((this -boolean) stream)
-  (format stream (if (eql (intern-data this) :true)
+  (format stream (if (eql (data this) :true)
 		     "true"
 		     "false"))
   this)
@@ -47,23 +44,24 @@
 ;;; new Boolean() constructs a object with [[PrimitiveValue]]: true.
 ;;; While Boolean() converts some thing to a boolean.
 (defun -boolean-constructor (value)
-  (to-boolean value))
+  (-to-boolean value))
 
 (defun new-boolean (value)
   (-object-constructor value))
 
-(defun to-boolean (value)
+(defun -to-boolean (value)
+  "Abstract operation of some-type to boolean conversion."
   (typecase value
     (-undefined
      (make-instance '-boolean :data :false))
     (-null
      (make-instance '-boolean :data :false))
     (-boolean
-     (make-instance '-boolean :data (intern-data value)))
+     value)
     (-number
      ;; When DATA is 0 or NaN, return FALSE.
-     (make-instance '-boolean :data (if (or (eql (intern-data value) :nan)
-					      (= (intern-data value) 0))
+     (make-instance '-boolean :data (if (or (eql (data value) :nan)
+					      (= (data value) 0))
 					:false
 					:true)))
     (-string
@@ -74,14 +72,14 @@
      (make-instance '-boolean :data :true))))
 
 (defmethod to-string ((this -boolean))
-  (if (eql (intern-data this) :true)
+  (if (eql (data this) :true)
       "true"
       "false"))
 
 (defmethod to-locale-string ((this -boolean))
-  (if (eql (intern-data this) :true)
+  (if (eql (data this) :true)
       "true"
       "false"))
 
 (defmethod value-of ((this -boolean))
-  (intern-data this))
+  (data this))
