@@ -39,13 +39,29 @@
   (-new-object-string value))
 
 (defun -to-string (value)
-  )
+  (typecase value
+    (-undefined
+     (make-instance '-string :data "undefined"))
+    (-null
+     (make-instance '-string :data "null"))
+    (-boolean
+     (make-instance '-string :data (if (eql (data value) :false)
+				       "false"
+				       "true")))
+    (-number
+     (make-instance '-string :data (write-to-string (data value))))
+    (-string
+     value)
+    (-symbol
+     (error '-type-error))
+    (-object
+     (make-instance '-string :data (-to-string (data value))))))
 
 (defmethod to-string ((this -string))
-  )
+  (data this))
 
 (defmethod to-locale-string ((this -string))
   )
 
 (defmethod value-of ((this -string))
-  )
+  (data this))
