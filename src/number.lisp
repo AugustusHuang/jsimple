@@ -42,7 +42,7 @@
 (defconstant +math-sqrt-2 (sqrt 2.0d0))
 
 ;;; Get rid of complains, use DEFPARAMETER...
-(defparameter +decimal-digits+ "1234567890")
+(defparameter +decimal-digits+ "0123456789")
 (defparameter +exponent-indicator+ "eE")
 
 (deftype number-raw ()
@@ -60,14 +60,12 @@
   (-object-number value))
 
 ;;; Helper function to parse a general number...
-;;; FIXME: Test failed...
 (defun parse-number (string)
   ;; Firstly check the first two chars, if they match 0x/0X, 0o/0O, 0b/0B,
   ;; use corresponding radix PARSE-INTEGER. Or handle decimal values.
   (declare (type string string))
-  (let ((sign 1)
-	(position 0))
-    (when (> 2 (length string))
+  (let ((sign 1))
+    (when (> (length string) 2)
       (let ((first-char (char string 0))
 	    (second-char (char string 1)))
 	(when (char= first-char #\0)
@@ -83,14 +81,17 @@
 	       (parse-integer string :start 2 :radix 2)))))))
     ;; Now we must be parsing a decimal, or NaN.
     (let ((integer-part 0)
-	  (decimal-part 0.0)
+	  (decimal-part 0.0d0)
 	  (saw-integer-digits nil)
 	  (saw-decimal-digits nil)
 	  (saw-decimal-point nil)
 	  (exponent #\E)
 	  (exponent-sign 1)
-	  (exponent-value 0))
+	  (exponent-value 0.0d0)
+	  (position 0))
       ;; Underlying methods are taken from Mezzano's reader.
+      (declare (type integer integer-part)
+	       (type double-float decimal-part exponent-value))
       (flet ((peek ()
 	       (when (< position (length string))
 		 (char string position)))
@@ -133,7 +134,7 @@
 	    ;; Now works backwards and build the decimal part.
 	    (dotimes (i (- position first-decimal))
 	      (incf decimal-part (digit-char-p (char string (- position i 1))))
-	      (setf decimal-part (/ decimal-part 10)))))
+	      (setf decimal-part (/ decimal-part 10.0d0)))))
 	;; And look for an exponent.
 	(when (find (peek) +exponent-indicator+)
 	  (setf exponent (consume))
@@ -149,14 +150,14 @@
 	  ;; Read exponent part.
 	  (loop (when (not (find (peek) +decimal-digits+))
 		  (return))
-	     (setf exponent-value (+ (* exponent-value 10)
+	     (setf exponent-value (+ (* exponent-value 10.0d0)
 				     (digit-char-p (consume))))))
 	;; Must be at the end.
 	(when (peek)
 	  (return-from parse-number (values :nan 0)))
 	(* sign
 	   (+ integer-part decimal-part)
-	   (expt 10.0 (* exponent-sign exponent-value)))))))
+	   (expt 10.0d0 (* exponent-sign exponent-value)))))))
 
 (defun -to-number (value)
   (typecase value
