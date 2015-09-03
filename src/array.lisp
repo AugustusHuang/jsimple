@@ -27,3 +27,40 @@
 (defclass -array ()
   ()
   (:documentation "Builtin array prototype."))
+
+(defclass -int8-array ()
+  ()
+  (:documentation ""))
+
+(defclass -int16-array ()
+  ()
+  (:documentation ""))
+
+(defclass -int32-array ()
+  ()
+  (:documentation ""))
+
+(defclass -float32-array ()
+  ()
+  (:documentation ""))
+
+(defclass -float64-array ()
+  ()
+  (:documentation ""))
+
+(defclass -uint8-array ()
+  ()
+  (:documentation ""))
+
+(defclass -uint8-clamped-array ()
+  ()
+  (:documentation ""))
+
+(defclass -uint16-array ()
+  ()
+  (:documentation ""))
+
+(defclass -uint32-array ()
+  ()
+  (:documentation ""))
+

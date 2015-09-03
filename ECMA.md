@@ -79,3 +79,21 @@ stage, if it is a boolean valued property or a string valued property,
 embed it into corresponding prototypes, and implement them. If it is a function
 valued property, make generic function and methods. If object valued, the type
 will be `(or object null)`.
+
+## The relation between \[\[Prototype\]\] and .prototype
+If we have a user-defined class `a`, itself is a function, so its
+`\[\[Prototype\]\]` internal slot's value is `Function.prototype`, which we
+will use `-function` to implement. A internal class won't have this internal
+attribute but store this as a property, so `Function` only have
+`Function.prototype`, which point to the class itself in order to make
+implementation easy. Now we have two classes, `b extends a`, then:  
+
+    `b\[\[Prototype\]\] === a`
+	`b.prototype === b.prototype`
+	`a\[\[Prototype\]\] === Function === Function.prototype`
+	`a.prototype === a.prototype`
+	`b.prototype\[\[Prototype\]\] === a.prototype`
+	`a.prototype\[\[Prototype\]\] === Object.prototype === Object`
+
+Here `Function.prototype === Function` and `Object.prototype === Object` is
+implementation specifical.
