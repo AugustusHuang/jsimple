@@ -41,6 +41,10 @@
 (defconstant +math-sqrt-1/2 (sqrt (/ 1.0d0 2.0d0)))
 (defconstant +math-sqrt-2 (sqrt 2.0d0))
 
+;;; Get rid of complains, use DEFPARAMETER...
+(defparameter +decimal-digits+ "1234567890")
+(defparameter +exponent-indicator+ "eE")
+
 (deftype number-raw ()
   `(and double-float (member :nan :infinity :-infinity)))
 
@@ -79,7 +83,7 @@
 	       (parse-integer string :start 2 :radix 2)))))))
     ;; Now we must be parsing a decimal, or NaN.
     (let ((integer-part 0)
-	  (decimal-part 0.0d0)
+	  (decimal-part 0.0)
 	  (saw-integer-digits nil)
 	  (saw-decimal-digits nil)
 	  (saw-decimal-point nil)
@@ -152,7 +156,7 @@
 	  (return-from parse-number (values :nan 0)))
 	(* sign
 	   (+ integer-part decimal-part)
-	   (expt 10.0d0 (* exponent-sign exponent-value)))))))
+	   (expt 10.0 (* exponent-sign exponent-value)))))))
 
 (defun -to-number (value)
   (typecase value

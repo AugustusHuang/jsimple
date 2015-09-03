@@ -49,7 +49,9 @@
 				       "false"
 				       "true")))
     (-number
-     (make-instance '-string :data (write-to-string (data value))))
+     (make-instance '-string :data (if (eql (data value) :nan)
+				       "NaN"
+				       (write-to-string (data value)))))
     (-string
      value)
     (-symbol
