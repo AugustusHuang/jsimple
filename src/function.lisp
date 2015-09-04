@@ -31,30 +31,10 @@
 ;;; it will be parsed into !this-type, and then the problem will be trivial...
 ;;; See builtin-util.lisp
 
+(defclass -function-prototype ()
+  ()
+  (:documentation ""))
+
 (defclass -function ()
-  ((constructor :reader constructor :type string
-		:initarg :constructor :initform "Function")
-   (data :accessor data :type string
-	 :initarg :data :initform "Anonymous"))
-  (:documentation "Builtin function prototype."))
-
-(defmethod intern-data ((this -function))
-  )
-
-(defmethod print-object ((this -function) stream)
-  )
-
-(defun -new-function ()
-  )
-
-(defun -function-constructor (name &rest args definition)
-  )
-
-(defmethod to-string ((this -function))
-  )
-
-(defmethod to-locale-string ((this -function))
-  )
-
-(defmethod value-of ((this -function))
-  )
+  ()
+  (:documentation ""))

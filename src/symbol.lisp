@@ -27,10 +27,26 @@
 (deftype symbol-raw ()
   'symbol)
 
+;;; Well known symbols are built-in symbol values are typically used
+;;; as the keys of properties. -- ECMA V6.
+;;; In order to make each symbol immutable, make a global symbol hashtable...
+
+(defparameter *global-symbol-registry*
+  (make-hash-table :test 'eql))
+
 (defclass -symbol ()
-  ()
+  ((constructor :reader constructor :type function
+		:initarg :constructor :initform #'-new-symbol
+		:allocation class)
+   (description :type (or -undefined -string) :initarg :description
+		:initform :undefined))
   (:documentation "Builtin symbol prototype."))
 
+(defmethod print-object ((this -symbol) stream)
+  )
+
+;;; XXX: Symbol is not allowed to be called with new, neither can it be used
+;;; as a superclass...
 (defun -new-symbol (value)
   (-new-object-symbol value))
 
@@ -45,3 +61,4 @@
 
 (defmethod value-of ((this -string))
   )
+

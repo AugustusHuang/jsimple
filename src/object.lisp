@@ -23,64 +23,65 @@
 
 (in-package :jsimple-builtin)
 
-;;; Object related builtin functions.
-(defclass -object ()
-  ((constructor :reader constructor :type function
-		:initarg :constructor :initform #'-new-object
-		:allocation class)
-   ;; Keys will be strings or symbols, values will be DATA-PROPERTY or
-   ;; ACCESSOR-PROPERTY.
-   (properties :accessor properties :type (or list null)
-	       :initarg :properties :initform nil))
-  (:documentation "Builtin object prototype."))
-
 ;;; In ECMA-262, internal slots are not object properties and they are not
 ;;; inherited, and they are allocated as part of the process of creating an
 ;;; object and may not be dynamically added to an object.
-;;; So choose mixin as the specific instance created in a object way.
-;;; It is misleading, but we don't need the slots provided by specific class
-;;; or they will be redundant, when we need to cast the type, fetch the value.
-(defclass -object-boolean (-object)
-  ((boolean-data :initarg :data :type boolean-raw :initform :false))
-  (:documentation "Object type constructed by new Boolean()."))
 
-(defclass -object-number (-object)
-  ((number-data :initarg :data :type number-raw :initform 0))
-  (:documentation "Object type constructed by new Number()."))
+;;; An ordinary object is made up by a prototype part and an internal part,
+;;; prototype part is inherited as prototype, but internal part is only
+;;; accessible by internal methods or print methods, users can't alter them.
 
-(defclass -object-string (-object)
-  ((string-data :initarg :data :type string-raw :initform ""))
-  (:documentation "Object type constructed by new String()."))
+;;; %ObjectPrototype% Object Prototype Object: [[Prototype]] = null,
+;;; [[Extensible]] = true, constructor = %Object%, hasOwnProperty = t,
+;;; isPrototypeOf = t, propertyIsEnumerable = t, toLocaleString = t,
+;;; toString = t, valueOf = t.
+(defclass -object-prototype ()
+  ((prototype :type (or symbol -null)
+	      :initarg :prototype
+	      :initform :null)
+   (extensible :type (or boolean-raw -undefined)
+	       :initarg :extensible
+	       :iniform :true)
+   (own-properties :accessor own :type (or null list)
+		   :initarg :own
+		   ;; If we want to refer to a class, use symbol name, and
+		   ;; use FIND-CLASS to get the corresponding class.
+		   :initform '((constructor . -object) (has-own-property . t)
+			       (is-prototype-of . t)
+			       (property-is-enumerable . t)
+			       (to-locale-string . t) (to-string . t)
+			       (value-of . t)))
+   (inherit-properties :accessor inherit :type (or null list)
+		       :initarg :inherit
+		       :initform nil))
+  (:documentation "Object prototype, provides inherited properties."))
 
-(defclass -object-symbol (-object)
-  ((symbol-data :initarg :data :type symbol-raw))
-  (:documentation "Object type constructed by new Symbol()."))
-
-;;; VALUE is a form ((KEY1 :TYPE1 VALUE1) (KEY2 :TYPE2 VALUE2)).
-(defun -new-object (&optional value)
-  (let ((assoc-list ()))
-    (dolist (key-value value)
-      (let* ((key (first key-value))
-	     (value (third key-value))
-	     (property (make-property :value value)))
-	;; If we found a defined property, replace it with a new CDR.
-	;; Else push a new property onto ASSOC-LIST.
-	(if (cdr (assoc key assoc-list))
-	    (rplacd (assoc key assoc-list) property)
-	    (setf assoc-list (acons key property assoc-list)))))
-    (make-instance '-object :properties assoc-list)))
-
-(defun -new-object-boolean (value)
-  )
-
-(defun -new-object-number (value)
-  )
-
-(defun -new-object-string (value)
-  )
-
-(defun -new-object-symbol (value)
-  )
+;;; %Object% Object Constructor: [[Prototype]] = %FunctionPrototype%,
+;;; [[Extensible]] = undefined, length = 1, assign = t, create = t,
+;;; defineProperties = t, defineProperty = t, freeze = t,
+;;; getOwnPropertyDescriptor = t, getOwnPropertyNames = t,
+;;; getOwnPropertySymbols = t, getPrototypeOf = t, is = t, isExtensible = t,
+;;; isFrozen = t, isSealed = t, keys = t, preventExtensions = t, seal = t,
+;;; prototype = %ObjectPrototype%, seal = t, setPrototypeOf = t.
+(defclass -object ()
+  ((prototype :type (or symbol -null)
+	      :initarg :prototype :initform '-function)
+   (extensible :type (or boolean-raw -undefined)
+	       :initarg :extensible
+	       :initform :true)
+   (properties :accessor properties :type (or null list)
+	       :initarg :properties
+	       :initform '((length . 1) (prototype . -object-prototype)
+			   (assign . t) (create . t) (define-properties . t)
+			   (define-property . t) (freeze . t)
+			   (get-own-property-descriptor . t)
+			   (get-own-property-names . t)
+			   (get-own-property-symbols . t)
+			   (get-prototype-of . t)
+			   (is . t) (is-extensible . t) (is-frozen . t)
+			   (is-sealed . t) (keys . t) (prevent-extensions . t)
+			   (seal . t) (set-prototype-of . t))))
+  (:documentation "Object constructor, used with new operator."))
 
 ;;; We need PRINT-OBJECT methods for all mixins and original object type.
 ;;; Object style: <Object: <a: 1> <b: 2>>
@@ -89,7 +90,7 @@
 ;;; String object style:
 ;;; <String: <0: "s"> <1: "t"> <2: "r"> <length: 3> <primitive-value: "str">>
 ;;; Symbol object style: <Symbol: <primitive-value: 'sym>>.
-(defmethod print-object ((this -object) stream)
+(defmethod print-object ((this -object-prototype) stream)
   ;; ALIST looks like ((a . b) (c . d) (e . f)).
   ;; Make it into form ((a b) (c d) (e f)).
   (labels ((pair-out (lst)
@@ -98,34 +99,7 @@
 		    (push (list (car pair) (cdr pair)) result))
 	       result)))
     (format stream "<Object:~:{ <~S: ~S>~}>"
-	    (pair-out (properties object))))
-  this)
-
-(defmethod print-object ((this -object-boolean) stream)
-  (format stream "<Boolean: <boolean-data: ~A>"
-	  (slot-value this 'boolean-data))
-  this)
-
-(defmethod print-object ((this -object-number) stream)
-  (format stream "<Number: <number-data: ~A>"
-	  (slot-value this 'number-data))
-  this)
-
-(defmethod print-object ((this -object-string) stream)
-  (labels ((pair-out (lst)
-	     (let ((result ()))
-	       (loop for pair in lst do
-		    (push (list (car pair) (cdr pair)) result))
-	       result)))
-    (format stream "<String:~:{ <~S: ~S>~} <string-data: ~A>>"
-	    (pair-out (properties this))
-	    (slot-value this 'string-data)))
-  this)
-
-(defmethod print-object ((this -object-symbol) stream)
-  (format stream "<Symbol: <symbol-data: ~A>"
-	  (slot-value this 'symbol-data))
-  this)
+	    (pair-out (properties this)))))
 
 ;;; To make string slots properties.
 (defun string-to-object-properties (string)
@@ -159,3 +133,48 @@
     ;; Won't be here.
     (t
      (error '-type-error))))
+
+;;; Internal methods.
+(defmethod -get-prototype-of ((this -object-prototype))
+  )
+
+(defmethod -set-prototype-of ((this -object-prototype) proto)
+  )
+
+(defmethod -is-extensible ((this -object-prototype))
+  )
+
+(defmethod -prevent-extensions ((this -object-prototype))
+  )
+
+(defmethod -get-own-property ((this -object-prototype) key)
+  )
+
+(defmethod -has-property ((this -object-prototype) key)
+  )
+
+(defmethod -get ((this -object-prototype) key receiver)
+  )
+
+(defmethod -set ((this -object-prototype) key value receiver)
+  )
+
+(defmethod -delete ((this -object-prototype) key)
+  )
+
+(defmethod -define-own-property ((this -object-prototype) key descriptor)
+  )
+
+(defmethod -enumerate ((this -object-prototype))
+  )
+
+(defmethod -own-property-keys ((this -object-prototype))
+  )
+
+;;; Object property methods and Object prototype property methods.
+;;; Since Object is called without THIS, define them as functions...
+(defun assign (target &rest sources)
+  )
+
+(defun create (object &optional property-list)
+  )

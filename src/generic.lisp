@@ -25,6 +25,78 @@
 
 ;;;; Generic methods definitions, since some of them will be used by different
 ;;;; types, move it into an one and only place.
+(defgeneric -get-prototype-of (this)
+  (:documentation "Determine the object that provides inherited properties
+for this object. A :NULL value indicates that there are not inherited
+properties."))
+
+(defgeneric -set-prototype-of (this object)
+  (:documentation "Associate this object with another object that provides
+inherited properties. Passing :NULL indicates that there are no inherited
+properties. Returns :TRUE indicating that the operation was completed
+successfully or :FALSE indicating that the operation was not successful."))
+
+(defgeneric -is-extensible (this)
+  (:documentation "Determine whether it is permitted to add additional
+properties to this object."))
+
+(defgeneric -prevent-extensions (this)
+  (:documentation "Control whether new properties may be added to this object.
+Returns :TRUE if the operation was successful of :FALSE if the operation was
+unsuccessful."))
+
+(defgeneric -get-own-property (this key)
+  (:documentation "Return a property descriptor for the own property of this
+object whose key is KEY, or :UNDEFINED if no such property exists."))
+
+(defgeneric -has-property (this key)
+  (:documentation "Return a Boolean value indicating whether this object
+already has either an own or inherited property whose key is KEY."))
+
+(defgeneric -get (this key receiver)
+  (:documentation "Return the value of the property whose key is KEY from this
+object. If any code must be executed to retrieve the property value, RECEIVER
+is used as the 'this' value when evaluating the code."))
+
+(defgeneric -set (this key value receiver)
+  (:documentation "Set the value of the property whose key is KEY to VALUE. If
+any code must be executed to set the property value, RECEIVER is used as the
+'this' value when evaluating the code. Returns :TRUE if the property value was
+set or :FALSE if it could not be set."))
+
+(defgeneric -delete (this key)
+  (:documentation "Remove the own property whose key is KEY from this object.
+Return :FALSE if the property was not deleted and is still present. Return
+:TRUE if the property was deleted or is not present."))
+
+(defgeneric -define-own-property (this key descriptor)
+  (:documentation "Create or alter the own property, whose key is KEY, to have
+the state described by DESCRIPTOR. Return :TRUE if that property was
+successfully created/updated or :FALSE if the property could not be created
+or updated."))
+
+(defgeneric -enumerate (this)
+  (:documentation "Return an iterator object that produces the keys of the
+string-keyed enumerable properties of the object."))
+
+(defgeneric -own-property-keys (this)
+  (:documentation "Return a list whose elements are all of the own property
+keys for the object."))
+
+(defgeneric -call (this &rest args)
+  (:documentation "Executes code associated with this object. Invoked via a
+function call expression. The arguments to the internal method are a 'this'
+value and a list containing the arguments passed to the function by a call
+expression. Objects that implement this internal method are callable."))
+
+(defgeneric -construct (this args object)
+  (:documentation "Creates an object. Invoked via the 'new' or 'super'
+operators. The first argument to the internal method is a list containing the
+arguments of the operator. The second argument is the object to which the 'new'
+operator was initially applied. Objects that implement this internal method
+are called constructors. A function object is not necessarily a constructor
+and such non-constructor function objects do not have a [[Construct]] internal
+method."))
 
 ;;; Here when we are facing error, we mean all kinds of errors,
 ;;; so EvalError will have the same generic functions set as Error.

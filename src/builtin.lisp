@@ -38,17 +38,19 @@
 (deftype -null ()
   `(satisfies null-p))
 
-(deftype +js-types+ ()
-  `(or -undefined -null -boolean -number -symbol -string -object))
+;;; OBJECT-RAW should be a assoc list.
+(deftype +js-value-types+ ()
+  `(or -undefined -null boolean-raw number-raw symbol-raw string-raw
+       object-raw))
 
-(deftype +js-primitive-value+ ()
-  `(or -undefined -null -boolean -number -symbol -string))
+(deftype +js-primitive-value-types+ ()
+  `(or -undefined -null boolean-raw number-raw symbol-raw string-raw))
 
 ;;; In an object, property list is an associative list with CARs keys (symbols
 ;;; or strings) and CDRs property structures.
 (defstruct property
   ;; The value retrieved by a get access of the property.
-  (value :undefined :type +js-type+)
+  (value :undefined :type +js-value-types+)
   ;; If not :UNDEFINED must be a function object, in this implementation,
   ;; function is an object, but has parallel status, so there's no way to
   ;; be both function and object. The function's [[Call]] method is called
