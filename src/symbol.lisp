@@ -31,9 +31,8 @@
 ;;; as the keys of properties. -- ECMA V6.
 (defclass -symbol-prototype (-object-prototype)
   ((-prototype :initform '-object-prototype :allocation :class)
-   (-extensible :allocation :class)
    (-symbol-data :type symbol-raw :initarg :-symbol-data)
-   (constructor :initform '-symbol :allocation :class)
+   (constructor :initform (make-property :value '-symbol) :allocation :class)
    (own-properties
     :initform '((to-primitive . (make-property :value 'to-primitive
 				 :configurable :true))
@@ -50,7 +49,7 @@
   ((-prototype :initform '-function-prototype :allocation :class)
    (-extensible :initform :false :allocation :class)
    (length :initform (make-property :value 0) :allocation :class)
-   (prototype :type (or symbol -null) :accessor prototype
+   (prototype :type (or property -null) :accessor prototype
 	      :initarg :prototype :initform (make-property :value '-symbol-prototype)
 	      :allocation :class)
    (own-properties

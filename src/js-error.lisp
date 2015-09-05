@@ -24,47 +24,151 @@
 (in-package :jsimple-builtin)
 
 ;;;; Error related definitions and methods.
+(defclass -error-prototype (-object-prototype)
+  ((-prototype :initform '-object-prototype :allocation :class)
+   (-extensible :allocation :class)
+   (-error-data :type -undefined :initarg :-error-data :initform :undefined)
+   (constructor :initform (make-property :value '-error) :allocation :class)
+   (own-properties :initform '((message . (make-property :value ""))
+			       (name . (make-property :value "Error")))
+		   :allocation :class)
+   (inherit-properties
+    :initform (append (fetch-own-properties (find-class '-object-prototype))
+		      (fetch-inherit-properties (find-class '-object-prototype)))
+    :allocation :class))
+  (:documentation "Error prototype, provides inherited properties."))
 
-(defclass js-error ()
-  ((message :initarg :message :type string :initform "" :accessor message)
-   (name :initarg :name :type string :initform "Error" :accessor name))
-  (:documentation "Error prototype, will be the superclass of all errors."))
+(defclass -error (-function-prototype)
+  ((-prototype :initform '-function-prototype :allocation :class)
+   (-extensible :allocation :class)
+   (length :initform (make-property :value 1) :accessor length
+	   :allocation :class)
+   (prototype :type (or property -null) :allocation :class :accessor prototype
+	      :initarg :prototype
+	      :initform (make-property :value '-error-prototype))
+   (own-properties :initform nil :allocation :class)
+   (inherit-properties
+    :initform (append (fetch-own-properties (find-class '-function-prototype))
+		      (fetch-inherit-properties (find-class '-function-prototype)))
+    :allocation :class))
+  (:documentation "Error constructor."))
 
-(defmethod js-message ((this js-error))
-  (slot-value this 'message))
+;;; Now we handle all kinds of errors the same way. It can be merged
+;;; into Lisp style condition system.
+(defclass -eval-error-prototype (-error-prototype)
+  ((-prototype :initform '-error-prototype :allocation :class)
+   (constructor :initform (make-property :value '-eval-error)
+		:allocation :class))
+  (:documentation "Evaluation error prototype."))
 
-(defmethod js-name ((this js-error))
-  (slot-value this 'name))
-
-(defmethod js-to-string ((this js-error))
-  (concatenate 'string (js-name this) ": " (js-message this)))
-
-;;; Now we handle all kinds of errors the same way. But it can be merged
-;;; into Lisp style condition system. Someday it will do.
-(defclass js-eval-error (js-error)
-  ()
+(defclass -eval-error (-error)
+  ((-prototype :initform '-error :allocation :class)
+   (prototype :initform (make-property :value '-eval-error-prototype)
+	      :allocation :class))
   (:documentation "Evaluation error. Currently not used."))
 
-(defclass js-range-error (js-error)
-  ()
+(defclass -range-error-prototype (-error-prototype)
+  ((-prototype :initform '-error-prototype :allocation :class)
+   (constructor :initform (make-property :value '-range-error)
+		:allocation :class))
+  (:documentation "Range error prototype."))
+
+(defclass -range-error (-error)
+  ((-prototype :initform '-error :allocation :class)
+   (prototype :initform (make-property :value '-range-error-prototype)
+	      :allocation :class))
   (:documentation "Range error. Indicates a value that is not in the set or
 range of allowable values."))
 
-(defclass js-reference-error (js-error)
-  ()
+(defclass -reference-error-prototype (-error-prototype)
+  ((-prototype :initform '-error-prototype :allocation :class)
+   (constructor :initform (make-property :value '-reference-error)
+		:allocation :class))
+  (:documentation "Reference error prototype."))
+
+(defclass -reference-error (-error)
+  ((-prototype :initform '-error :allocation :class)
+   (prototype :initform (make-property :value '-reference-error-prototype)
+	      :allocation :class))
   (:documentation "Reference error. Indicates that an invalid reference value
 has been detected."))
 
-(defclass js-syntax-error (js-error)
-  ()
+(defclass -syntax-error-prototype (-error-prototype)
+  ((-prototype :initform '-error-prototype :allocation :class)
+   (constructor :initform (make-property :value '-syntax-error)
+		:allocation :class))
+  (:documentation "Syntax error prototype."))
+
+(defclass -syntax-error (-error)
+  ((-prototype :initform '-error :allocation :class)
+   (prototype :initform (make-property :value '-syntax-error-prototype)
+	      :allocation :class))
   (:documentation "Syntax error. Indicates that a parsing error has occured."))
 
-(defclass js-type-error (js-error)
-  ()
+(defclass -type-error-prototype (-error-prototype)
+  ((-prototype :initform '-error-prototype :allocation :class)
+   (constructor :initform (make-property :value '-type-error)
+		:allocation :class))
+  (:documentation "Type error prototype."))
+
+(defclass -type-error (-error)
+  ((-prototype :initform '-error :allocation :class)
+   (prototype :initform (make-property :value '-type-error-prototype)
+	      :allocation :class))
   (:documentation "Type error. Indicates the actual type of an operand is
 different than the expected type."))
 
-(defclass js-uri-error (js-error)
-  ()
+(defclass -uri-error-prototype (-error-prototype)
+  ((-prototype :initform '-error-prototype :allocation :class)
+   (constructor :initform (make-property :value '-uri-error)
+		:allocation :class))
+  (:documentation "URI error prototype."))
+
+(defclass -uri-error (-error)
+  ((-prototype :initform '-error :allocation :class)
+   (prototype :initform (make-property :value '-uri-error-prototype)
+	      :allocation :class))
   (:documentation "URI error. Indicates that one of the global URI handling
 functions was used in a way that is incompatible with its definition."))
+
+(defmethod print-object ((this -error-prototype) stream)
+  )
+
+(defmethod print-object ((this -eval-error-prototype) stream)
+  )
+
+(defmethod print-object ((this -range-error-prototype) stream)
+  )
+
+(defmethod print-object ((this -reference-error-prototype) stream)
+  )
+
+(defmethod print-object ((this -syntax-error-prototype) stream)
+  )
+
+(defmethod print-object ((this -type-error-prototype) stream)
+  )
+
+(defmethod print-object ((this -uri-error-prototype) stream)
+  )
+
+(defmethod to-string ((this -error-prototype))
+  )
+
+(defmethod to-string ((this -eval-error-prototype))
+  )
+
+(defmethod to-string ((this -range-error-prototype))
+  )
+
+(defmethod to-string ((this -reference-error-prototype))
+  )
+
+(defmethod to-string ((this -syntax-error-prototype))
+  )
+
+(defmethod to-string ((this -type-error-prototype))
+  )
+
+(defmethod to-string ((this -uri-error-prototype))
+  )

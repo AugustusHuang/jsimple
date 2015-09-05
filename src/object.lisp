@@ -77,7 +77,6 @@
 (defclass -object (-function-prototype)
   ((-prototype :initform '-function-prototype :allocation :class)
    ;; Extensible is the same.
-   (-extensible :allocation :class)
    (length :initform (make-property :value 1) :allocation :class)
    (prototype :type (or symbol -null) :accessor prototype
 	      :initarg :prototype :allocation :class

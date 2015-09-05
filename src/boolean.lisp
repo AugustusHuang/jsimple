@@ -30,7 +30,6 @@
 (defclass -boolean-prototype (-object-prototype)
   ((-prototype :initform '-object-prototype :allocation :class)
    ;; Extensible is the same.
-   (-extensible :allocation :class)
    (-boolean-data :type boolean-raw :initarg :-boolean-data)
    (constructor :initform (make-property :value '-boolean) :allocation :class)
    (own-properties :initform nil :allocation :class)
@@ -42,10 +41,10 @@
 (defclass -boolean (-function-prototype)
   ((-prototype :initform '-function-prototype :allocation :class)
    ;; Extensible is the same.
-   (-extensible :allocation :class)
    (length :initform (make-property :value 1) :allocation :class)
-   (prototype :type (or symbol -null) :accessor prototype :allocation :class
-	      :initarg :prototype :initform (make-property :value '-boolean-prototype))
+   (prototype :type (or property -null) :accessor prototype :allocation :class
+	      :initarg :prototype
+	      :initform (make-property :value '-boolean-prototype))
    (own-properties :initform nil :allocation :class)
    (inherit-properties
     :initform (append (fetch-own-properties (find-class '-function-prototype))
