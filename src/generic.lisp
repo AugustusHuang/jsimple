@@ -98,9 +98,23 @@ are called constructors. A function object is not necessarily a constructor
 and such non-constructor function objects do not have a [[Construct]] internal
 method."))
 
-;;; Here when we are facing error, we mean all kinds of errors,
-;;; so EvalError will have the same generic functions set as Error.
-;;; EvalError, RangeError, ReferenceError, SyntaxError, TypeError, URIError.
+(defgeneric has-own-property (this value)
+  (:documentation ""))
+
+(defgeneric is-prototype-of (this value)
+  (:documentation ""))
+
+(defgeneric property-is-enumerable (this value)
+  (:documentation ""))
+
+(defgeneric to-locale-string (this)
+  (:documentation ""))
+
+(defgeneric to-string (this)
+  (:documentation ""))
+
+(defgeneric value-of (this)
+  (:documentation "Return a type converted value of THIS."))
 
 ;;; Only include those multi-class generic methods.
 (defgeneric js-add (this value)

@@ -76,3 +76,12 @@
 	(setf result (string-downcase result :end 1)))
     result))
 
+;;; To get the owned and inherited property list fast, use this method.
+;;; FIXME: Another better one?
+(defgeneric fetch-own-properties (this)
+  (:documentation "Fetch the OWN-PROPERTIES slot from a class object, create
+an instance of the class object and fetch its slot."))
+
+(defgeneric fetch-inherit-properties (this)
+  (:documentation "Fetch the INHERIT-PROPERTIES slot from a class object,
+create an instance of the class object and fetch its slot."))
