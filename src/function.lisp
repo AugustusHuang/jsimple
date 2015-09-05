@@ -39,16 +39,15 @@
 	   :initarg :length :initform (make-property :value 0))
    (name :type (or property -null) :accessor name :allocation :class
 	 :initarg :name :initform (make-property :value ""))
-   (own-properties
-    :initform '((apply . (make-property :value 'apply))
-		(bind . (make-property :value 'bind))
-		(call . (make-property :value 'call))
-		;; 'name' property of this function is
-		;; "[Symbol.hasInstance]".
-		(has-instance . (make-property :value 'has-instance)))
-    :allocation :class)
-   (inherit-properties
-    :initform (fetch-own-properties (find-class '-object-prototype))
+   (properties
+    :initform
+    (append (fetch-properties (find-class '-object-prototype))
+	    '((apply . (make-property :value 'apply))
+	      (bind . (make-property :value 'bind))
+	      (call . (make-property :value 'call))
+	      ;; 'name' property of this function is
+	      ;; "[Symbol.hasInstance]".
+	      (has-instance . (make-property :value 'has-instance))))
     :allocation :class))
   (:documentation "Function prototype, provides inherited properties."))
 
@@ -60,10 +59,8 @@
    (prototype :type (or property -null) :accessor prototype
 	      :initarg :prototype :initform (make-property :value '-function-prototype)
 	      :allocation :class)
-   (own-properties :initform nil :allocation :class)
-   (inherit-properties
-    :initform (append (fetch-own-properties (find-class '-function-prototype))
-		      (fetch-inherit-properties (find-class '-function-prototype)))
+   (properties
+    :initform (fetch-properties (find-class '-function-prototype))
     :allocation :class))
   (:documentation "Function constructor, used with new operator."))
 
@@ -101,16 +98,10 @@ all function instances."))
 
 ;;; Helper functions.
 (defmethod fetch-own-properties ((this -function-prototype))
-  (own-properties (make-instance (class-name this))))
+  (properties (make-instance (class-name this))))
 
 (defmethod fetch-own-properties ((this -function))
-  (own-properties (make-instance (class-name this))))
-
-(defmethod fetch-inherit-properties ((this -function-prototype))
-  (inherit-properties (make-instance (class-name this))))
-
-(defmethod fetch-inherit-properties ((this -function))
-  (inherit-properties (make-instance (class-name this))))
+  (properties (make-instance (class-name this))))
 
 (defmethod -get-prototype-of ((this -function-prototype))
   )
@@ -158,7 +149,8 @@ all function instances."))
 (defmethod call ((this -function-prototype) this-arg &rest args)
   )
 
-(defmethod to-string ((this -function-prototype))
+(defmethod to-string ((this -function-prototype) &optional radix)
+  (declare (ignore radix))
   )
 
 (defmethod has-instance ((this -function-prototype) value)

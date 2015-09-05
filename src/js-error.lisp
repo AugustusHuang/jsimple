@@ -29,12 +29,11 @@
    (-extensible :allocation :class)
    (-error-data :type -undefined :initarg :-error-data :initform :undefined)
    (constructor :initform (make-property :value '-error) :allocation :class)
-   (own-properties :initform '((message . (make-property :value ""))
-			       (name . (make-property :value "Error")))
-		   :allocation :class)
-   (inherit-properties
-    :initform (append (fetch-own-properties (find-class '-object-prototype))
-		      (fetch-inherit-properties (find-class '-object-prototype)))
+   (properties
+    :initform
+    (append (fetch-properties (find-class '-object-prototype))
+	    '((message . (make-property :value ""))
+	      (name . (make-property :value "Error"))))
     :allocation :class))
   (:documentation "Error prototype, provides inherited properties."))
 
@@ -46,10 +45,8 @@
    (prototype :type (or property -null) :allocation :class :accessor prototype
 	      :initarg :prototype
 	      :initform (make-property :value '-error-prototype))
-   (own-properties :initform nil :allocation :class)
-   (inherit-properties
-    :initform (append (fetch-own-properties (find-class '-function-prototype))
-		      (fetch-inherit-properties (find-class '-function-prototype)))
+   (properties
+    :initform (fetch-properties (find-class '-function-prototype))
     :allocation :class))
   (:documentation "Error constructor."))
 
@@ -131,6 +128,48 @@ different than the expected type."))
   (:documentation "URI error. Indicates that one of the global URI handling
 functions was used in a way that is incompatible with its definition."))
 
+(defmethod fetch-properties ((this -error-prototype))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -error))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -eval-error-prototype))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -eval-error))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -range-error-prototype))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -range-error))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -reference-error-prototype))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -reference-error))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -syntax-error-prototype))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -syntax-error))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -type-error-prototype))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -type-error))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -uri-error-prototype))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -uri-error))
+  (properties (make-instance (class-name this))))
+
 (defmethod print-object ((this -error-prototype) stream)
   )
 
@@ -152,23 +191,30 @@ functions was used in a way that is incompatible with its definition."))
 (defmethod print-object ((this -uri-error-prototype) stream)
   )
 
-(defmethod to-string ((this -error-prototype))
+(defmethod to-string ((this -error-prototype) &optional radix)
+  (declare (ignore radix))
   )
 
-(defmethod to-string ((this -eval-error-prototype))
+(defmethod to-string ((this -eval-error-prototype) &optional radix)
+  (declare (ignore radix))
   )
 
-(defmethod to-string ((this -range-error-prototype))
+(defmethod to-string ((this -range-error-prototype) &optional radix)
+  (declare (ignore radix))
   )
 
-(defmethod to-string ((this -reference-error-prototype))
+(defmethod to-string ((this -reference-error-prototype) &optional radix)
+  (declare (ignore radix))
   )
 
-(defmethod to-string ((this -syntax-error-prototype))
+(defmethod to-string ((this -syntax-error-prototype) &optional radix)
+  (declare (ignore radix))
   )
 
-(defmethod to-string ((this -type-error-prototype))
+(defmethod to-string ((this -type-error-prototype) &optional radix)
+  (declare (ignore radix))
   )
 
-(defmethod to-string ((this -uri-error-prototype))
+(defmethod to-string ((this -uri-error-prototype) &optional radix)
+  (declare (ignore radix))
   )

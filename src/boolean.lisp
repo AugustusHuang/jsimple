@@ -32,9 +32,8 @@
    ;; Extensible is the same.
    (-boolean-data :type boolean-raw :initarg :-boolean-data)
    (constructor :initform (make-property :value '-boolean) :allocation :class)
-   (own-properties :initform nil :allocation :class)
-   (inherit-properties
-    :initform (fetch-own-properties (find-class '-object-prototype))
+   (properties
+    :initform (fetch-properties (find-class '-object-prototype))
     :allocation :class))
   (:documentation "Boolean prototype, provides inherited properties."))
 
@@ -45,24 +44,16 @@
    (prototype :type (or property -null) :accessor prototype :allocation :class
 	      :initarg :prototype
 	      :initform (make-property :value '-boolean-prototype))
-   (own-properties :initform nil :allocation :class)
-   (inherit-properties
-    :initform (append (fetch-own-properties (find-class '-function-prototype))
-		      (fetch-inherit-properties (find-class '-function-prototype)))
+   (properties
+    :initform (fetch-properties (find-class '-function-prototype))
     :allocation :class))
   (:documentation "Boolean constructor, used with new operator."))
 
-(defmethod fetch-own-properties ((this -boolean-prototype))
-  (own-properties (make-instance (class-name this))))
+(defmethod fetch-properties ((this -boolean-prototype))
+  (properties (make-instance (class-name this))))
 
-(defmethod fetch-own-properties ((this -boolean))
-  (own-properties (make-instance (class-name this))))
-
-(defmethod fetch-inherit-properties ((this -boolean-prototype))
-  (inherit-properties (make-instance (class-name this))))
-
-(defmethod fetch-inherit-properties ((this -boolean))
-  (inherit-properties (make-instance (class-name this))))
+(defmethod fetch-properties ((this -boolean))
+  (properties (make-instance (class-name this))))
 
 (defmethod print-object ((this -boolean-prototype) stream)
   (format stream (if (eql (slot-value this '-boolean-data) :true)
@@ -111,11 +102,12 @@
 (defmethod -construct ((this -boolean) args object)
   )
 
-(defmethod to-string ((this -boolean-prototype))
+(defmethod to-string ((this -boolean-prototype) &optional radix)
+  (declare (ignore radix))
   (if (eql (slot-value this '-boolean-data) :true)
       "true"
       "false"))
 
-(defmethod value-of ((this -boolean))
-  (slot this -boolean-data))
+(defmethod value-of ((this -boolean-prototype))
+  (slot-value this '-boolean-data))
 

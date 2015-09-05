@@ -34,14 +34,12 @@
    (-symbol-data :type symbol-raw :initarg :-symbol-data)
    (constructor :initform (make-property :value '-symbol) :allocation :class)
    (own-properties
-    :initform '((to-primitive . (make-property :value 'to-primitive
-				 :configurable :true))
-		(to-string-tag . (make-property :value "Symbol"
-				  :configurable :true)))
-    :allocation :class)
-   (inherit-properties
-    :initform (append (fetch-own-properties (find-class '-object-prototype))
-		      (fetch-inherit-properties (find-class '-object-prototype)))
+    :initform
+    (append (fetch-properties (find-class '-object-prototype))
+	    '((to-primitive . (make-property :value 'to-primitive
+			       :configurable :true))
+	      (to-string-tag . (make-property :value "Symbol"
+				:configurable :true))))
     :allocation :class))
   (:documentation "Symbol prototype, provides inherited properties."))
 
@@ -53,30 +51,29 @@
 	      :initarg :prototype :initform (make-property :value '-symbol-prototype)
 	      :allocation :class)
    (own-properties
-    :initform '((for . (make-property :value 'key))
-		(has-instance . (make-property :value 'has-instance))
-		(is-concat-spreadable . (make-property :value 'is-concat-spreadable))
-		(iterator . (make-property :value 'iterator))
-		(key-for . (make-property :value 'key-for))
-		(match . (make-property :value 'match))
-		(replace . (make-property :value 'replace))
-		(search . (make-property :value 'search))
-		(species . (make-property :value 'species))
-		(split . (make-property :value 'split))
-		(to-primitive . (make-property :value 'to-primitive))
-		(to-string-tag . (make-property :value 'to-string-tag))
-		(unscopables . (make-property :value 'unscopables)))
-    :allocation :class)
-   (inherit-properties
-    :initform (append (fetch-own-properties (find-class '-function-prototype))
-		      (fetch-inherit-properties (find-class '-function-prototype)))
+    :initform
+    (append (fetch-properties (find-class '-function-prototype))
+	    '((for . (make-property :value 'key))
+	      (has-instance . (make-property :value 'has-instance))
+	      (is-concat-spreadable . (make-property :value 'is-concat-spreadable))
+	      (iterator . (make-property :value 'iterator))
+	      (key-for . (make-property :value 'key-for))
+	      (match . (make-property :value 'match))
+	      (replace . (make-property :value 'replace))
+	      (search . (make-property :value 'search))
+	      (species . (make-property :value 'species))
+	      (split . (make-property :value 'split))
+	      (to-primitive . (make-property :value 'to-primitive))
+	      (to-string-tag . (make-property :value 'to-string-tag))
+	      (unscopables . (make-property :value 'unscopables))))
     :allocation :class))
   (:documentation "Symbol constructor, used with new operator."))
 
 (defmethod print-object ((this -symbol-prototype) stream)
   )
 
-(defmethod to-string ((this -symbol-prototype))
+(defmethod to-string ((this -symbol-prototype) &optional radix)
+  (declare (ignore radix))
   )
 
 (defmethod value-of ((this -symbol-prototype))

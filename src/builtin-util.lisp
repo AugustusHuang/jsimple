@@ -33,43 +33,47 @@
   (declare (type string name))
   (let ((result (make-array 0 :element-type 'character :fill-pointer t))
 	;; To handle name like URIError, have to create a state.
-	;; out of URI -> 0
+	;; out of URI & NaN -> 0
 	;; U|RI -> 1
 	;; UR|I -> 2
-	(uri-state 0))
+	;; To handle NaN...
+	;; N|aN -> 3
+	;; Na|N -> 4
+	(uri-nan-state 0))
     (loop for char across (the string name) do
        ;; Only meeting with those upcase-able char in their uppercase form
        ;; do we need to add a hyphen and cast it to lowercase.
-	 (if (char= (char-downcase char) char)
-	     (progn
-	       (vector-push-extend char result)
-	       ;; Get out of URI-STATE.
-	       (setf uri-state 0))
-	     (cond ((and (= uri-state 0) (char= char #\U))
-		    (progn
-		      (setf uri-state 1)
-		      (vector-push-extend #\- result)
-		      (vector-push-extend (char-downcase char) result)))
-		   ((and (= uri-state 1) (char= char #\R))
-		    (progn
-		      (setf uri-state 2)
-		      (vector-push-extend (char-downcase char) result)))
-		   ((and (= uri-state 2) (char= char #\I))
-		    (progn
-		      (setf uri-state 0)
-		      (vector-push-extend (char-downcase char) result)))
-		   (t
-		    (progn
-		      (setf uri-state 0)
-		      (vector-push-extend #\- result)
-		      (vector-push-extend (char-downcase char) result))))))
-    result))
+	 (if (char= char #\_)
+	     (vector-push-extend #\- result)
+	     (if (char= (char-downcase char) char)
+		 (if (and (= uri-nan-state 3) (char= char #\a))
+		     (progn
+		       (setf uri-nan-state 4)
+		       (vector-push-extend #\a result))
+		     (progn
+		       (setf uri-nan-state 0)
+		       (vector-push-extend char result)))
+		 (progn
+		   (setf uri-nan-state 0)
+		   (vector-push-extend char result))
+		 (cond ((and (= uri-nan-state 0) (char= char #\U))
+			(progn
+			  (setf uri-nan-state 1)
+			  (vector-push-extend #\- result)
+			  (vector-push-extend #\u result)))
+		       ((and (= uri-nan-state 1) (char= char #\R))
+			(progn
+			  (setf uri-nan-state 2)
+			  (vector-push-extend #\r result)))
+    result))))))
 
+;;; FIXME: Make these two functions applied as an identity,
+;;; handle URI and NaN correctly.
 (defun hyphen-to-camel (name)
   "Cast a lisp style function name into a camel style function name."
   (declare (type string name))
   (let ((1st (char name 0))
-	;; Transform !this-is-an-example into !ThisIsAnExample.
+	;; Transform -this-is-an-example into ThisIsAnExample.
 	(result (remove #\- (string-capitalize name))))
     (if (char= 1st #\-)
 	(setf result (string-left-trim "-" result))
@@ -78,10 +82,7 @@
 
 ;;; To get the owned and inherited property list fast, use this method.
 ;;; FIXME: Another better one?
-(defgeneric fetch-own-properties (this)
-  (:documentation "Fetch the OWN-PROPERTIES slot from a class object, create
+(defgeneric fetch-properties (this)
+  (:documentation "Fetch the PROPERTIES slot from a class object, create
 an instance of the class object and fetch its slot."))
 
-(defgeneric fetch-inherit-properties (this)
-  (:documentation "Fetch the INHERIT-PROPERTIES slot from a class object,
-create an instance of the class object and fetch its slot."))

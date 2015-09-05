@@ -110,7 +110,8 @@ method."))
 (defgeneric to-locale-string (this)
   (:documentation ""))
 
-(defgeneric to-string (this)
+;;; A prototype other than Number simple (DECLARE (IGNORE RADIX)).
+(defgeneric to-string (this &optional radix)
   (:documentation ""))
 
 (defgeneric value-of (this)
@@ -127,6 +128,16 @@ method."))
 
 (defgeneric has-instance (this value)
   (:documentation ""))
+
+(defgeneric to-exponential (this digits)
+  (:documentation ""))
+
+(defgeneric to-fixed (this digits)
+  (:documentation ""))
+
+(defgeneric to-precision (this precision)
+  (:documentation ""))
+
 
 ;;; Only include those multi-class generic methods.
 (defgeneric js-add (this value)
