@@ -56,10 +56,37 @@
   (:use :cl
 	:jsimple-error)
   (:documentation
-   "Builtin feature package of Javascript 6.")
+   "Builtin feature package of Ecma-script 6.")
   ;; Will be a long list...
   (:export :camel-to-hyphen
 	   :hyphen-to-camel
+	   :-get-prototype-of
+	   :-set-prototype-of
+	   :-is-extensible
+	   :-prevent-extensions
+	   :-get-own-property
+	   :-has-property
+	   :-get
+	   :-set
+	   :-delete
+	   :-define-own-property
+	   :-enumerate
+	   :-own-property-keys
+	   :-call
+	   :-construct
+	   :has-own-property
+	   :is-prototype-of
+	   :property-is-enumerable
+	   :to-locale-string
+	   :to-string
+	   :value-of
+	   :!apply ;; APPLY is a dirty name.
+	   :bind
+	   :call
+	   :has-instance
+	   :to-exponential
+	   :to-fixed
+	   :to-precision
 	   ))
 
 (defpackage :jsimple-ir
