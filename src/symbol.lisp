@@ -29,36 +29,60 @@
 
 ;;; Well known symbols are built-in symbol values are typically used
 ;;; as the keys of properties. -- ECMA V6.
-;;; In order to make each symbol immutable, make a global symbol hashtable...
+(defclass -symbol-prototype (-object-prototype)
+  ((-prototype :initform '-object-prototype :allocation :class)
+   (-extensible :allocation :class)
+   (-symbol-data :type symbol-raw :initarg :-symbol-data)
+   (constructor :initform '-symbol :allocation :class)
+   (own-properties
+    :initform '((to-primitive . (make-property :value 'to-primitive
+				 :configurable :true))
+		(to-string-tag . (make-property :value "Symbol"
+				  :configurable :true)))
+    :allocation :class)
+   (inherit-properties
+    :initform (append (fetch-own-properties (find-class '-object-prototype))
+		      (fetch-inherit-properties (find-class '-object-prototype)))
+    :allocation :class))
+  (:documentation "Symbol prototype, provides inherited properties."))
 
-(defparameter *global-symbol-registry*
-  (make-hash-table :test 'eql))
+(defclass -symbol (-function-prototype)
+  ((-prototype :initform '-function-prototype :allocation :class)
+   (-extensible :initform :false :allocation :class)
+   (length :initform (make-property :value 0) :allocation :class)
+   (prototype :type (or symbol -null) :accessor prototype
+	      :initarg :prototype :initform (make-property :value '-symbol-prototype)
+	      :allocation :class)
+   (own-properties
+    :initform '((for . (make-property :value 'key))
+		(has-instance . (make-property :value 'has-instance))
+		(is-concat-spreadable . (make-property :value 'is-concat-spreadable))
+		(iterator . (make-property :value 'iterator))
+		(key-for . (make-property :value 'key-for))
+		(match . (make-property :value 'match))
+		(replace . (make-property :value 'replace))
+		(search . (make-property :value 'search))
+		(species . (make-property :value 'species))
+		(split . (make-property :value 'split))
+		(to-primitive . (make-property :value 'to-primitive))
+		(to-string-tag . (make-property :value 'to-string-tag))
+		(unscopables . (make-property :value 'unscopables)))
+    :allocation :class)
+   (inherit-properties
+    :initform (append (fetch-own-properties (find-class '-function-prototype))
+		      (fetch-inherit-properties (find-class '-function-prototype)))
+    :allocation :class))
+  (:documentation "Symbol constructor, used with new operator."))
 
-(defclass -symbol ()
-  ((constructor :reader constructor :type function
-		:initarg :constructor :initform #'-new-symbol
-		:allocation class)
-   (description :type (or -undefined -string) :initarg :description
-		:initform :undefined))
-  (:documentation "Builtin symbol prototype."))
-
-(defmethod print-object ((this -symbol) stream)
+(defmethod print-object ((this -symbol-prototype) stream)
   )
 
-;;; XXX: Symbol is not allowed to be called with new, neither can it be used
-;;; as a superclass...
-(defun -new-symbol (value)
-  (-new-object-symbol value))
-
-(defun -to-symbol (value)
+(defmethod to-string ((this -symbol-prototype))
   )
 
-(defmethod to-string ((this -symbol))
+(defmethod value-of ((this -symbol-prototype))
   )
 
-(defmethod to-locale-string ((this -symbol))
-  )
-
-(defmethod value-of ((this -string))
+(defmethod to-primitive ((this -symbol-prototype) hint)
   )
 

@@ -116,6 +116,18 @@ method."))
 (defgeneric value-of (this)
   (:documentation "Return a type converted value of THIS."))
 
+(defgeneric apply (this this-arg args)
+  (:documentation ""))
+
+(defgeneric bind (this this-arg &rest args)
+  (:documentation ""))
+
+(defgeneric call (this this-arg &rest args)
+  (:documentation ""))
+
+(defgeneric has-instance (this value)
+  (:documentation ""))
+
 ;;; Only include those multi-class generic methods.
 (defgeneric js-add (this value)
   (:documentation "XXX.prototype.add(value). Candidate: Set, WeakSet"))

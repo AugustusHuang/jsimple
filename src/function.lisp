@@ -32,13 +32,46 @@
 ;;; See builtin-util.lisp
 
 (defclass -function-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype)
+  ((-prototype :initform '-object-prototype :allocation :class)
    ;; Extensible is the same.
-   
-   ;; Internal slots of function objects:
-   ;; The lexical environment that the function was closed over. Used as the
-   ;; outer environment when evaluating the code of the function.
-   (-environment :initarg :-environment)
+   (constructor :initform (make-property :value '-function) :allocation :class)
+   (length :type (or property -null) :accessor length :allocation :class
+	   :initarg :length :initform (make-property :value 0))
+   (name :type (or property -null) :accessor name :allocation :class
+	 :initarg :name :initform (make-property :value ""))
+   (own-properties
+    :initform '((apply . (make-property :value 'apply))
+		(bind . (make-property :value 'bind))
+		(call . (make-property :value 'call))
+		;; 'name' property of this function is
+		;; "[Symbol.hasInstance]".
+		(has-instance . (make-property :value 'has-instance)))
+    :allocation :class)
+   (inherit-properties
+    :initform (fetch-own-properties (find-class '-object-prototype))
+    :allocation :class))
+  (:documentation "Function prototype, provides inherited properties."))
+
+(defclass -function (-function-prototype)
+  ((-prototype :initform '-function-prototype :allocation :class)
+   (-extensible :initform :true :allocation :class)
+   (length :allocation :class :initform (make-property :value 1
+						       :configurable :true))
+   (prototype :type (or property -null) :accessor prototype
+	      :initarg :prototype :initform (make-property :value '-function-prototype)
+	      :allocation :class)
+   (own-properties :initform nil :allocation :class)
+   (inherit-properties
+    :initform (append (fetch-own-properties (find-class '-function-prototype))
+		      (fetch-inherit-properties (find-class '-function-prototype)))
+    :allocation :class))
+  (:documentation "Function constructor, used with new operator."))
+
+(defclass function-instance-class (-function-prototype)
+  ;; Internal slots of function objects:
+  ;; The lexical environment that the function was closed over. Used as the
+  ;; outer environment when evaluating the code of the function.
+  ((-environment :initarg :-environment)
    ;; The root parse node of the source text that defines the function's
    ;; formal parameter list.
    (-formal-parameters :initarg :-formal-parameters)
@@ -62,35 +95,9 @@
    (-strict :type boolean-raw :initarg :-strict)
    ;; If the function uses 'super' this is the object whose [[GetPrototypeOf]]
    ;; provides the object where 'super' property lookups begin.
-   (-home-object :type symbol :initarg :-home-object)
-   (constructor :initform (make-property :value '-function))
-   (length :type (or property -null) :accessor length
-	   :initarg :length :initform (make-property :value 0))
-   (name :type (or property -null) :accessor name
-	 :initarg :name :initform (make-property :value ""))
-   (own-properties
-    :initform '((apply . (make-property :value 'apply))
-		(bind . (make-property :value 'bind))
-		(call . (make-property :value 'call))
-		;; 'name' property of this function is
-		;; "[Symbol.hasInstance]".
-		(has-instance . (make-property :value 'has-instance))))
-   (inherit-properties
-    :initform (fetch-own-properties (find-class '-object-prototype))))
-  (:documentation "Function prototype, provides inherited properties."))
-
-(defclass -function ()
-  ((-prototype :type (or symbol -null)
-	       :initarg :-prototype :initform '-function-prototype)
-   (-extensible :type (or boolean-raw -undefined)
-		:initarg :-extensible :initform :true)
-   (length :type (or property -null) :accessor length
-	   :initarg :length :initform (make-property :value 1
-						     :configurable :true))
-   (prototype :type (or property -null) :accessor prototype
-	      :initarg :prototype :initform (make-property :value '-function-prototype))
-   ())
-  (:documentation "Function constructor, used with new operator."))
+   (-home-object :type symbol :initarg :-home-object))
+  (:documentation "Function instance class, acts as the direct superclass of
+all function instances."))
 
 ;;; Helper functions.
 (defmethod fetch-own-properties ((this -function-prototype))
@@ -105,3 +112,54 @@
 (defmethod fetch-inherit-properties ((this -function))
   (inherit-properties (make-instance (class-name this))))
 
+(defmethod -get-prototype-of ((this -function-prototype))
+  )
+
+(defmethod -set-prototype-of ((this -function-prototype) proto)
+  )
+
+(defmethod -is-extensible ((this -function-prototype))
+  )
+
+(defmethod -prevent-extensions ((this -function-prototype))
+  )
+
+(defmethod -get-own-property ((this -function-prototype) key)
+  )
+
+(defmethod -has-property ((this -function-prototype) key)
+  )
+
+(defmethod -get ((this -function-prototype) key receiver)
+  )
+
+(defmethod -set ((this -function-prototype) key value receiver)
+  )
+
+(defmethod -delete ((this -function-prototype) key)
+  )
+
+(defmethod -define-own-property ((this -function-prototype) key descriptor)
+  )
+
+(defmethod -enumerate ((this -function-prototype))
+  )
+
+(defmethod -own-property-keys ((this -function-prototype))
+  )
+
+;;; Function prototype property methods.
+(defmethod apply ((this -function-prototype) this-arg args)
+  )
+
+(defmethod bind ((this -function-prototype) this-arg &rest args)
+  )
+
+(defmethod call ((this -function-prototype) this-arg &rest args)
+  )
+
+(defmethod to-string ((this -function-prototype))
+  )
+
+(defmethod has-instance ((this -function-prototype) value)
+  )

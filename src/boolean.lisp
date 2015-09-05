@@ -27,58 +27,96 @@
 (deftype boolean-raw ()
   `(member :false :true))
 
-(defclass -boolean ()
-  ((constructor :reader constructor :type function
-		:initarg :constructor :initform #'-new-boolean
-		:allocation class)
-   (data :accessor data :type boolean-raw
-	 :initarg :data :initform :false))
-  (:documentation "Builtin Boolean prototype."))
+(defclass -boolean-prototype (-object-prototype)
+  ((-prototype :initform '-object-prototype :allocation :class)
+   ;; Extensible is the same.
+   (-extensible :allocation :class)
+   (-boolean-data :type boolean-raw :initarg :-boolean-data)
+   (constructor :initform (make-property :value '-boolean) :allocation :class)
+   (own-properties :initform nil :allocation :class)
+   (inherit-properties
+    :initform (fetch-own-properties (find-class '-object-prototype))
+    :allocation :class))
+  (:documentation "Boolean prototype, provides inherited properties."))
 
-(defmethod print-object ((this -boolean) stream)
-  (format stream (if (eql (data this) :true)
+(defclass -boolean (-function-prototype)
+  ((-prototype :initform '-function-prototype :allocation :class)
+   ;; Extensible is the same.
+   (-extensible :allocation :class)
+   (length :initform (make-property :value 1) :allocation :class)
+   (prototype :type (or symbol -null) :accessor prototype :allocation :class
+	      :initarg :prototype :initform (make-property :value '-boolean-prototype))
+   (own-properties :initform nil :allocation :class)
+   (inherit-properties
+    :initform (append (fetch-own-properties (find-class '-function-prototype))
+		      (fetch-inherit-properties (find-class '-function-prototype)))
+    :allocation :class))
+  (:documentation "Boolean constructor, used with new operator."))
+
+(defmethod fetch-own-properties ((this -boolean-prototype))
+  (own-properties (make-instance (class-name this))))
+
+(defmethod fetch-own-properties ((this -boolean))
+  (own-properties (make-instance (class-name this))))
+
+(defmethod fetch-inherit-properties ((this -boolean-prototype))
+  (inherit-properties (make-instance (class-name this))))
+
+(defmethod fetch-inherit-properties ((this -boolean))
+  (inherit-properties (make-instance (class-name this))))
+
+(defmethod print-object ((this -boolean-prototype) stream)
+  (format stream (if (eql (slot-value this '-boolean-data) :true)
 		     "true"
-		     "false"))
-  this)
+		     "false")))
 
-;;; new Boolean() constructs a object with [[PrimitiveValue]]: true.
-;;; While Boolean() converts some thing to a boolean.
-;;; so new Boolean will be translated to -NEW-BOOLEAN and Boolean
-;;; to -TO-BOOLEAN.
-(defun -new-boolean (value)
-  (-new-object-boolean value))
+(defmethod -get-prototype-of ((this -boolean-prototype))
+  )
 
-(defun -to-boolean (value)
-  "Abstract operation of some-type to boolean conversion."
-  (typecase value
-    (-undefined
-     (make-instance '-boolean :data :false))
-    (-null
-     (make-instance '-boolean :data :false))
-    (-boolean
-     value)
-    (-number
-     ;; When DATA is 0 or NaN, return FALSE.
-     (make-instance '-boolean :data (if (or (eql (data value) :nan)
-					      (= (data value) 0))
-					:false
-					:true)))
-    (-string
-     (make-instance '-boolean :data :true))
-    (-symbol
-     (make-instance '-boolean :data :true))
-    (-object
-     (make-instance '-boolean :data :true))))
+(defmethod -set-prototype-of ((this -boolean-prototype) proto)
+  )
 
-(defmethod to-string ((this -boolean))
-  (if (eql (data this) :true)
-      "true"
-      "false"))
+(defmethod -is-extensible ((this -boolean-prototype))
+  )
 
-(defmethod to-locale-string ((this -boolean))
-  (if (eql (data this) :true)
+(defmethod -prevent-extensions ((this -boolean-prototype))
+  )
+
+(defmethod -get-own-property ((this -boolean-prototype) key)
+  )
+
+(defmethod -has-property ((this -boolean-prototype) key)
+  )
+
+(defmethod -get ((this -boolean-prototype) key receiver)
+  )
+
+(defmethod -set ((this -boolean-prototype) key value receiver)
+  )
+
+(defmethod -delete ((this -boolean-prototype) key)
+  )
+
+(defmethod -define-own-property ((this -boolean-prototype) key descriptor)
+  )
+
+(defmethod -enumerate ((this -boolean-prototype))
+  )
+
+(defmethod -own-property-keys ((this -boolean-prototype))
+  )
+
+(defmethod -call ((this -boolean) &rest args)
+  )
+
+(defmethod -construct ((this -boolean) args object)
+  )
+
+(defmethod to-string ((this -boolean-prototype))
+  (if (eql (slot-value this '-boolean-data) :true)
       "true"
       "false"))
 
 (defmethod value-of ((this -boolean))
-  (data this))
+  (slot this -boolean-data))
+

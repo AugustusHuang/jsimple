@@ -44,17 +44,17 @@
 (defclass -object-prototype ()
   ((-prototype :type (or symbol -null)
 	      :initarg :-prototype
-	      :initform :null)
+	      :initform :null :allocation :class)
    (-extensible :type (or boolean-raw -undefined)
 	       :initarg :-extensible
-	       :iniform :true)
+	       :iniform :true :allocation :class)
    (constructor :type (or property -null) :accessor constructor
 		:initarg :constructor
 		;; If we want to refer to a class, use symbol name, and
 		;; use FIND-CLASS to get the corresponding class.
-		:initform (make-property :value '-object)
+		:initform (make-property :value '-object) :allocation :class)
    (own-properties :accessor own :type (or null list)
-		   :initarg :own
+		   :initarg :own :allocation :class
 		   :initform
 		   '((has-own-property . (make-property :value 'has-own-property))
 		     (is-prototype-of . (make-property :value 'is-prototype-of))
@@ -63,7 +63,7 @@
 		     (to-string . (make-property :value 'to-string))
 		     (value-of . (make-property :value 'value-of))))
    (inherit-properties :accessor inherit :type (or null list)
-		       :initarg :inherit
+		       :initarg :inherit :allocation :class
 		       :initform nil))
   (:documentation "Object prototype, provides inherited properties."))
 
@@ -75,11 +75,12 @@
 ;;; isFrozen = t, isSealed = t, keys = t, preventExtensions = t, seal = t,
 ;;; prototype = %ObjectPrototype%, seal = t, setPrototypeOf = t.
 (defclass -object (-function-prototype)
-  ((-prototype :initform '-function-prototype)
+  ((-prototype :initform '-function-prototype :allocation :class)
    ;; Extensible is the same.
-   (length :initform (make-property :value 1))
+   (-extensible :allocation :class)
+   (length :initform (make-property :value 1) :allocation :class)
    (prototype :type (or symbol -null) :accessor prototype
-	      :initarg :prototype
+	      :initarg :prototype :allocation :class
 	      :initform (make-property :value '-object-prototype))
    (own-properties
     ;; NOTE: Here ASSIGN is a symbol, but it is meant to be a
@@ -103,10 +104,12 @@
 		(keys . (make-property :value 'keys))
 		(prevent-extensions . (make-property :value 'prevent-extensions))
 		(seal . (make-property :value 'seal))
-		(set-prototype-of . (make-property :value 'set-prototype-of))))
+		(set-prototype-of . (make-property :value 'set-prototype-of)))
+    :allocation :class)
    (inherit-properties
     :initform (append (fetch-own-properties (find-class '-function-prototype))
-		      (fetch-inherit-properties (find-class '-function-prototype)))))
+		      (fetch-inherit-properties (find-class '-function-prototype)))
+    :allocation :class))
   (:documentation "Object constructor, used with new operator."))
 
 ;;; Helpers to make access to OWN-PROPERTIES and INHERIT-PROPERTIES when
@@ -152,27 +155,6 @@
 	       (acons (write-to-string i) (string (char string i)) alist)))
     (setf alist (acons "length" len alist))
     (reverse alist)))
-
-(defun -to-object (value)
-  "Abstract operation of some-type to object conversion."
-  (typecase value
-    (-undefined
-     (error '-type-error))
-    (-null
-     (error '-type-error))
-    (-boolean
-     (make-instance '-object-boolean :boolean-data (data value)))
-    (-number
-     (make-instance '-object-number :number-data (data value)))
-    (-string
-     (make-instance '-object-string
-		    :properties (string-to-object-properties (data value))
-		    :string-data (data value)))
-    (-symbol
-     (make-instance '-object-symbol :symbol-data (data value)))
-    ;; Won't be here.
-    (t
-     (error '-type-error))))
 
 ;;; Internal methods.
 (defmethod -get-prototype-of ((this -object-prototype))
