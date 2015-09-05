@@ -27,13 +27,13 @@
 (deftype string-raw ()
   'string)
 
-(defclass -string ()
-  ((constructor :reader constructor :type function
-		:initarg :constructor :initform #'-new-string
-		:allocation class)
-   (data :accessor data :type string-raw
-	 :initarg :data :initform ""))
-  (:documentation "Builtin string prototype."))
+(defclass -string-prototype (-object-prototype)
+  ()
+  (:documentation "String prototype, provides inherited properties."))
+
+(defclass -string (-function-prototype)
+  ()
+  (:documentation "String constructor, used with new operator."))
 
 (defun -new-string (value)
   (-new-object-string value))
@@ -59,11 +59,17 @@
     (-object
      (make-instance '-string :data (-to-string (data value))))))
 
-(defmethod to-string ((this -string))
-  (data this))
+(defmethod fetch-properties ((this -string-prototype))
+  (properties (make-instance (class-name this))))
 
-(defmethod to-locale-string ((this -string))
+(defmethod fetch-properties ((this -string))
+  (properties (make-instance (class-name this))))
+
+(defmethod to-string ((this -string-prototype))
   )
 
-(defmethod value-of ((this -string))
-  (data this))
+(defmethod to-locale-string ((this -string-prototype))
+  )
+
+(defmethod value-of ((this -string-prototype))
+  )
