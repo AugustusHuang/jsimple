@@ -138,6 +138,80 @@ method."))
 (defgeneric to-precision (this precision)
   (:documentation ""))
 
+(defgeneric char-at (this pos)
+  (:documentation ""))
+
+(defgeneric char-code-at (this pos)
+  (:documentation ""))
+
+(defgeneric code-point-at (this pos)
+  (:documentation ""))
+
+(defgeneric concat (this &rest args)
+  (:documentation ""))
+
+(defgeneric ends-with (this search &optional end)
+  (:documentation ""))
+
+(defgeneric includes (this search &optional pos)
+  (:documentation ""))
+
+(defgeneric index-of (this search &optional pos)
+  (:documentation ""))
+
+(defgeneric last-index-of (this search &optional pos)
+  (:documentation ""))
+
+(defgeneric locale-compare (this that)
+  (:documentation ""))
+
+(defgeneric match (this regexp)
+  (:documentation ""))
+
+(defgeneric normalize (this &optional form)
+  (:documentation ""))
+
+(defgeneric repeat (this count)
+  (:documentation ""))
+
+(defgeneric replace (this search replace)
+  (:documentation ""))
+
+(defgeneric search (this regexp)
+  (:documentation ""))
+
+(defgeneric slice (this start end)
+  (:documentation ""))
+
+(defgeneric split (this separator limit)
+  (:documentation ""))
+
+(defgeneric starts-with (this search &optional pos)
+  (:documentation ""))
+
+(defgeneric substring (this start end)
+  (:documentation ""))
+
+(defgeneric to-locale-lower-case (this)
+  (:documentation ""))
+
+(defgeneric to-locale-upper-case (this)
+  (:documentation ""))
+
+(defgeneric to-lower-case (this)
+  (:documentation ""))
+
+(defgeneric to-upper-case (this)
+  (:documentation ""))
+
+(defgeneric trim (this)
+  (:documentation ""))
+
+(defgeneric iterator (this)
+  (:documentation ""))
+
+(defgeneric next (this)
+  (:documentation ""))
 
 ;;; Only include those multi-class generic methods.
 (defgeneric js-add (this value)

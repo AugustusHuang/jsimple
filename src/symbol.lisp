@@ -72,6 +72,48 @@
 (defmethod print-object ((this -symbol-prototype) stream)
   )
 
+(defmethod -get-prototype-of ((this -symbol-prototype))
+  )
+
+(defmethod -set-prototype-of ((this -symbol-prototype) proto)
+  )
+
+(defmethod -is-extensible ((this -symbol-prototype))
+  )
+
+(defmethod -prevent-extensions ((this -symbol-prototype))
+  )
+
+(defmethod -get-own-property ((this -symbol-prototoype) key)
+  )
+
+(defmethod -has-property ((this -symbol-prototype) key)
+  )
+
+(defmethod -get ((this -symbol-prototype) key receiver)
+  )
+
+(defmethod -set ((this -symbol-prototype) key value receiver)
+  )
+
+(defmethod -delete ((this -symbol-prototype) key)
+  )
+
+(defmethod -define-own-property ((this -symbol-prototype) key descriptor)
+  )
+
+(defmethod -enumerate ((this -symbol-prototype))
+  )
+
+(defmethod -own-property-keys ((this -symbol-prototype))
+  )
+
+(defmethod -call ((this -symbol) &rest args)
+  )
+
+(defmethod -construct ((this -symbol) args object)
+  )
+
 (defmethod to-string ((this -symbol-prototype) &optional radix)
   (declare (ignore radix))
   )
