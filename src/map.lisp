@@ -71,6 +71,28 @@
   (:documentation "Map iterator prototype, provides inherited map iterator
 object properties."))
 
+(defclass -weak-map-prototype (-object-prototype)
+  ((-prototype :initform '-object-prototype :allocation :class)
+   (-weak-map-data :type hash-table :initarg :-weak-map-data)
+   (constructor :initform '-weak-map :allocation :class)
+   (properties
+    :initform
+    (append '((delete . (make-property :value '!delete))
+	      (get . (make-property :value '!get))
+	      (has . (make-property :value 'has))
+	      (set . (make-property :value '!set))
+	      (to-string-tag . (make-property :value "WeakMap"
+				:configurable :true))))
+    :allocation :class))
+  (:documentation "Weak map prototype, provides inherited properties."))
+
+(defclass -weak-map (-function-prototype)
+  ((-prototype :initform '-function-prototype :allocation :class)
+   (length :initform (make-property :value 0) :allocation :class)
+   (prototype :type property :allocation :class :initarg :prototype
+	      :initform (make-property :value '-weak-map-prototype)))
+  (:documentation "Weak constructor, used with new operator."))
+
 (defmethod fetch-properties ((this -map-prototype))
   (properties (make-instance (class-name this))))
 
@@ -78,4 +100,10 @@ object properties."))
   (properties (make-instance (class-name this))))
 
 (defmethod fetch-properties ((this -map-iterator-prototype))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -weak-map-prototype))
+  (properties (make-instance (class-name this))))
+
+(defmethod fetch-properties ((this -weak-map))
   (properties (make-instance (class-name this))))
