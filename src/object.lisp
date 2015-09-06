@@ -75,7 +75,7 @@
   ((-prototype :initform '-function-prototype :allocation :class)
    ;; Extensible is the same.
    (length :initform (make-property :value 1) :allocation :class)
-   (prototype :type (or symbol -null) :accessor prototype
+   (prototype :type (or property -null) :accessor prototype
 	      :initarg :prototype :allocation :class
 	      :initform (make-property :value '-object-prototype))
    (properties
