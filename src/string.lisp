@@ -76,7 +76,7 @@
 
 (defclass -string-iterator-prototype (-iterator-prototype)
   ((-prototype :initform '-iterator-prototype :allocation :class)
-   (-iterated-string :type string :initarg :-iterated-string)
+   (-iterated-string :type -string-prototype :initarg :-iterated-string)
    (-string-iterator-next-index :type integer
 				:initarg :-string-iterator-next-index)
    (properties
