@@ -25,7 +25,7 @@
 ;;;; since these functions will be functions belong to prototypes,
 ;;;; they are typed functions, so they will be efficient and don't need
 ;;;; further optimization.
-(in-package :jsimple-builtin)
+(in-package :lesp-builtin)
 
 ;;;; -UNDEFINED, -NULL are trivial, use the keywords.
 (defun undefined-p (value)

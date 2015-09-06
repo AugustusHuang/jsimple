@@ -22,7 +22,7 @@
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
 ;;;; Number related routines and constants.
-(in-package :jsimple-builtin)
+(in-package :lesp-builtin)
 
 ;;; In SBCL 32-bit version, it's OK.
 (defconstant +number-max-safe-integer+ (- (expt 2 53) 1))

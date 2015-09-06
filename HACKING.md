@@ -1,4 +1,4 @@
-Jsimple Hacking Guide
+Lesp Hacking Guide
 ===================
 
 This guide is influenced by *SBCL Hacking Guide*.  
@@ -16,7 +16,7 @@ Table of Contents
 ### Packages
 Packages are the primary abstraction and packing level of Common Lisp,
 so a good modularization starts from good packaging.
-All packages related to Jsimple should have prefix `jsimple-`, and followed
+All packages related to Lesp should have prefix `lesp-`, and followed
 with some descriptive words, if the package name is too long, you can add
 a nickname (which is optional in Common Lisp). If a package will call function
 from another non-system-dependent package (e.g. SB-C package in SBCL is a
@@ -58,6 +58,6 @@ some numerical method may be declared with `speed 3`.
 
 ### Test
 Test functions and applications should be put in test system, which is optional
-asdf-loadable, so there will be a *jsimple-test.asd* file in the root directory
+asdf-loadable, so there will be a *lesp-test.asd* file in the root directory
 of our repo. Tests are needed if you decided to add a new feature or idea
 into the main project.

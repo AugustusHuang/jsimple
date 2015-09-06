@@ -42,7 +42,7 @@
 ;;;; 3. This notice may not be removed or altered from any source
 ;;;;    distribution.
 
-(in-package :jsimple-parser)
+(in-package :lesp-parser)
 
 ;;; Now javascript has a new 6th version standard, adjust PARSE-JS lib,
 ;;; make it compatible with new features. Also make some modifications

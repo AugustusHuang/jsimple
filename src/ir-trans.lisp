@@ -27,7 +27,7 @@
 ;;;; of functional style. Then do some early optimization to the IR and get
 ;;;; to the final stage: compile the IR into optimized Lisp code (with type
 ;;;; and optimize level) and evaluate to result.
-(in-package :jsimple-ir)
+(in-package :lesp-ir)
 
 ;;; Go deeper, push a new 1 to the tail, go further, increment last element.
 (declaim (list *ast-pos*))

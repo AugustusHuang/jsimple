@@ -22,7 +22,7 @@
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
 ;;;; Builtin regular expression type definitions.
-(in-package :jsimple-builtin)
+(in-package :lesp-builtin)
 
 (defclass -reg-exp-prototype (-object-prototype)
   ((-prototype :initform '-object-prototype :allocation :class)

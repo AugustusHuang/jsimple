@@ -43,7 +43,7 @@
 ;;;;    distribution.
 
 ;;;; Parser package.
-(in-package :jsimple-parser)
+(in-package :lesp-parser)
 
 ;;; FIXME: Change Javascript from 3rd version to 6th version. Some new
 ;;; reserved keywords will be added, and maybe some change in the source.

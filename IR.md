@@ -1,5 +1,5 @@
-# Intermediate Representation of jsimple
-I decide to design the IR of jsimple base on webassembly. Since webassembly
+# Intermediate Representation of lesp
+I decide to design the IR of lesp base on webassembly. Since webassembly
 is a brand new project, this IR will update when needed, but since it lies
 between Javascript and Common Lisp, it will be simpler than webassembly, which
 is designed to be the lower level of web standard.

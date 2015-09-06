@@ -1,4 +1,4 @@
-# jsimple
+# lesp
 A hobby ECMA-script 6 interpreter written in Common Lisp, still in its infancy!
 
 ## Target

@@ -21,7 +21,7 @@
 ;;;; ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :jsimple-builtin)
+(in-package :lesp-builtin)
 
 ;;;; Generic methods definitions, since some of them will be used by different
 ;;;; types, move it into an one and only place.

@@ -23,7 +23,7 @@
 
 ;;;; NODE definition, extensions and related functions.
 ;;;; NODE is the minimal element of IR.
-(in-package :jsimple-ir)
+(in-package :lesp-ir)
 
 ;;; FIXME: Shall we move this to piece module?
 ;;; CONTROL TRANSFER structure directly lended from SBCL.

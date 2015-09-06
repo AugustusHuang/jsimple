@@ -22,7 +22,7 @@
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
 ;;;; Builtin string type definitions.
-(in-package :jsimple-builtin)
+(in-package :lesp-builtin)
 
 (defclass -string-prototype (-object-prototype)
   ((-prototype :initform '-object-prototype :allocation :class)

@@ -22,7 +22,7 @@
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
 ;;;; Utilities of metaclass.
-(in-package :jsimple-builtin)
+(in-package :lesp-builtin)
 
 (declaim (inline delistify))
 (defun delistify (list)

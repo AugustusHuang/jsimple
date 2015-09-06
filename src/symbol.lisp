@@ -22,7 +22,7 @@
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
 ;;;; Builtin symbol type definitions.
-(in-package :jsimple-builtin)
+(in-package :lesp-builtin)
 
 (deftype symbol-raw ()
   'symbol)

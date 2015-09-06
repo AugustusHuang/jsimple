@@ -22,7 +22,7 @@
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
 ;;;; Utilities used in IR transform and optimize stage.
-(in-package :jsimple-ir)
+(in-package :lesp-ir)
 
 ;;; The general macro to translate a form with CAR in js content into
 ;;; a node or methods applied to nodes.

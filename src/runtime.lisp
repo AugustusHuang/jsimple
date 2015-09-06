@@ -21,10 +21,10 @@
 ;;;; ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :jsimple-runtime)
+(in-package :lesp-runtime)
 
-(defun top-level (&keys (prompt "JS> "))
-  "The repl of Jsimple."
+(defun top-level (&keys (prompt "LESP> "))
+  "The repl of Lesp."
   (with-simple-restart (abort "Exit out of the top level.")
     (loop
 	 (with-simple-restart (abort "Return to the top level.")

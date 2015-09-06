@@ -23,10 +23,10 @@
 
 (in-package :cl-user)
 
-(defpackage :jsimple-error
+(defpackage :lesp-error
   (:use :cl)
   (:documentation
-   "Error module of jsimple.")
+   "Error module of lesp.")
   ;; Those error functions should be wrapped by ES errors.
   (:export :general-error
 	   :runtime-error
@@ -39,11 +39,11 @@
 	   :invalid-class-error
 	   :number-too-large-error))
 
-(defpackage :jsimple-parser
+(defpackage :lesp-parser
   (:use :cl
-	:jsimple-error)
+	:lesp-error)
   (:documentation
-   "Parser of jsimple.")
+   "Parser of lesp.")
   (:export :*char*
 	   :*line*
 	   :*position*
@@ -52,9 +52,9 @@
 	   :parse-js
 	   :parse-js-string))
 
-(defpackage :jsimple-builtin
+(defpackage :lesp-builtin
   (:use :cl
-	:jsimple-error)
+	:lesp-error)
   (:documentation
    "Builtin feature package of Ecma-script 6.")
   ;; Will be a long list...
@@ -89,29 +89,29 @@
 	   :to-precision
 	   ))
 
-(defpackage :jsimple-ir
+(defpackage :lesp-ir
   (:use :cl
-	:jsimple-error
-	:jsimple-parser
-	:jsimple-builtin)
+	:lesp-error
+	:lesp-parser
+	:lesp-builtin)
   (:documentation
-   "Intermediate representation optimizer module of jsimple.")
+   "Intermediate representation optimizer module of lesp.")
   (:export))
 
-(defpackage :jsimple-runtime
+(defpackage :lesp-runtime
   (:use :cl
-	:jsimple-error
-	:jsimple-parser
-	:jsimple-builtin
-	:jsimple-ir)
+	:lesp-error
+	:lesp-parser
+	:lesp-builtin
+	:lesp-ir)
   (:documentation
-   "Runtime environment of jsimple.")
+   "Runtime environment of lesp.")
   (:export :top-level))
 
-(defpackage :jsimple-test
+(defpackage :lesp-test
   (:use :cl
-	:jsimple-error
-	:jsimple-runtime)
+	:lesp-error
+	:lesp-runtime)
   (:documentation
-   "Testsuite of jsimple.")
+   "Testsuite of lesp.")
   (:export))

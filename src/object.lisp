@@ -21,7 +21,7 @@
 ;;;; ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :jsimple-builtin)
+(in-package :lesp-builtin)
 
 ;;; In ECMA-262, internal slots are not object properties and they are not
 ;;; inherited, and they are allocated as part of the process of creating an

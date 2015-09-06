@@ -21,14 +21,14 @@
 ;;;; ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-;;;; All jsimple interpreter error handling function.
+;;;; All lesp interpreter error handling function.
 ;;;; NOTE: Some of them have been moved to related file in order to prevent
 ;;;; appearence of compile-warning. Make it silent!
-(in-package :jsimple-error)
+(in-package :lesp-error)
 
 (define-condition general-error ()
   ()
-  (:documentation "General jsimple error, will be the superclass of all."))
+  (:documentation "General lesp error, will be the superclass of all."))
 
 (define-condition ir-error (general-error)
   ((tree-pos :initarg :tree-pos :reader :ir-error-tree-pos))

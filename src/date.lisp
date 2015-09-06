@@ -22,7 +22,7 @@
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
 ;;;; Date object.
-(in-package :jsimple-builtin)
+(in-package :lesp-builtin)
 
 (defclass -date-prototype (-object-prototype)
   ((-prototype :initform '-object-prototype :allocation :class)

@@ -22,7 +22,7 @@
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
 ;;;; Boolean builtin type definitions.
-(in-package :jsimple-builtin)
+(in-package :lesp-builtin)
 
 (deftype boolean-raw ()
   `(member :false :true))

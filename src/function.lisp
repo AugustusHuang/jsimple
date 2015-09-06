@@ -21,7 +21,7 @@
 ;;;; ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :jsimple-builtin)
+(in-package :lesp-builtin)
 
 ;;; Every function has its own symbol, once created, store it into a global
 ;;; hashtable in order to prevent duplicates. (Since naming style is quite

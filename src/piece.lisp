@@ -24,7 +24,7 @@
 ;;;; PIECE definition and related functions.
 ;;;; PIECE is the structure contains info about how to make NODEs into
 ;;;; separable pieces, like a covering set.
-(in-package :jsimple-ir)
+(in-package :lesp-ir)
 
 (defstruct piece
   )
