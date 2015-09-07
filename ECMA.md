@@ -106,11 +106,11 @@ so `Function` only have `Function.prototype`,
 which point to the prototype class in order to make implementation easy.
 Now we have two classes, `b extends a`, then:  
 
-    `b[[Prototype]] === a`
-    `b.prototype === b.prototype === b-prototype`
-    `a[[Prototype]] === Function === -function`
-    `a.prototype === a.prototype === a-prototype`
-    `b.prototype[[Prototype]] === a.prototype`
-    `a.prototype[[Prototype]] === Object.prototype === -object-prototype`
+    b[[Prototype]] === a
+    b.prototype === b.prototype === b-prototype
+    a[[Prototype]] === Function === -function
+    a.prototype === a.prototype === a-prototype
+    b.prototype[[Prototype]] === a.prototype
+    a.prototype[[Prototype]] === Object.prototype === -object-prototype
 
 
