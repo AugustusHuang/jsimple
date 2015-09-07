@@ -39,3 +39,16 @@ list and judge, then check the internal slots.
 And other types...  
 
 ## Operations on objects
+These operations are implemented using generic functions. The internal methods
+mentioned in these operations are also implemented using generic functions.
+
+## Operations on iterator objects
+`GetIterator(obj, method)` :  
+If `method` is not passed, use internal iterator method, or call `method` with
+checking its type is Object.  
+
+# Executable code and execution contexts
+Lexical environment is associated with some specific syntactic structure of
+code such as function declaration, block statement, catch clause of a try
+statement, so a new lexical environment is created each time such code is
+evaluated, in the parser form, they are :DEFUN, :BLOCK, :CATCH in :TRY.
