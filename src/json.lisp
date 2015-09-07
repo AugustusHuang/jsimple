@@ -24,7 +24,7 @@
 (in-package :lesp-builtin)
 
 (defclass -json (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    (properties
     :initform
     (append '((parse . (make-property :value 'parse))

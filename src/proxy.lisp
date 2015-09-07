@@ -24,7 +24,7 @@
 (in-package :lesp-builtin)
 
 (defclass -proxy (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (length :initform (make-property :value 2) :allocation :class)
    (properties
     :initform

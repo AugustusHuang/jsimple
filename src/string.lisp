@@ -25,8 +25,8 @@
 (in-package :lesp-builtin)
 
 (defclass -string-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
-   (-string-data :type string :initarg :-string-data)
+  ((-prototype :initform '-object-prototype)
+   (-string-data :type string-raw :initarg :-string-data)
    (length :type property :initarg :length :initform (make-property :value 0))
    (constructor :initform '-string :allocation :class)
    (properties
@@ -60,7 +60,7 @@
   (:documentation "String prototype, provides inherited properties."))
 
 (defclass -string (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (length :initform (make-property :value 1) :allocation :class)
    (prototype :type (or property -null) :allocation :class :accessor prototype
 	      :initarg :prototype
@@ -75,7 +75,7 @@
   (:documentation "String constructor, used with new operator."))
 
 (defclass -string-iterator-prototype (-iterator-prototype)
-  ((-prototype :initform '-iterator-prototype :allocation :class)
+  ((-prototype :initform '-iterator-prototype)
    (-iterated-string :type -string-prototype :initarg :-iterated-string)
    (-string-iterator-next-index :type integer
 				:initarg :-string-iterator-next-index)

@@ -24,7 +24,7 @@
 (in-package :lesp-builtin)
 
 (defclass -promise-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    ;; "pending", "fulfilled" or "rejected".
    (-promise-state :type string :initarg :-promise-state)
    ;; Only meaningful if [[PromiseState]] is not "pending".
@@ -47,7 +47,7 @@
   (:documentation "Promise prototype, provides inherited properties."))
 
 (defclass -promise (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (length :initform (make-property :value 1) :allocation :class)
    (prototype :type (or property -null) :allocation :class :initarg :prototype
 	      :initform (make-property :value '-promise-prototype))

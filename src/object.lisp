@@ -42,12 +42,12 @@
 ;;; isPrototypeOf = t, propertyIsEnumerable = t, toLocaleString = t,
 ;;; toString = t, valueOf = t.
 (defclass -object-prototype ()
-  ((-prototype :type (or symbol -null)
+  ((-prototype :type (or symbol-raw -null)
 	      :initarg :-prototype
-	      :initform :null :allocation :class)
+	      :initform :null)
    (-extensible :type (or boolean-raw -undefined)
 	       :initarg :-extensible
-	       :iniform :true :allocation :class)
+	       :iniform :true)
    (constructor :type (or property -null) :accessor constructor
 		:initarg :constructor
 		;; If we want to refer to a class, use symbol name, and
@@ -72,7 +72,7 @@
 ;;; isFrozen = t, isSealed = t, keys = t, preventExtensions = t, seal = t,
 ;;; prototype = %ObjectPrototype%, seal = t, setPrototypeOf = t.
 (defclass -object (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    ;; Extensible is the same.
    (length :initform (make-property :value 1) :allocation :class)
    (prototype :type (or property -null) :accessor prototype

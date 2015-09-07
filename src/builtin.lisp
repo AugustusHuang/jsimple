@@ -38,7 +38,17 @@
 (deftype -null ()
   `(satisfies null-p))
 
-;;; OBJECT-RAW should be a assoc list.
+(deftype boolean-raw ()
+  `(member :true :false))
+(deftype number-raw ()
+  `(or double-float (member :nan :infinity :-infinity)))
+(deftype string-raw ()
+  'string)
+(deftype symbol-raw ()
+  'symbol)
+(deftype object-raw ()
+  '-object-prototype)
+
 (deftype +js-value-types+ ()
   `(or -undefined -null boolean-raw number-raw symbol-raw string-raw
        object-raw))
@@ -68,6 +78,28 @@
   ;; If :FALSE, attempts to delete the property, change the property to be
   ;; an accessor property, or change its attributes will fail.
   (configurable :false :type boolean-raw))
+
+(declaim (inline !eval))
+(defun !eval (x)
+  )
+
+(defun is-finite (number)
+  )
+
+(defun is-nan (number)
+  )
+
+(defun decode-uri (encoded)
+  )
+
+(defun decode-uri-component (encoded-component)
+  )
+
+(defun encode-uri (uri)
+  )
+
+(defun encode-uri-component (component)
+  )
 
 ;;; Well known symbols are built-in symbol values are typically used
 ;;; as the keys of properties. -- ECMA V6.

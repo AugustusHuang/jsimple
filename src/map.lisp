@@ -24,7 +24,7 @@
 (in-package :lesp-builtin)
 
 (defclass -map-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    (-map-data :type list :initarg :-map-data)
    (constructor :initform (make-property :value '-map))
    (properties
@@ -46,7 +46,7 @@
   (:documentation "Map prototype, provides inherited properties."))
 
 (defclass -map (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (length :initform (make-property :value 0) :allocation :class)
    (prototype :type (or property -null) :allocation :class :initarg :prototype
 	      :initform (make-property :value '-map-prototype))
@@ -58,7 +58,7 @@
   (:documentation "Map constructor, used with new operator."))
 
 (defclass -map-iterator-prototype (-iterator-prototype)
-  ((-prototype :initform '-iterator-prototype :allocation :class)
+  ((-prototype :initform '-iterator-prototype)
    (-map :type -map-prototype :initarg :-map)
    (-map-next-index :type integer :initarg :-map-next-index)
    ;; "key" "value" or "key+value".
@@ -72,7 +72,7 @@
 object properties."))
 
 (defclass -weak-map-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    (-weak-map-data :type hash-table :initarg :-weak-map-data)
    (constructor :initform '-weak-map :allocation :class)
    (properties
@@ -87,9 +87,9 @@ object properties."))
   (:documentation "Weak map prototype, provides inherited properties."))
 
 (defclass -weak-map (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (length :initform (make-property :value 0) :allocation :class)
-   (prototype :type property :allocation :class :initarg :prototype
+   (prototype :type (or property -null) :allocation :class :initarg :prototype
 	      :initform (make-property :value '-weak-map-prototype)))
   (:documentation "Weak constructor, used with new operator."))
 

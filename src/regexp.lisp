@@ -25,7 +25,7 @@
 (in-package :lesp-builtin)
 
 (defclass -reg-exp-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    (-reg-exp-matcher :type string :initarg :-reg-exp-matcher)
    (-original-source :type string :initarg :-original-source)
    (-original-flags :type string :initarg :-original-flags)
@@ -52,7 +52,7 @@
   (:documentation "RegExp prototype, provides inherited properties."))
 
 (defclass -reg-exp (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (length :initform (make-property :value 2) :allocation :class)
    (prototype :type (or property -null) :allocation :class :initarg :prototype
 	      :initform '-reg-exp-prototype)

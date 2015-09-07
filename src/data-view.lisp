@@ -24,7 +24,7 @@
 (in-package :lesp-builtin)
 
 (defclass -data-view-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    ;; This internal slot is not used now.
    (-data-view :type null :initform nil)
    ;; TODO: Decide their types!
@@ -60,9 +60,9 @@
   (:documentation ""))
 
 (defclass -data-view (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (length :initform (make-property :value 3) :allocation :class)
-   (prototype :type property :allocation :class :initarg :prototype
+   (prototype :type (or property -null) :allocation :class :initarg :prototype
 	      :initform (make-property :value '-data-view-prototype))
    (properties :initform (fetch-properties (find-class '-function-prototype))
 	       :allocation :class))

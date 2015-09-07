@@ -24,11 +24,8 @@
 ;;;; Boolean builtin type definitions.
 (in-package :lesp-builtin)
 
-(deftype boolean-raw ()
-  `(member :false :true))
-
 (defclass -boolean-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    ;; Extensible is the same.
    (-boolean-data :type boolean-raw :initarg :-boolean-data)
    (constructor :initform (make-property :value '-boolean) :allocation :class)
@@ -38,7 +35,7 @@
   (:documentation "Boolean prototype, provides inherited properties."))
 
 (defclass -boolean (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    ;; Extensible is the same.
    (length :initform (make-property :value 1) :allocation :class)
    (prototype :type (or property -null) :accessor prototype :allocation :class

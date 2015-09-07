@@ -24,7 +24,7 @@
 (in-package :lesp-builtin)
 
 (defclass -set-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    (-set-data :type list :initarg :-set-data)
    (constructor :initform (make-property :value '-function-prototype)
 		:allocation :class)
@@ -47,9 +47,9 @@
   (:documentation "Set prototype, provides inherited properties."))
 
 (defclass -set (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (length :initform (make-property :value 0) :allocation :class)
-   (prototype :type property :allocation :class :initarg :prototype
+   (prototype :type (or property -null) :allocation :class :initarg :prototype
 	      :initform (make-property :value '-set-prototype))
    (properties
     :initform
@@ -59,7 +59,7 @@
   (:documentation "Set constructor, used with new operator."))
 
 (defclass -set-iterator-prototype (-iterator-prototype)
-  ((-prototype :initform '-iterator-prototype :allocation :class)
+  ((-prototype :initform '-iterator-prototype)
    (-iterated-set :type -set-prototype :initarg :-iterated-set)
    (-set-next-index :type integer :initarg :-set-next-index)
    ;; "key", "value" or "key+value", where "key" and "value" means the same.
@@ -73,7 +73,7 @@
 objects properties."))
 
 (defclass -weak-set-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    (-weak-set-data :type hash-table :initarg :-weak-set-data)
    (constructor :initform '-weak-set :allocation :class)
    (properties
@@ -88,9 +88,9 @@ objects properties."))
   (:documentation "Weak set prototype, provides inherited properties."))
 
 (defclass -weak-set (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (length :initform (make-property :value 0) :allocation :class)
-   (prototype :type property :allocation :class :initarg :prototype
+   (prototype :type (or property -null) :allocation :class :initarg :prototype
 	      :initform (make-property :value '-weak-set-prototype)))
   (:documentation "Weak set constructor, used with new operator."))
 

@@ -25,7 +25,7 @@
 (in-package :lesp-builtin)
 
 (defclass -date-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    (-date-value :type number-raw :initarg :-date-value)
    (constructor :initform (make-property :value '-date) :allocation :class)
    (properties
@@ -35,7 +35,7 @@
   (:documentation "Date prototype, provides inherited properties."))
 
 (defclass -date (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (length :initform (make-property :value 7) :allocation :class)
    (prototype :type (or property -null) :allocation :class :initarg :prototype
 	      :initform (make-property :value '-date-prototype))

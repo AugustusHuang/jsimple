@@ -25,8 +25,7 @@
 
 ;;;; Error related definitions and methods.
 (defclass -error-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
-   (-extensible :allocation :class)
+  ((-prototype :initform '-object-prototype)
    (-error-data :type -undefined :initarg :-error-data :initform :undefined)
    (constructor :initform (make-property :value '-error) :allocation :class)
    (properties
@@ -38,8 +37,7 @@
   (:documentation "Error prototype, provides inherited properties."))
 
 (defclass -error (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
-   (-extensible :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (length :initform (make-property :value 1) :accessor length
 	   :allocation :class)
    (prototype :type (or property -null) :allocation :class :accessor prototype
@@ -53,76 +51,76 @@
 ;;; Now we handle all kinds of errors the same way. It can be merged
 ;;; into Lisp style condition system.
 (defclass -eval-error-prototype (-error-prototype)
-  ((-prototype :initform '-error-prototype :allocation :class)
+  ((-prototype :initform '-error-prototype)
    (constructor :initform (make-property :value '-eval-error)
 		:allocation :class))
   (:documentation "Evaluation error prototype."))
 
 (defclass -eval-error (-error)
-  ((-prototype :initform '-error :allocation :class)
+  ((-prototype :initform '-error)
    (prototype :initform (make-property :value '-eval-error-prototype)
 	      :allocation :class))
   (:documentation "Evaluation error. Currently not used."))
 
 (defclass -range-error-prototype (-error-prototype)
-  ((-prototype :initform '-error-prototype :allocation :class)
+  ((-prototype :initform '-error-prototype)
    (constructor :initform (make-property :value '-range-error)
 		:allocation :class))
   (:documentation "Range error prototype."))
 
 (defclass -range-error (-error)
-  ((-prototype :initform '-error :allocation :class)
+  ((-prototype :initform '-error)
    (prototype :initform (make-property :value '-range-error-prototype)
 	      :allocation :class))
   (:documentation "Range error. Indicates a value that is not in the set or
 range of allowable values."))
 
 (defclass -reference-error-prototype (-error-prototype)
-  ((-prototype :initform '-error-prototype :allocation :class)
+  ((-prototype :initform '-error-prototype)
    (constructor :initform (make-property :value '-reference-error)
 		:allocation :class))
   (:documentation "Reference error prototype."))
 
 (defclass -reference-error (-error)
-  ((-prototype :initform '-error :allocation :class)
+  ((-prototype :initform '-error)
    (prototype :initform (make-property :value '-reference-error-prototype)
 	      :allocation :class))
   (:documentation "Reference error. Indicates that an invalid reference value
 has been detected."))
 
 (defclass -syntax-error-prototype (-error-prototype)
-  ((-prototype :initform '-error-prototype :allocation :class)
+  ((-prototype :initform '-error-prototype)
    (constructor :initform (make-property :value '-syntax-error)
 		:allocation :class))
   (:documentation "Syntax error prototype."))
 
 (defclass -syntax-error (-error)
-  ((-prototype :initform '-error :allocation :class)
+  ((-prototype :initform '-error)
    (prototype :initform (make-property :value '-syntax-error-prototype)
 	      :allocation :class))
   (:documentation "Syntax error. Indicates that a parsing error has occured."))
 
 (defclass -type-error-prototype (-error-prototype)
-  ((-prototype :initform '-error-prototype :allocation :class)
+  ((-prototype :initform '-error-prototype)
    (constructor :initform (make-property :value '-type-error)
 		:allocation :class))
   (:documentation "Type error prototype."))
 
 (defclass -type-error (-error)
-  ((-prototype :initform '-error :allocation :class)
+  ((-prototype :initform '-error)
    (prototype :initform (make-property :value '-type-error-prototype)
 	      :allocation :class))
   (:documentation "Type error. Indicates the actual type of an operand is
 different than the expected type."))
 
 (defclass -uri-error-prototype (-error-prototype)
-  ((-prototype :initform '-error-prototype :allocation :class)
+  ((-prototype :initform '-error-prototype)
    (constructor :initform (make-property :value '-uri-error)
 		:allocation :class))
   (:documentation "URI error prototype."))
 
 (defclass -uri-error (-error)
-  ((-prototype :initform '-error :allocation :class)
+  ((-prototype :initform '-error)
    (prototype :initform (make-property :value '-uri-error-prototype)
 	      :allocation :class))
   (:documentation "URI error. Indicates that one of the global URI handling

@@ -25,7 +25,7 @@
 
 ;;;; Builtin array definitions.
 (defclass -array-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    (length :type integer :initarg :length
 	   :initform (make-property :value 0 :writable :true))
    (constructor :initform '-array :allocation :class)
@@ -66,7 +66,7 @@
   (:documentation "Array prototype, provides inherited properties."))
 
 (defclass -array (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (length :initform (make-property :value 1) :allocation :class)
    (prototype :type (or property -null) :allocation :class :initarg :prototype
 	      :initform '-array-prototype)

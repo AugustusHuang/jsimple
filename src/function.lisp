@@ -32,7 +32,7 @@
 ;;; See builtin-util.lisp
 
 (defclass -function-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    ;; Extensible is the same.
    ;; Internal slots of function objects:
    ;; The lexical environment that the function was closed over. Used as the
@@ -42,11 +42,11 @@
    ;; formal parameter list.
    (-formal-parameters :initarg :-formal-parameters)
    ;; Either "normal" "classConstructor" or "generator"
-   (-function-kind :type string :initarg :-function-kind)
+   (-function-kind :type string-raw :initarg :-function-kind)
    ;; The root parse node of the source text that defines the function's body.
    (-script-code :initarg :-script-code)
    ;; Either "base" or "derived".
-   (-constructor-kind :type string :initarg :-constructor-kind)
+   (-constructor-kind :type string-raw :initarg :-constructor-kind)
    ;; The code realm in which the function was created and which provides any
    ;; intrinsic objects that are accessed when evaluating the function.
    (-realm :initarg :realm)
@@ -58,10 +58,10 @@
    ;; reference to the global object.
    (-this-mode :type (member :lexical :strict :global) :initarg :-this-mode)
    ;; :TRUE if this is a strict mode function, :FALSE if this is not.
-   (-strict :type boolean :initarg :-strict)
+   (-strict :type boolean-raw :initarg :-strict)
    ;; If the function uses 'super' this is the object whose [[GetPrototypeOf]]
    ;; provides the object where 'super' property lookups begin.
-   (-home-object :type symbol :initarg :-home-object)
+   (-home-object :type symbol-raw :initarg :-home-object)
    (constructor :initform (make-property :value '-function) :allocation :class)
    (length :type (or property -null) :accessor length :allocation :class
 	   :initarg :length :initform (make-property :value 0
@@ -83,7 +83,7 @@
   (:documentation "Function prototype, provides inherited properties."))
 
 (defclass -function (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    ;; Extensible is the same.
    (length :allocation :class :initform (make-property :value 1
 						       :configurable :true))
@@ -94,38 +94,6 @@
     :initform (fetch-properties (find-class '-function-prototype))
     :allocation :class))
   (:documentation "Function constructor, used with new operator."))
-
-(defclass function-instance-class (-function-prototype)
-  ;; Internal slots of function objects:
-  ;; The lexical environment that the function was closed over. Used as the
-  ;; outer environment when evaluating the code of the function.
-  ((-environment :initarg :-environment)
-   ;; The root parse node of the source text that defines the function's
-   ;; formal parameter list.
-   (-formal-parameters :initarg :-formal-parameters)
-   ;; Either "normal" "classConstructor" or "generator"
-   (-function-kind :initarg :-function-kind)
-   ;; The root parse node of the source text that defines the function's body.
-   (-script-code :initarg :-script-code)
-   ;; Either "base" or "derived".
-   (-constructor-kind :type string-raw :initarg :-constructor-kind)
-   ;; The code realm in which the function was created and which provides any
-   ;; intrinsic objects that are accessed when evaluating the function.
-   (-realm :initarg :realm)
-   ;; Defineds how 'this' reference are interpreted within the formal
-   ;; parameters and code body of the function. :LEXICAL means 'this' refers
-   ;; to the 'this' value of a lexically enclosing function. :STRICT means
-   ;; the 'this' value is used exactly as provided by an invocation of the
-   ;; function. :GLOBAL means a 'this' value of :UNDEFINED is interpreted as a
-   ;; reference to the global object.
-   (-this-mode :type (or :lexical :strict :global) :initarg :-this-mode)
-   ;; :TRUE if this is a strict mode function, :FALSE if this is not.
-   (-strict :type boolean-raw :initarg :-strict)
-   ;; If the function uses 'super' this is the object whose [[GetPrototypeOf]]
-   ;; provides the object where 'super' property lookups begin.
-   (-home-object :type symbol :initarg :-home-object))
-  (:documentation "Function instance class, acts as the direct superclass of
-all function instances."))
 
 ;;; Helper functions.
 (defmethod fetch-own-properties ((this -function-prototype))

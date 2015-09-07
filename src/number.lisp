@@ -45,11 +45,8 @@
 (defparameter +decimal-digits+ "0123456789")
 (defparameter +exponent-indicator+ "eE")
 
-(deftype number-raw ()
-  `(and double-float (member :nan :infinity :-infinity)))
-
 (defclass -number-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    (-number-data :type number-raw :accessor -number-data
 		 :initarg :-number-data)
    (constructor :initform '-number :allocation :class)
@@ -63,7 +60,7 @@
   (:documentation "Number prototype, provides inherited properties."))
 
 (defclass -number (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (length :initform (make-property :value 1) :allocation :class)
    (prototype :type (or property -null) :accessor prototype :allocation :class
 	      :initarg :prototype

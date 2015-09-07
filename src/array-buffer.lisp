@@ -24,7 +24,7 @@
 (in-package :lesp-builtin)
 
 (defclass -array-buffer-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    (-array-buffer-data :type (or array -null) :initarg :-array-buffer-data)
    (-array-buffer-data-length :type integer :initarg :-array-buffer-data-length)
    (constructor :initform (make-property :value '-array-buffer)
@@ -40,9 +40,9 @@
   (:documentation ""))
 
 (defclass -array-buffer (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (length :initform (make-property :value 1) :allocation :class)
-   (prototype :type property :allocation :class :initarg :prototype
+   (prototype :type (or property -null) :allocation :class :initarg :prototype
 	      :initform (make-property :value '-array-buffer-prototype))
    (properties
     :initform

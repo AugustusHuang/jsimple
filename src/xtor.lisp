@@ -25,7 +25,7 @@
 (in-package :lesp-builtin)
 
 (defclass -iterator-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    (properties
     :initform
     (append '((iterator . (make-property :value 'iterator)))
@@ -34,7 +34,7 @@
   (:documentation "Iterator prototype, provides inherited properties."))
 
 (defclass -generator-prototype (-iterator-prototype)
-  ((-prototype :initform '-iterator-prototype :allocation :class)
+  ((-prototype :initform '-iterator-prototype)
    ;; :UNDEFINED, "suspendedStart" "suspendedYield" "executing" or "completed".
    (-generator-state :type (or string -undefined) :initarg :-generator-state)
    (-generator-context :initarg :-generator-context)
@@ -52,7 +52,7 @@
   (:documentation "Generator prototype, provides indirect inherited properties."))
 
 (defclass -generator (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
+  ((-prototype :initform '-function-prototype)
    (-function-kind :initform "generator")
    ;; Configurable: TRUE.
    ;; Length and name are the same as FunctionPrototype.
@@ -75,7 +75,7 @@
   (:documentation "Generator function."))
 
 (defclass -generator-function (-function)
-  ((-prototype :initform '-function :allocation :class)
+  ((-prototype :initform '-function)
    (length :initform (make-property :value 1
 				    :configurable :true) :allocation :class)
    (name :initform (make-property :value "GeneratorFunction")

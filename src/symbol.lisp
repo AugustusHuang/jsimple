@@ -24,13 +24,10 @@
 ;;;; Builtin symbol type definitions.
 (in-package :lesp-builtin)
 
-(deftype symbol-raw ()
-  'symbol)
-
 ;;; Well known symbols are built-in symbol values are typically used
 ;;; as the keys of properties. -- ECMA V6.
 (defclass -symbol-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    (-symbol-data :type symbol-raw :initarg :-symbol-data)
    (constructor :initform (make-property :value '-symbol) :allocation :class)
    (own-properties
@@ -44,8 +41,8 @@
   (:documentation "Symbol prototype, provides inherited properties."))
 
 (defclass -symbol (-function-prototype)
-  ((-prototype :initform '-function-prototype :allocation :class)
-   (-extensible :initform :false :allocation :class)
+  ((-prototype :initform '-function-prototype)
+   (-extensible :initform :false)
    (length :initform (make-property :value 0) :allocation :class)
    (prototype :type (or property -null) :accessor prototype
 	      :initarg :prototype :initform (make-property :value '-symbol-prototype)

@@ -24,7 +24,7 @@
 (in-package :lesp-builtin)
 
 (defclass -reflect (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
+  ((-prototype :initform '-object-prototype)
    (properties
     :initform
     (append '((apply . (make-property :value '!apply))
