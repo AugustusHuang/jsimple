@@ -14,7 +14,7 @@ all slots, those global inherited slots will be allocated by class.
 the value of a constructor's prototype property is a prototype object that is
 used to implement inheritance and shared properties. To implement
 **constructor**, define a data class object with the same name and decide
-to include `\[\[Call\]\]` and `\[\[Construct\]\]` or not, it's only a pure
+to include `[[Call]]` and `[[Construct]]` or not, it's only a pure
 data class, only the internal methods will be callable.  
 **Prototype** is object that provides shared properties for other objects,
 properties added to an object's prototype are shared through inheritance, by
@@ -31,10 +31,10 @@ be compiled into a call call, if those calls are `:NULL`, throw an error.
 There will be a `constructor` property in every **prototype** and there
 will be a `prototype` property in every **constructor**, if not specified.
 `ObjectPrototype` is the very beginning, it has no ancestor.  
-Difference between `\[\[Prototype\]\]` and `prototype`:  
-`\[\[Prototype\]\]` is implemented as `-prototype` in Lisp, and it contains
+Difference between `[[Prototype]]` and `prototype`:  
+`[[Prototype]]` is implemented as `-prototype` in Lisp, and it contains
 the symbol of the direct ancestor of a class, e.g. `ObjectPrototype` has no
-ancestor so `\[\[Prototype\]\]` is `:NULL`, `Object`'s `\[\[Prototype\]\]`
+ancestor so `[[Prototype]]` is `:NULL`, `Object`'s `[[Prototype]]`
 is `FunctionPrototype` but its `prototype` is `ObjectPrototype`.  
 **Ordinary object** is object that has the default behaviour for the essential
 internal methods that must be supported by all objects. It will only be a
@@ -97,20 +97,20 @@ embed it into corresponding prototypes, and implement them. If it is a function
 valued property, make generic function and methods. If object valued, the type
 will be `(or object null)`.
 
-## The relation between \[\[Prototype\]\] and .prototype
+## The relation between `[[Prototype]]` and `.prototype`
 If we have a user-defined class `a`, itself is a function, so its
-`\[\[Prototype\]\]` internal slot's value is `Function.prototype`, which we
+`[[Prototype]]` internal slot's value is `Function.prototype`, which we
 will use `-function-prototype` to implement.
 A internal class won't have this internal attribute but store this as a property,
 so `Function` only have `Function.prototype`,
 which point to the prototype class in order to make implementation easy.
 Now we have two classes, `b extends a`, then:  
 
-    `b\[\[Prototype\]\] === a`
-	`b.prototype === b.prototype === b-prototype`
-	`a\[\[Prototype\]\] === Function === -function`
-	`a.prototype === a.prototype === a-prototype`
-	`b.prototype\[\[Prototype\]\] === a.prototype`
-	`a.prototype\[\[Prototype\]\] === Object.prototype === -object-prototype`
+    `b[[Prototype]] === a`
+    `b.prototype === b.prototype === b-prototype`
+    `a[[Prototype]] === Function === -function`
+    `a.prototype === a.prototype === a-prototype`
+    `b.prototype[[Prototype]] === a.prototype`
+    `a.prototype[[Prototype]] === Object.prototype === -object-prototype`
 
 
