@@ -30,12 +30,12 @@
 ;;;; -UNDEFINED, -NULL are trivial, use the keywords.
 (defun undefined-p (value)
   (eql value :undefined))
-(deftype -undefined ()
+(deftype undefined-raw ()
   `(satisfies undefined-p))
 
 (defun null-p (value)
   (eql value :null))
-(deftype -null ()
+(deftype null-raw ()
   `(satisfies null-p))
 
 (deftype boolean-raw ()
@@ -47,14 +47,14 @@
 (deftype symbol-raw ()
   'symbol)
 (deftype object-raw ()
-  '-object-prototype)
+  'standard-object)
 
 (deftype +js-value-types+ ()
-  `(or -undefined -null boolean-raw number-raw symbol-raw string-raw
+  `(or undefined-raw null-raw boolean-raw number-raw symbol-raw string-raw
        object-raw))
 
 (deftype +js-primitive-value-types+ ()
-  `(or -undefined -null boolean-raw number-raw symbol-raw string-raw))
+  `(or undefined-raw null-raw boolean-raw number-raw symbol-raw string-raw))
 
 ;;; In an object, property list is an associative list with CARs keys (symbols
 ;;; or strings) and CDRs property structures.
@@ -66,11 +66,11 @@
   ;; be both function and object. The function's [[Call]] method is called
   ;; with an empty argument list to retrieve the property value each time
   ;; a get access of the property is performed.
-  (get :undefined :type (or -undefined -function))
+  (get :undefined :type (or undefined-raw builtin-function))
   ;; If not :UNDEFINED must be a function object, the function's [[Call]]
   ;; method is called with an argument list containing assigned value,
   ;; assigns the property with this argument.
-  (set :undefined :type (or -undefined -function))
+  (set :undefined :type (or undefined-raw builtin-function))
   ;; If :FALSE, attempts to change [[Value]] attribute using [[Set]] failes.
   (writable :false :type boolean-raw)
   ;; If :TRUE, the property will be enumerable by a for-in.
@@ -78,6 +78,31 @@
   ;; If :FALSE, attempts to delete the property, change the property to be
   ;; an accessor property, or change its attributes will fail.
   (configurable :false :type boolean-raw))
+
+(defclass proto ()
+  ((-prototype :type (or object-raw null-raw) :initarg :-prototype
+	       :initform :null)
+   (-extensible :type (or boolean-raw undefined-raw) :initarg :-extensible
+		:initform :undefined)
+   (constructor :type (or object-raw null-raw) :initarg :constructor
+		:allocation :class :accessor properties :initform :null)
+   (properties :type (or null list) :initarg :properties
+	       :accessor properties :allocation :class :initform nil))
+  (:documentation "General prototype class, used as a helper basis class,
+it is implementation specific."))
+
+(defclass builtin-function ()
+  ((-prototype :type (or object-raw null-raw) :initarg :-prototype
+	       :initform :null)
+   (-extensible :type (or boolean-raw undefined-raw) :initarg :-extensible
+		:initform :undefined)
+   (prototype :type (or property null-raw) :initarg :prototype
+	      :allocation :class :initform :null)
+   (properties :type (or null list) :initarg :properties
+	       :accessor properties :allocation :class :initform nil))
+  (:metaclass funcallable-standard-class)
+  (:documentation "Builtin function prototype class, used as a helper
+funcallable class, it is implementation specific."))
 
 (declaim (inline !eval))
 (defun !eval (x)

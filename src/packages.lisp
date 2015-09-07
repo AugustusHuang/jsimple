@@ -54,6 +54,8 @@
 
 (defpackage :lesp-builtin
   (:use :cl
+	;; How about other implementations?
+	:sb-pcl
 	:lesp-error)
   (:documentation
    "Builtin feature package of Ecma-script 6.")

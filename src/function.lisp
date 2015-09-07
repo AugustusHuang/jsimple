@@ -23,10 +23,9 @@
 
 (in-package :lesp-builtin)
 
-;;; Every function has its own symbol, once created, store it into a global
-;;; hashtable in order to prevent duplicates. (Since naming style is quite
-;;; different in Lisp and ES, functions like Another and another will be the
-;;; same... But they are different, if use thisIsAFunctionStyle, it will
+;;; Since naming style is quite different in Lisp and ES,
+;;; functions like Another and another will be the same...
+;;; But they are different, if use thisIsAFunctionStyle, it will
 ;;; be parsed into this-is-a-function-style in Lisp, and if use ThisType,
 ;;; it will be parsed into !this-type, and then the problem will be trivial...
 ;;; See builtin-util.lisp

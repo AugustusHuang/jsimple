@@ -29,13 +29,17 @@
 
 ;;; An ordinary object is made up by a prototype part and an internal part,
 ;;; prototype part is inherited as prototype, but internal part is only
-;;; accessible by internal methods or print methods, users can't alter them.
+;;; accessible by internal methods or print methods, users can't alter them
+;;; barely by using accessor functions. e.g. [[Prototype]] can only be modified
+;;; by [[SetPrototypeOf]] internal methods.
 
 ;;; In this very internal stage, we don't tell the different between internal
 ;;; slots and properties that shared everywhere like prototype, constructor
 ;;; and length. The different between them is that internal slots contain
 ;;; bare-bone data, but properties contain PROPERTY typed data. Method
-;;; properties are directly handled by CLOS.
+;;; properties are directly handled by CLOS, And every method property will
+;;; have a lot of other properties, so they will be implemented as built-in
+;;; function instances of built-in function class.
 
 ;;; %ObjectPrototype% Object Prototype Object: [[Prototype]] = null,
 ;;; [[Extensible]] = true, constructor = %Object%, hasOwnProperty = t,
@@ -43,25 +47,40 @@
 ;;; toString = t, valueOf = t.
 (defclass -object-prototype ()
   ((-prototype :type (or symbol-raw -null)
-	      :initarg :-prototype
-	      :initform :null)
+	       :initarg :-prototype
+	       :initform :null)
    (-extensible :type (or boolean-raw -undefined)
-	       :initarg :-extensible
-	       :iniform :true)
+		:initarg :-extensible
+		:iniform :true)
    (constructor :type (or property -null) :accessor constructor
-		:initarg :constructor
-		;; If we want to refer to a class, use symbol name, and
-		;; use FIND-CLASS to get the corresponding class.
-		:initform (make-property :value '-object) :allocation :class)
-   (properties :accessor properties :type (or null list)
-	       :initarg :properties :allocation :class
-	       :initform
-	       '((has-own-property . (make-property :value 'has-own-property))
-		 (is-prototype-of . (make-property :value 'is-prototype-of))
-		 (property-is-enumerable . (make-property :value 'property-is-enumerable))
-		 (to-locale-string . (make-property :value 'to-locale-string))
-		 (to-string . (make-property :value 'to-string))
-		 (value-of . (make-property :value 'value-of)))))
+		:initarg :constructor :allocation :class
+		:initform (make-property :value (find-class '-object)))
+   (has-own-property :type property :accessor has-own-property
+		     :initarg :has-own-property :allocation :class
+		     :initform
+		     (make-property :value (-builtin-function #'has-own-property)))
+   (is-prototype-of :type property :accessor is-prototype-of
+		    :initarg :is-prototype-of :allocation :class
+		    :initform
+		    (make-property :value (-builtin-function #'is-prototype-of)))
+   (property-is-enumerable :type property :accessor property-is-enumerable
+			   :initarg :property-is-enumerable :allocation :class
+			   :initform
+			   (make-property :value (-builtin-function #'property-is-enumerable)))
+   (to-locale-string :type property :accessor to-locale-string
+		     :initarg :to-locale-string :allocation :class
+		     :initform
+		     (make-property :value (-builtin-function #'to-locale-string)))
+   (to-string :type property :accessor to-string
+	      :initarg :to-string :allocation :class
+	      :initform
+	      (make-property :value (-builtin-function #'to-string)))
+   (value-of :type property :accessor value-of
+	     :initarg :value-of :allocation :class
+	     :initform
+	     (make-property :value (-builtin-function #'value-of)))
+   (properties :accessor properties :type list
+	       :initarg :properties :initform nil))
   (:documentation "Object prototype, provides inherited properties."))
 
 ;;; %Object% Object Constructor: [[Prototype]] = %FunctionPrototype%,
