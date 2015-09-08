@@ -59,54 +59,100 @@
     :allocation :class))
   (:documentation "Number prototype, provides inherited properties."))
 
-(defclass -number (-function-prototype)
-  ((-prototype :initform '-function-prototype)
-   (length :initform (make-property :value 1) :allocation :class)
-   (prototype :type (or property -null) :accessor prototype :allocation :class
-	      :initarg :prototype
-	      :initform (make-property :value '-number-prototype))
-   (properties
-    :initform
-    (append (fetch-properties (find-class '-function-prototype))
-	    '((epsilon . (make-property :value +number-epsilon+))
-	      (is-finite . (make-property :value 'is-finite))
-	      (is-integer . (make-property :value 'is-integer))
-	      (is-nan . (make-property :value 'is-nan))
-	      (is-safe-integer . (make-property :value 'is-safe-integer))
-	      (max-safe-integer . (make-property :value +number-max-safe-integer+))
-	      (max-value . (make-property :value +number-max-value+))
-	      (min-safe-integer . (make-property :value +number-min-safe-integer+))
-	      (min-value . (make-property :value +number-min-value+))
-	      (nan . (make-property :value :nan))
-	      (negative-infinity . (make-property :value :-infinity))
-	      (parse-float . (make-property :value 'parse-float))
-	      (parse-int . (make-property :value 'parse-int))
-	      (positive-infinity . (make-property :value :infinity))))
-    :allocation :class))
-  (:documentation "Number constructor, used with new operator."))
+(defun -to-number (arg)
+  (typecase arg
+    (undefined-raw
+     (-number :nan))
+    (null-raw
+     (-number 0))
+    (-boolean-proto
+     (if (eql (slot-value arg '-boolean-data) :true)
+	 (-number 1)
+	 (-number 0)))
+    (-number-proto
+     arg)
+    (-string-proto
+     (-number (string-to-number arg)))
+    (-symbol-proto
+     (error (find-property message '-type-error-proto)))
+    (-object-proto
+     (-number (-to-primitive arg :hint 'number)))))
 
-(defmethod fetch-properties ((this -number-prototype))
+(defun -to-integer (arg)
+  (let* ((number (-to-number arg))
+	 (data (slot-value number '-number-data)))
+    (case data
+      (:nan
+       (-number 0))
+      ((0 :infinity :-infinity)
+       number)
+      (t
+       ((-number (* (signum data)
+		    (floor (abs data)))))))))
+
+(defun -to-int32 (arg)
+  (let ((data (slot-value (-to-number arg) '-number-data)))
+    (case data
+      ((:nan 0 :infinity :-infinity)
+       (-number 0))
+      (t
+       (let ((int-32bit (mod (* (signum data)
+				(floor (abs data))) (expt 2 32))))
+	 (if (>= int-32bit (expt 2 31))
+	     (-number (- int-32bit (expt 2 32)))
+	     (-number int-32bit)))))))
+
+(defun -to-uint32 (arg)
+  (let ((data (slot-value (-to-number arg) '-number-data)))
+    (case data
+      ((:nan 0 :infinity :-infinity)
+       (-number 0))
+      (t
+       (let ((int-32bit (mod (* (signum data)
+				(floor (abs data))) (expt 2 32))))
+	 (-number int-32bit))))))
+
+(defun -to-int16 (arg)
+  (let ((data (slot-value (-to-number arg) '-number-data)))
+    (case data
+      ((:nan 0 :infinity :-infinity)
+       (-number 0))
+      (t
+       (let ((int-16bit (mod (* (signum data)
+				(floor (abs data))) (expt 2 16))))
+	 (if (>= int-16bit (expt 2 15))
+	     (-number (- int-16bit (expt 2 16)))
+	     (-number int-16bit)))))))
+
+(defun -to-uint16 (arg)
+  (let ((data (slot-value (-to-number arg) '-number-data)))
+    (case data
+      ((:nan 0 :infinity :-infinity)
+       (-number 0))
+      (t
+       (let ((int-16bit (mod (* (signum data)
+				(floor (abs data))) (expt 2 16))))
+	 (-number int-16bit))))))
+
+(defmethod fetch-properties ((this -number-proto))
   (properties (make-instance (class-name this))))
 
-(defmethod fetch-properties ((this -number))
-  (properties (make-instance (class-name this))))
-
-(defmethod to-exponential ((this -number-prototype) digits)
+(defmethod to-exponential ((this -number-proto) digits)
   )
 
-(defmethod to-fixed ((this -number-prototype) digits)
+(defmethod to-fixed ((this -number-proto) digits)
   )
 
-(defmethod to-locale-string ((this -number-prototype))
+(defmethod to-locale-string ((this -number-proto))
   )
 
-(defmethod to-precision ((this -number-prototype) precision)
+(defmethod to-precision ((this -number-proto) precision)
   )
 
-(defmethod to-string ((this -number-prototype) &optional radix)
+(defmethod to-string ((this -number-proto) &optional radix)
   )
 
-(defmethod value-of ((this -number-prototype))
+(defmethod value-of ((this -number-proto))
   )
 
 ;;; Math object definitions. Since Math is not a function and can't be called

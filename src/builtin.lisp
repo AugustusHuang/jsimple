@@ -134,6 +134,9 @@ funcallable class, it is implementation specific."))
 	     (eval `(function (lambda ,arg-list
 		      (,name ,(remove-& arg-list)))))))))))
 
+(defun to-primitive (arg &key (hint 'default))
+  )
+
 ;;; Internal methods will have name camel-to-hyphen ed. Constructor instances
 ;;; will have name camel-to-hyphen ed too, but since built-in function should
 ;;; have a instance of -FUNCTION-PROTO without using the duplicated symbol,
@@ -326,7 +329,7 @@ funcallable class, it is implementation specific."))
 (defun is-finite (number)
   (let ((num (to-number number)))
     (case num
-      ((:nan :infinity :-infinity)
+      (((-number :nan) (-number :infinity) (-number :-infinity))
        :false)
       (t
        :true))))
@@ -334,7 +337,7 @@ funcallable class, it is implementation specific."))
 (defun is-nan (number)
   (let ((num (to-number number)))
     (case num
-      (:nan
+      ((-number :nan)
        :true)
       (t
        :false))))

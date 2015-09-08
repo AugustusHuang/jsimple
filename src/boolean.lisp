@@ -34,17 +34,25 @@
     :allocation :class))
   (:documentation "Boolean prototype, provides inherited properties."))
 
-(defclass -boolean (-function-prototype)
-  ((-prototype :initform '-function-prototype)
-   ;; Extensible is the same.
-   (length :initform (make-property :value 1) :allocation :class)
-   (prototype :type (or property -null) :accessor prototype :allocation :class
-	      :initarg :prototype
-	      :initform (make-property :value '-boolean-prototype))
-   (properties
-    :initform (fetch-properties (find-class '-function-prototype))
-    :allocation :class))
-  (:documentation "Boolean constructor, used with new operator."))
+(defun -to-boolean (arg)
+  (typecase arg
+    (undefined-raw
+     (-boolean :false))
+    (null-raw
+     (-boolean :false))
+    (-boolean-proto
+     arg)
+    (-number-proto
+     (if (or (= 0 (slot-value arg '-number-data))
+	     (= :nan (slot-value arg '-number-data)))
+	 (-boolean :false)
+	 (-boolean :true)))
+    (-string-proto
+     (-boolean :true))
+    (-symbol-proto
+     (-boolean :true))
+    (-object-proto
+     (-boolean :true))))
 
 (defmethod fetch-properties ((this -boolean-prototype))
   (properties (make-instance (class-name this))))
