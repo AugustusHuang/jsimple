@@ -41,13 +41,13 @@
 (deftype boolean-raw ()
   `(member :true :false))
 (deftype number-raw ()
-  `(or double-float (member :nan :infinity :-infinity)))
+  `(or double-float integer (member :nan :infinity :-infinity)))
 (deftype string-raw ()
   'string)
 (deftype symbol-raw ()
   'symbol)
 (deftype object-raw ()
-  `(or standard-class funcallable-standard-class -function))
+  `(or standard-class -function-proto))
 
 (deftype +js-value-types+ ()
   `(or undefined-raw null-raw boolean-raw number-raw symbol-raw string-raw
@@ -70,11 +70,11 @@
   ;; be both function and object. The function's [[Call]] method is called
   ;; with an empty argument list to retrieve the property value each time
   ;; a get access of the property is performed.
-  (get :undefined :type (or undefined-raw builtin-function))
+  (get :undefined :type (or undefined-raw -function-proto))
   ;; If not :UNDEFINED must be a function object, the function's [[Call]]
   ;; method is called with an argument list containing assigned value,
   ;; assigns the property with this argument.
-  (set :undefined :type (or undefined-raw builtin-function))
+  (set :undefined :type (or undefined-raw -function-proto))
   ;; If :FALSE, attempts to change [[Value]] attribute using [[Set]] failes.
   (writable :false :type boolean-raw)
   ;; If :TRUE, the property will be enumerable by a for-in.
@@ -90,8 +90,8 @@
 		:initform :undefined)
    (constructor :type (or object-raw null-raw) :initarg :constructor
 		:allocation :class :accessor properties :initform :null)
-   (properties :type (or null list) :initarg :properties
-	       :accessor properties :initform nil))
+   (properties :type list :initarg :properties :accessor properties
+	       :initform nil))
   (:documentation "General prototype class, used as a helper basis class,
 it is implementation specific."))
 
@@ -100,15 +100,13 @@ it is implementation specific."))
 	       :initform :null)
    (-extensible :type (or boolean-raw undefined-raw) :initarg :-extensible
 		:initform :undefined)
-   (prototype :type (or property null-raw) :initarg :prototype
-	      :allocation :class :initform :null)
    ;; LENGTH and NAME are present no matter in which function, make them
-   ;; outstanding. Only PROTOTYPE, CONSTRUCTOR, LENGTH, NAME can be out.
+   ;; outstanding. Only CONSTRUCTOR, LENGTH, NAME can be out.
    (length :type (or property null-raw) :initarg :length :accessor length
 	   :initform (make-property :value 0))
    (name :type (or property null-raw) :initarg :name :accessor name
 	 :initform (make-property :value ""))
-   (properties :type (or null list) :initarg :properties
+   (properties :type list :initarg :properties
 	       :accessor properties :initform nil))
   (:metaclass funcallable-standard-class)
   (:documentation "Builtin function prototype class, used as a helper
@@ -117,16 +115,333 @@ funcallable class, it is implementation specific."))
 ;;; All the funcallable class should have at least one instance,
 ;;; all funcallable instances acts like a wrapper, which contains properties
 ;;; information.
+(defmethod initialize-instance :after ((func -function-proto) &key)
+  (with-slots (name) func
+    (let ((fun (symbol-function
+		;; NAME is ThisStyle, cast to THIS-STYLE and find the function.
+		(string-upcase (camel-to-hyphen (property-value name))))))
+      (if (eql (type-of (symbol-function name)) 'function)
+	  ;; The type of the function is a general function.
+	  (let ((arg-list (sb-introspect:function-lambda-list fun)))
+	    (set-funcallable-instance-function
+	     func
+	     (eval `(function (lambda ,arg-list
+		      (,name ,(remove-& arg-list)))))))
+	  ;; The type of the function is standard generic function.
+	  (let ((arg-list (generic-function-lambda-list fun)))
+	    (set-funcallable-instance-function
+	     func
+	     (eval `(function (lambda ,arg-list
+		      (,name ,(remove-& arg-list)))))))))))
+
+;;; Internal methods will have name camel-to-hyphen ed. Constructor instances
+;;; will have name camel-to-hyphen ed too, but since built-in function should
+;;; have a instance of -FUNCTION-PROTO without using the duplicated symbol,
+;;; add ! as a prefix.
+(setf !eval
+      (make-instance '-function-proto
+		     :name (make-property :value "eval")
+		     :length (make-property :value 1))
+      !is-finite
+      (make-instance '-function-proto
+		     :name (make-property :value "isFinite")
+		     :length (make-property :value 1))
+      !is-nan
+      (make-instance '-function-proto
+		     :name (make-property :value "isNaN")
+		     :length (make-property :value 1))
+      !parse-float
+      (make-instance '-function-proto
+		     :name (make-property :value "parseFloat")
+		     :length (make-property :value 1))
+      !parse-int
+      (make-instance '-function-proto
+		     :name (make-property :value "parseInt")
+		     :length (make-property :value 2))
+      !decode-uri
+      (make-instance '-function-proto
+		     :name (make-property :value "decodeURI")
+		     :length (make-property :value 1))
+      !decode-uri-component
+      (make-instance '-function-proto
+		     :name (make-property :value "decodeURIComponent")
+		     :length (make-property :value 1))
+      !encode-uri
+      (make-instance '-function-proto
+		     :name (make-property :value "encodeURI")
+		     :length (make-property :value 1))
+      !encode-uri-component
+      (make-instance '-function-proto
+		     :name (make-property :value "encodeURIComponent")
+		     :length (make-property :value 1)))
+
+(setf !assign
+      (make-instance '-function-proto
+		     :name (make-property :value "assign")
+		     :length (make-property :value 2))
+      !create
+      (make-instance '-function-proto
+		     :name (make-property :value "create")
+		     :length (make-property :value 2))
+      !define-properties
+      (make-instance '-function-proto
+		     :name (make-property :value "defineProperties")
+		     :length (make-property :value 2))
+      !define-property
+      (make-instance '-function-proto
+		     :name (make-property :value "defineProperty")
+		     :length (make-property :value 3))
+      !freeze
+      (make-instance '-function-proto
+		     :name (make-property :value "freeze")
+		     :length (make-property :value 1))
+      !get-own-property-descriptor
+      (make-instance '-function-proto
+		     :name (make-property :value "getOwnPropertyDescriptor")
+		     :length (make-property :value 2))
+      !get-own-property-names
+      (make-instance '-function-proto
+		     :name (make-property :value "getOwnPropertyNames")
+		     :length (make-property :value 1))
+      !get-own-property-symbols
+      (make-instance '-function-proto
+		     :name (make-property :value "getOwnPropertySymbols")
+		     :length (make-property :value 1))
+      !get-prototype-of
+      (make-instance '-function-proto
+		     :name (make-property :value "getPrototypeOf")
+		     :length (make-property :value 1))
+      !is
+      (make-instance '-function-proto
+		     :name (make-property :value "is")
+		     :length (make-property :value 2))
+      !is-extensible
+      (make-instance '-function-proto
+		     :name (make-property :value "isExtensible")
+		     :length (make-property :value 1))
+      !is-frozen
+      (make-instance '-function-proto
+		     :name (make-property :value "isFrozen")
+		     :length (make-property :value 1))
+      !is-sealed
+      (make-instance '-function-proto
+		     :name (make-property :value "isSealed")
+		     :length (make-property :value 1))
+      !keys
+      (make-instance '-function-proto
+		     :name (make-property :value "keys")
+		     :length (make-property :value 1))
+      !prevent-extensions
+      (make-instance '-function-proto
+		     :name (make-property :value "preventExtensions")
+		     :length (make-property :value 1))
+      !seal
+      (make-instance '-function-proto
+		     :name (make-property :value "seal")
+		     :length (make-property :value 1))
+      !set-prototype-of
+      (make-instance '-function-proto
+		     :name (make-property :value "setPrototypeOf")
+		     :length (make-property :value 2))
+      )
+
+(setf -object
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Object")
+		     :length (make-property :value 1 :configurable :true)
+		     :properties
+		     '((prototype . (make-property :value (find-class '-object-proto')))
+		       (assign . (make-property :value !assign))
+		       (create . (make-property :value !create))
+		       (define-properties . (make-property :value !define-properties))
+		       (define-property . (make-property :value !define-property))
+		       (freeze . (make-property :value !freeze))
+		       (get-own-property-descriptor . (make-property :value !get-own-property-descriptor))
+		       (get-own-property-names . (make-property :value !get-own-property-names))
+		       (get-own-property-symbols . (make-property :value !get-own-property-symbols))
+		       (get-prototype-of . (make-property :value !get-prototype-of))
+		       (is . (make-property :value !is))
+		       (is-extensible . (make-property :value !is-extensible))
+		       (is-frozen . (make-property :value !is-frozen))
+		       (is-sealed . (make-property :value !is-sealed))
+		       (keys . (make-property :value !keys))
+		       (prevent-extensions . (make-property :value !prevent-extensions))
+		       (seal . (make-property :value !seal))
+		       (set-prototype-of . (make-property :value !set-prototype-of))))
+      -function
+      (make-instance '-function-proto
+		     :-prototype '-function-proto
+		     :name (make-property :value "Function")
+		     :length (make-property :value 1 :configurable :true)
+		     :properties
+		     '((prototype . (make-property :value (find-class '-function-proto)))))
+      -boolean
+      (make-instance '-function-proto
+		     :-prototype '-function-proto
+		     :name (make-property :value "Boolean")
+		     :length (make-property :value 1)
+		     :properties
+		     '((prototype . (make-property :value (find-class '-boolean-proto)))))
+      -symbol
+      (make-instance '-function-proto
+		     :-prototype '-function-proto
+		     :name (make-property :value "Symbol")
+		     :length (make-property :value 0)
+		     :properties
+		     '(()))
+      -error
+      (make-instance '-function-proto
+		     :-prototype '-function-proto
+		     :name (make-property :value "Error")
+		     :length (make-property :value 1)
+		     :properties
+		     '(()))
+      -eval-error
+      (make-instance '-function-proto
+		     :-prototype '-function-proto
+		     :name (make-property :value "EvalError")
+		     :length (make-property :value 1)
+		     :properties
+		     '(()))
+      -range-error
+      (make-instance '-function-proto
+		     :-prototype '-function-proto
+		     :name (make-property :value "RangeError")
+		     :length (make-property :value 1)
+		     :properties
+		     '(()))
+      -reference-error
+      (make-instance '-function-proto
+		     :-prototype '-function-proto
+		     :name (make-property :value "ReferenceError")
+		     :length (make-property :value 1)
+		     :properties
+		     '(()))
 
 (declaim (inline !eval))
 (defun !eval (x)
   )
 
 (defun is-finite (number)
-  )
+  (let ((num (to-number number)))
+    (case num
+      ((:nan :infinity :-infinity)
+       :false)
+      (t
+       :true))))
 
 (defun is-nan (number)
-  )
+  (let ((num (to-number number)))
+    (case num
+      (:nan
+       :true)
+      (t
+       :false))))
+
+;;; Helper function to parse a general number...
+;;; PARSE-INT is internal...
+(defun parse-float (string)
+  ;; Firstly check the first two chars, if they match 0x/0X, 0o/0O, 0b/0B,
+  ;; use corresponding radix PARSE-INTEGER. Or handle decimal values.
+  (declare (type string string))
+  (let ((sign 1))
+    (when (> (length string) 2)
+      (let ((first-char (char string 0))
+	    (second-char (char string 1)))
+	(when (char= first-char #\0)
+	  (case second-char
+	    ((#\x #\X)
+	     (return-from parse-number
+	       (parse-integer string :start 2 :radix 16)))
+	    ((#\o #\O)
+	     (return-from parse-number
+	       (parse-integer string :start 2 :radix 8)))
+	    ((#\b #\B)
+	     (return-from parse-number
+	       (parse-integer string :start 2 :radix 2)))))))
+    ;; Now we must be parsing a decimal, or NaN.
+    (let ((integer-part 0)
+	  (decimal-part 0.0d0)
+	  (saw-integer-digits nil)
+	  (saw-decimal-digits nil)
+	  (saw-decimal-point nil)
+	  (exponent #\E)
+	  (exponent-sign 1)
+	  (exponent-value 0.0d0)
+	  (position 0))
+      ;; Underlying methods are taken from Mezzano's reader.
+      (declare (type integer integer-part)
+	       (type double-float decimal-part exponent-value))
+      (flet ((peek ()
+	       (when (< position (length string))
+		 (char string position)))
+	     (consume ()
+	       (prog1 (char string position)
+		 (incf position))))
+	;; Check for a leading sign.
+	(case (peek)
+	  (#\- (consume)
+	       (setf sign -1))
+	  (#\+ (consume)))
+	;; Remaining string must not be empty.
+	(when (null (peek))
+	  (return-from parse-number (values :nan 0)))
+	;; Parse the integer portion.
+	(loop
+	   (let ((weight (position (peek) +decimal-digits+)))
+	     (when (not weight) (return))
+	     (consume)
+	     (setf saw-integer-digits t)
+	     (setf integer-part (+ (* integer-part 10) weight))))
+	;; Parse the decimal portion.
+	(when (char= #\. (peek))
+	  (setf saw-decimal-point t)
+	  (consume)
+	  ;; If there was an integer part, then the next character
+	  ;; must be either a decimal-digit or an exponent marker.
+	  ;; If there was no integer part, it must be a decimal-digit.
+	  (when (and (not (or (not saw-integer-digits)
+			      (find (peek) +exponent-indicator+)))
+		     (not (find (peek) +decimal-digits+)))
+	    (return-from parse-number (values :nan 0)))
+	  ;; Accumulate decimal digits.
+	  (let ((first-decimal position))
+	    (loop
+	       (when (not (find (peek) +decimal-digits+))
+		 (return))
+	       (setf saw-decimal-digits t)
+	       (consume))
+	    ;; Now works backwards and build the decimal part.
+	    (dotimes (i (- position first-decimal))
+	      (incf decimal-part (digit-char-p (char string (- position i 1))))
+	      (setf decimal-part (/ decimal-part 10.0d0)))))
+	;; And look for an exponent.
+	(when (find (peek) +exponent-indicator+)
+	  (setf exponent (consume))
+	  (case (peek)
+	    (#\- (consume)
+		 (setf exponent-sign -1))
+	    (#\+ (consume)))
+	  ;; Must be at least one digit in the exponent
+	  ;; and one digit in the integer part
+	  (when (or (not (find (peek) +decimal-digits+))
+		    (not saw-integer-digits))
+	    (return-from parse-number (values :nan 0)))
+	  ;; Read exponent part.
+	  (loop (when (not (find (peek) +decimal-digits+))
+		  (return))
+	     (setf exponent-value (+ (* exponent-value 10.0d0)
+				     (digit-char-p (consume))))))
+	;; Must be at the end.
+	(when (peek)
+	  (return-from parse-number (values :nan 0)))
+	(* sign
+	   (+ integer-part decimal-part)
+	   (expt 10.0d0 (* exponent-sign exponent-value)))))))
+
+(defun parse-int (string radix)
+  (parse-integer string :radix radix))
 
 (defun decode-uri (encoded)
   )
@@ -139,301 +454,4 @@ funcallable class, it is implementation specific."))
 
 (defun encode-uri-component (component)
   )
-
-;;; Well known symbols are built-in symbol values are typically used
-;;; as the keys of properties. -- ECMA V6.
-;;; At very early stage, all WELL-KNOWN-SYMBOLS are undefined.
-;;; These symbols will correspond to every object, and every object will
-;;; has its specific typed symbol function of them.
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *well-known-symbols*
-    (let ((symbols (make-hash-table :test 'string=)))
-      (dolist (name '("hasInstance" "isConcatSpreadable" "iterator" "match"
-		      "replace" "search" "species" "split" "toPrimitive"
-		      "toStringTag" "unscopables"))
-	(setf (gethash name symbols) :js-undefined))
-      symbols))
-
-  ;; WELL-KNOWN-OBJECTS are well-known intrinsic objects can be refered..
-  ;; When a symbol is met, corresponding function will be translated into
-  ;; Lisp land directly.
-  (defvar *well-known-objects*
-    (let ((objs (make-hash-table :test 'string=)))
-      (dolist (name '("Array" "ArrayBuffer" "ArrayBuffer.prototype"
-		      "Array.prototype" "Array.prototype.values" "Boolean"
-		      "Boolean.prototype" "DataView" "DataView.prototype"
-		      "Date" "Date.prototype" "decodeURI" "decodeURIComponent"
-		      "encodeURI" "encodeURIComponent" "Error"
-		      "Error.prototype" "eval" "EvalError"
-		      "EvalError.prototype" "Float32Array"
-		      "Float32Array.prototype" "Float64Array"
-		      "Float64Array.prototype" "Function" "Function.prototype"
-		      "Int8Array" "Int8Array.prototype" "Int16Array"
-		      "Int16Array.prototype" "Int32Array"
-		      "Int32Array.prototype" "isFinite" "isNaN" "JSON" "Map"
-		      "Map.prototype" "Math" "Number" "Number.prototype"
-		      "Object" "Object.prototype"
-		      "parseFloat" "parseInt" "Promise" "Promise.prototype"
-		      "Proxy" "RangeError" "RangeError.prototype"
-		      "ReferenceError" "ReferenceError.prototype" "Reflect"
-		      "RegExp" "RegExp.prototype" "Set.prototype" "String"
-		      "String.prototype" "Symbol" "Symbol.prototype"
-		      "SyntaxError" "SyntaxError.prototype" "TypeError"
-		      "TypeError.prototype" "Uint8Array" "Uint8Array.prototype"
-		      "Uint8ClampedArray" "Uint8ClampedArray.prototype"
-		      "Uint16Array" "Uint16Array.prototype" "Uint32Array"
-		      "Uint32Array.prototype" "URIError" "URIError.prototype"
-		      "WeakMap" "WeakMap.prototype" "WeakSet"
-		      "WeakSet.prototype"))
-	(setf (gethash name objs) nil))
-      objs))
-  
-  ;; Each symbol value immutably holds an associated value called
-  ;; description that is either :js-undefined or a string value. -- ECMA V6.
-  (setf (gethash "hasInstance" *well-known-symbols*) "Symbol.hasInstance"
-	(gethash "isConcatSpreadable" *well-known-symbols*)
-	"Symbol.isConcatSpreadable"
-	(gethash "iterator" *well-known-symbols*) "Symbol.iterator"
-	(gethash "match" *well-known-symbols*) "Symbol.match"
-	(gethash "replace" *well-known-symbols*) "Symbol.replace"
-	(gethash "search" *well-known-symbols*) "Symbol.search"
-	(gethash "species" *well-known-symbols*) "Symbol.species"
-	(gethash "split" *well-known-symbols*) "Symbol.split"
-	(gethash "toPrimitive" *well-known-symbols*) "Symbol.toPrimitive"
-	(gethash "toStringTag" *well-known-symbols*) "Symbol.toStringTag"
-	(gethash "unscopables" *well-known-symbols*) "Symbol.unscopables")
-
-  ;; All well known objects has related functions.
-  (setf
-   ;; All builtin constructors and object functions. The first element
-   ;; is the default constructor.
-   ;; TODO: Add object functions...
-   (gethash "Array" *well-known-objects*)
-   '(js-array-build)
-   (gethash "ArrayBuffer" *well-known-objects*)
-   '(js-array-buffer-build)
-   (gethash "Boolean" *well-known-objects*)
-   '(js-boolean-build)
-   (gethash "DataView" *well-known-objects*)
-   '(js-data-view-build)
-   (gethash "Date" *well-known-objects*)
-   '(js-date-build)
-   (gethash "Error" *well-known-objects*)
-   '(js-error-build)
-   (gethash "EvalError" *well-known-objects*)
-   '(js-eval-error-build)
-   (gethash "Float32Array" *well-known-objects*)
-   '(js-float32-array-build)
-   (gethash "Float64Array" *well-known-objects*)
-   '(js-float64-array-build)
-   ;; This is the function constructor, not the function declaration.
-   (gethash "Function" *well-known-objects*)
-   '(js-function-build)
-   (gethash "Int8Array" *well-known-objects*)
-   '(js-int8-array-build)
-   (gethash "Int16Array" *well-known-objects*)
-   '(js-int16-array-build)
-   (gethash "Int32Array" *well-known-objects*)
-   '(js-int32-array-build)
-   (gethash "Map" *well-known-objects*)
-   '(js-map-build)
-   (gethash "Math" *well-known-objects*)
-   '(js-math-build)
-   (gethash "Number" *well-known-objects*)
-   '(js-number-build js-is-integer js-is-safe-integer)
-   (gethash "Object" *well-known-objects*)
-   '(js-object-build
-     js-assign js-create js-define-properties js-define-property js-freeze
-     js-get-own-property-descriptor js-get-own-property-names
-     js-get-own-property-symbols js-get-property-of js-is
-     js--is-extensible js-is-frozen js-is-sealed js-keys
-     js-prevent-extensions js-seal js-set-prototype-of)
-   (gethash "Proxy" *well-known-objects*)
-   '(js-proxy-build)
-   (gethash "Promise" *well-known-objects*)
-   '(js-promise-build)
-   (gethash "RangeError" *well-known-objects*)
-   '(js-range-error-build)
-   (gethash "ReferenceError" *well-known-objects*)
-   '(js-reference-error-build)
-   (gethash "RegExp" *well-known-objects*)
-   '(js-reg-exp-build)
-   (gethash "Set" *well-known-objects*)
-   '(js-set-build)
-   (gethash "String" *well-known-objects*)
-   '(js-string-build)
-   (gethash "Symbol" *well-known-objects*)
-   '(js-symbol-build)
-   (gethash "SyntaxError" *well-known-objects*)
-   '(js-syntax-error-build)
-   (gethash "TypeError" *well-known-objects*)
-   '(js-type-error-build)
-   (gethash "Uint8Array" *well-known-objects*)
-   '(js-uint8-array-build)
-   (gethash "Uint8ClampedArray" *well-known-objects*)
-   '(js-uint8-clamped-array-build)
-   (gethash "Uint16Array" *well-known-objects*)
-   '(js-uint16-array-build)
-   (gethash "Uint32Array" *well-known-objects*)
-   '(js-uint32-array-build)
-   (gethash "URIError" *well-known-objects*)
-   '(js-uri-error-build)
-   (gethash "WeakMap" *well-known-objects*)
-   '(js-weak-map-build)
-   (gethash "WeakSet" *well-known-objects*)
-   '(js-weak-set-build)
-   ;; And builtin functions.
-   (gethash "isFinite" *well-known-objects*)
-   '(js-is-finite)
-   (gethash "isNaN" *well-known-objects*)
-   '(js-is-nan)
-   (gethash "parseFloat" *well-known-objects*)
-   '(js-parse-float)
-   (gethash "parseInt" *well-known-objects*)
-   '(js-parse-int)
-   (gethash "decodeURI" *well-known-objects*)
-   '(js-decode-uri)
-   (gethash "encodeURI" *well-known-objects*)
-   '(js-encode-uri)
-   (gethash "decodeURIComponent" *well-known-objects*)
-   '(js-decode-uri-component)
-   (gethash "encodeURIComponent" *well-known-objects*)
-   '(js-encode-uri-component)
-   ;; And builtin prototypes. Value will be a list of functions.
-   ;; The length property is implied.
-   ;; XXX: Use CLOS or not? If use CLOS, simplify the function names...
-   (gethash "Array.prototype" *well-known-objects*)
-   '(js-concat js-copy-within js-entries js-every js-fill js-filter js-find
-     js-find-index js-for-each js-index-of js-join js-keys js-last-index-of
-     js-map js-pop js-push js-reduce js-reduce-right js-reverse js-shift
-     js-slice js-some js-sort js-splice js-to-locale-string js-to-string
-     js-unshift js-values)
-   (gethash "ArrayBuffer.prototype" *well-known-objects*)
-   '(js-byte-length js-slice)
-   (gethash "Boolean.prototype" *well-known-objects*)
-   '(js-to-string)
-   (gethash "DataView.prototype" *well-known-objects*)
-   '(js-buffer js-byte-length js-byte-offset js-get-float32 js-get-float64
-     js-get-int8 js-get-int16 js-get-int32 js-get-uint8 js-get-uint16
-     js-get-uint32 js-set-float32 js-set-float64 js-set-int8 js-set-int16
-     js-set-int32 js-set-uint8 js-set-uint16 js-set-uint32)
-   (gethash "Date.prototype" *well-known-objects*)
-   '(js-get-date js-get-day js-get-hours js-get-milliseconds js-get-minutes
-     js-get-month js-get-seconds js-get-time js-get-timezone-offset
-     js-get-utc-date js-get-utc-day js-get-utc-full-year js-get-utc-hours
-     js-get-utc-milliseconds js-get-utc-minutes js-get-utc-month
-     js-get-utc-seconds js-set-date js-set-full-year js-set-hours
-     js-set-milliseconds js-set-minutes js-set-month js-set-seconds
-     js-set-time js-set-utc-date js-set-utc-full-year js-set-utc-hours
-     js-set-utc-milliseconds js-set-utc-minutes js-set-utc-month
-     js-set-utc-seconds js-to-date-string js-to-iso-string js-to-json
-     js-to-locale-date-string js-to-locale-string js-to-locale-time-string
-     js-to-string js-to-time-string js-to-utc-string js-value-of)
-   (gethash "EvalError.prototype" *well-known-objects*)
-   '(js-message js-name js-to-string)
-   (gethash "Error.prototype" *well-known-objects*)
-   '(js-message js-name js-to-string)
-   (gethash "Float32Array.prototype" *well-known-objects*)
-   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
-     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
-     js-join js-keys js-last-index-of js-length js-map js-reduce
-     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
-     js-to-locale-string js-to-string js-values)
-   (gethash "Float64Array.prototype" *well-known-objects*)
-   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
-     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
-     js-join js-keys js-last-index-of js-length js-map js-reduce
-     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
-     js-to-locale-string js-to-string js-values)
-   (gethash "Function.prototype" *well-known-objects*)
-   '(js-apply js-bind js-call js-to-string)
-   (gethash "Int8Array.prototype" *well-known-objects*)
-   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
-     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
-     js-join js-keys js-last-index-of js-length js-map js-reduce
-     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
-     js-to-locale-string js-to-string js-values)
-   (gethash "Int16Array.prototype" *well-known-objects*)
-   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
-     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
-     js-join js-keys js-last-index-of js-length js-map js-reduce
-     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
-     js-to-locale-string js-to-string js-values)
-   (gethash "Int32Array.prototype" *well-known-objects*)
-   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
-     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
-     js-join js-keys js-last-index-of js-length js-map js-reduce
-     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
-     js-to-locale-string js-to-string js-values)
-   (gethash "Map.prototype" *well-known-objects*)
-   '(js-clear js-delete js-entries js-for-each js-get js-has js-keys js-set
-     js-size js-values)
-   (gethash "Math.prototype" *well-known-objects*)
-   '(js-abs js-acos js-acosh js-asin js-asinh js-atan js-atanh js-atan2
-     js-cbrt js-ceil js-clz32 js-cos js-cosh js-exp js-expm1 js-floor
-     js-fround js-hypot js-imul js-log js-log1p js-log10 js-log2 js-max js-min
-     js-pow js-random js-round js-sign js-sin js-sinh js-sqrt js-tan js-tanh
-     js-trunc)
-   (gethash "Number.prototype" *well-known-objects*)
-   '(js-to-exponential js-to-fixed js-to-locale-string js-to-precision
-     js-to-string js-value-of)
-   (gethash "Object.prototype" *well-known-objects*)
-   '(js-has-own-property js-is-prototype-of js-property-is-enumerable
-     js-to-locale-string js-to-string js-value-of)
-   (gethash "Promise.prototype" *well-known-objects*)
-   '(js-catch js-then)
-   (gethash "RangeError.prototype" *well-known-objects*)
-   '(js-message js-name js-to-string)
-   (gethash "ReferenceError.prototype" *well-known-objects*)
-   '(js-message js-name js-to-string)
-   (gethash "RegExp.prototype" *well-known-objects*)
-   '(js-exec js-flags js-global js-ignore-case js-multiline js-source
-     js-sticky js-test js-to-string js-unicode)
-   (gethash "Set.prototype" *well-known-objects*)
-   '(js-add js-clear js-delete js-entries js-for-each js-has js-keys js-size
-     js-values)
-   (gethash "String.prototype" *well-known-objects*)
-   '(js-char-at js-char-code-at js-code-point-at js-concat js-ends-with
-     js-includes js-index-of js-last-index-of js-local-compare js-match
-     js-normalize js-repeat js-replace js-search js-slice js-split
-     js-starts-with js-substring js-to-locale-lower-case
-     js-to-locale-upper-case js-to-lower-case js-to-string js-to-upper-case
-     js-trim js-value-of)
-   (gethash "Symbol.prototype" *well-known-objects*)
-   '(js-to-string js-value-of)
-   (gethash "SyntaxError.prototype" *well-known-objects*)
-   '(js-message js-name js-to-string)
-   (gethash "TypeError.prototype" *well-known-objects*)
-   '(js-message js-name js-to-string)
-   (gethash "Uint8Array.prototype" *well-known-objects*)
-   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
-     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
-     js-join js-keys js-last-index-of js-length js-map js-reduce
-     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
-     js-to-locale-string js-to-string js-values)
-   (gethash "Uint8ClampedArray.prototype" *well-known-objects*)
-   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
-     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
-     js-join js-keys js-last-index-of js-length js-map js-reduce
-     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
-     js-to-locale-string js-to-string js-values)
-   (gethash "Uint16Array.prototype" *well-known-objects*)
-   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
-     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
-     js-join js-keys js-last-index-of js-length js-map js-reduce
-     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
-     js-to-locale-string js-to-string js-values)
-   (gethash "Uint32Array.prototype" *well-known-objects*)
-   '(js-buffer js-byte-length js-byte-offset js-copy-within js-entries
-     js-every js-fill js-filter js-find js-find-index js-for-each js-index-of
-     js-join js-keys js-last-index-of js-length js-map js-reduce
-     js-reduce-right js-reverse js-set js-slice js-some js-sort js-subarray
-     js-to-locale-string js-to-string js-values)
-   (gethash "URIError.prototype" *well-known-objects*)
-   '(js-message js-name js-to-string)
-   (gethash "WeakMap.prototype" *well-known-objects*)
-   '(js-delete js-get js-has js-set)
-   (gethash "WeakSet.prototype" *well-known-objects*)
-   '(js-add js-delete js-has)
-   ))
 

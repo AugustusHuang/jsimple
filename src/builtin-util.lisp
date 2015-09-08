@@ -80,9 +80,10 @@
 	(setf result (string-downcase result :end 1)))
     result))
 
-;;; To get the owned and inherited property list fast, use this method.
-;;; FIXME: Another better one?
+(defun remove-& (arglist)
+  "Remove all &-started elements in a argument list."
+  (remove '&key (remove '&rest (remove '&optional (remove '&body arglist)))))
+
 (defgeneric fetch-properties (this)
-  (:documentation "Fetch the PROPERTIES slot from a class object, create
-an instance of the class object and fetch its slot."))
+  (:documentation "Fetch the PROPERTIES slot from a class object."))
 

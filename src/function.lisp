@@ -30,8 +30,8 @@
 ;;; it will be parsed into !this-type, and then the problem will be trivial...
 ;;; See builtin-util.lisp
 
-(defclass -function-prototype (builtin-function)
-  ((-prototype :initform (find-class '-object-prototype))
+(defclass -function-proto (builtin-function)
+  ((-prototype :initform (find-class '-object-proto))
    (-extensible :initform :true)
    ;; Internal slots of function objects:
    ;; The lexical environment that the function was closed over. Used as the
@@ -61,38 +61,22 @@
    ;; If the function uses 'super' this is the object whose [[GetPrototypeOf]]
    ;; provides the object where 'super' property lookups begin.
    (-home-object :type symbol-raw :initarg :-home-object)
-   (constructor :initform (make-property :value (find-class '-function))
-		:allocation :class)
    (length :initform (make-property :value 0
 				    :configurable :true))
    (name :initform (make-property :value ""
 				  :configurable :true))
    (apply :type property :initarg :apply :allocation :class
-	  :initform (make-property :value ()))
-  ;; FunctionPrototype doesn't have a prototype property, directly
-  ;; inherit :NULL.
+	  :initform (make-property :value !apply))
+   (bind :type property :initarg :bind :allocation :class
+	 :initform (make-property :value !bind))
+   (call :type property :initarg :call :allocation :class
+	 :initform (make-property :value !call))
+   (properties :initform
+	       '((constructor . (make-property :value -function)))))
+   ;; FunctionPrototype doesn't have a prototype property, directly
+   ;; inherit :NULL.
   (:metaclass funcallable-standard-class)
   (:documentation "Function prototype, provides inherited properties."))
-
-(defclass -function (-function-prototype)
-  ((-prototype :initform '-function-prototype)
-   ;; Extensible is the same.
-   (length :initform (make-property :value 1
-				    :configurable :true))
-   (prototype :initform (make-property :value (find-class '-function-prototype)))
-   (properties
-    :initform nil
-    :allocation :class))
-  (:metaclass funcallable-standard-class)
-  (:documentation "Function constructor, used with or without new operator."))
-
-(defmethod initialize-instance :after ((func -function-prototype) &key)
-  (with-slots (name length) func
-    (let ((lambda-list (generic-function-lambda-list (symbol-function name))))
-      (set-funcallable-instance-function
-       func
-       (eval `(function (lambda ,lambda-list
-		(,name ,(remove-& lambda-list)))))))))
 
 ;;; Helper functions.
 (defmethod fetch-own-properties ((this -function-prototype))

@@ -48,7 +48,6 @@
 (defclass -object-proto (proto)
   ((-prototype :initform :null)
    (-extensible :initform :true)
-   (constructor	:initform (make-property :value (find-class '-object)))
    (has-own-property :type property :initarg :has-own-property
 		     :allocation :class
 		     :initform
@@ -70,7 +69,9 @@
    (value-of :type property :initarg :value-of :allocation :class
 	     :initform
 	     (make-property :value (-builtin-function #'value-of)))
-   (properties :type list :initarg :properties :initform nil))
+   (properties :type list :initarg :properties
+	       :initform
+	       '((constructor . (make-property :value -object)))))
   (:documentation "Object prototype, provides inherited properties."))
 
 ;;; %Object% Object Constructor: [[Prototype]] = %FunctionPrototype%,
@@ -80,47 +81,10 @@
 ;;; getOwnPropertySymbols = t, getPrototypeOf = t, is = t, isExtensible = t,
 ;;; isFrozen = t, isSealed = t, keys = t, preventExtensions = t, seal = t,
 ;;; prototype = %ObjectPrototype%, seal = t, setPrototypeOf = t.
-(defclass -object (-function-prototype)
-  ((-prototype :initform '-function-prototype)
-   ;; Extensible is the same.
-   (length :initform (make-property :value 1) :allocation :class)
-   (prototype :type (or property -null) :accessor prototype
-	      :initarg :prototype :allocation :class
-	      :initform (make-property :value '-object-prototype))
-   (properties
-    ;; NOTE: Here ASSIGN is a symbol, but it is meant to be a
-    ;; function object, so it will have properties, some of them
-    ;; are trivial, like prototype, but length is not,
-    ;; use SB-INTROSPECT:FUNCTION-ARGLIST to calculate!
-    ;; THIS doesn't count, since it won't appear in JS argument.
-    :initform
-    (append (fetch-properties (find-class '-function-prototype))
-	    '((assign . (make-property :value 'assign))
-	      (create . (make-property :value 'create))
-	      (define-properties . (make-property :value 'define-properties))
-	      (define-property . (make-property :value 'define-property))
-	      (freeze . (make-property :value 'freeze))
-	      (get-own-property-descriptor . (make-property :value 'get-own-property-descriptor))
-	      (get-own-property-names . (make-property :value 'get-own-property-names))
-	      (get-own-property-symbols . (make-property :value 'get-own-property-symbols))
-	      (get-prototype-of . (make-property :value 'get-prototype-of))
-	      (is . (make-property :value 'is))
-	      (is-extensible . (make-property :value 'is-extensible))
-	      (is-frozen . (make-property :value 'is-frozen))
-	      (is-sealed . (make-property :value 'is-sealed))
-	      (keys . (make-property :value 'keys))
-	      (prevent-extensions . (make-property :value 'prevent-extensions))
-	      (seal . (make-property :value 'seal))
-	      (set-prototype-of . (make-property :value 'set-prototype-of))))
-    :allocation :class))
-  (:documentation "Object constructor, used with new operator."))
 
 ;;; Helpers to make access to PROPERTIES when
 ;;; we are creating new class objects.
 (defmethod fetch-properties ((this -object-prototype))
-  (properties (make-instance (class-name this))))
-
-(defmethod fetch-properties ((this -object))
   (properties (make-instance (class-name this))))
 
 ;;; We need PRINT-OBJECT methods for all mixins and original object type.
