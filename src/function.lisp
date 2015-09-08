@@ -81,9 +81,18 @@
 				    :configurable :true))
    (prototype :initform (make-property :value (find-class '-function-prototype)))
    (properties
-    :initform (fetch-properties (find-class '-function-prototype))
+    :initform nil
     :allocation :class))
-  (:documentation "Function constructor, used with new operator."))
+  (:metaclass funcallable-standard-class)
+  (:documentation "Function constructor, used with or without new operator."))
+
+(defmethod initialize-instance :after ((func -function-prototype) &key)
+  (with-slots (name length) func
+    (let ((lambda-list (generic-function-lambda-list (symbol-function name))))
+      (set-funcallable-instance-function
+       func
+       (eval `(function (lambda ,lambda-list
+		(,name ,(remove-& lambda-list)))))))))
 
 ;;; Helper functions.
 (defmethod fetch-own-properties ((this -function-prototype))

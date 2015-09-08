@@ -122,4 +122,10 @@ Now we have two classes, `b extends a`, then:
 	     (eval `(function (lambda ,(generic-function-lambda-list (symbol-function name))
 	               (,name ,(car (generic-function-lambda-list (symbol-function name))))))))))
 
-Use this kind of wrapper funcall.
+Use this kind of wrapper funcall.  
+
+All internal slots are created instance-wise, and they are inherited since
+their number won't decrease. Common properties are created instance-wise, they
+are inherited since every instance will have such kind of properties,
+non-common properites will be created as a list in slot, use soft-inherit
+method to inherit those properties. All properties will be of type property.

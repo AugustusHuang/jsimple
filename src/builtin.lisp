@@ -47,7 +47,7 @@
 (deftype symbol-raw ()
   'symbol)
 (deftype object-raw ()
-  `(or standard-class -function))
+  `(or standard-class funcallable-standard-class -function))
 
 (deftype +js-value-types+ ()
   `(or undefined-raw null-raw boolean-raw number-raw symbol-raw string-raw
