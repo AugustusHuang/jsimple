@@ -26,98 +26,58 @@
 
 ;;; Well known symbols are built-in symbol values are typically used
 ;;; as the keys of properties. -- ECMA V6.
-(defclass -symbol-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype)
+(defclass -symbol-proto (-object-proto)
+  ((-prototype :initform (find-class '-object-proto))
    (-symbol-data :type symbol-raw :initarg :-symbol-data)
-   (constructor :initform (make-property :value '-symbol) :allocation :class)
-   (own-properties
-    :initform
-    (append (fetch-properties (find-class '-object-prototype))
-	    '((to-primitive . (make-property :value 'to-primitive
-			       :configurable :true))
-	      (to-string-tag . (make-property :value "Symbol"
-				:configurable :true))))
-    :allocation :class))
+   (constructor :initform (make-property :value -symbol) :allocation :class))
   (:documentation "Symbol prototype, provides inherited properties."))
 
-(defclass -symbol (-function-prototype)
-  ((-prototype :initform '-function-prototype)
-   (-extensible :initform :false)
-   (length :initform (make-property :value 0) :allocation :class)
-   (prototype :type (or property -null) :accessor prototype
-	      :initarg :prototype :initform (make-property :value '-symbol-prototype)
-	      :allocation :class)
-   (own-properties
-    :initform
-    (append (fetch-properties (find-class '-function-prototype))
-	    '((for . (make-property :value 'key))
-	      (has-instance . (make-property :value 'has-instance))
-	      (is-concat-spreadable . (make-property :value 'is-concat-spreadable))
-	      (iterator . (make-property :value 'iterator))
-	      (key-for . (make-property :value 'key-for))
-	      (match . (make-property :value 'match))
-	      (replace . (make-property :value 'replace))
-	      (search . (make-property :value 'search))
-	      (species . (make-property :value 'species))
-	      (split . (make-property :value 'split))
-	      (to-primitive . (make-property :value 'to-primitive))
-	      (to-string-tag . (make-property :value 'to-string-tag))
-	      (unscopables . (make-property :value 'unscopables))))
-    :allocation :class))
-  (:documentation "Symbol constructor, used with new operator."))
-
-(defmethod print-object ((this -symbol-prototype) stream)
+(defmethod print-object ((this -symbol-proto) stream)
   )
 
-(defmethod -get-prototype-of ((this -symbol-prototype))
+(defmethod -get-prototype-of ((this -symbol-proto))
   )
 
-(defmethod -set-prototype-of ((this -symbol-prototype) proto)
+(defmethod -set-prototype-of ((this -symbol-proto) proto)
   )
 
-(defmethod -is-extensible ((this -symbol-prototype))
+(defmethod -is-extensible ((this -symbol-proto))
   )
 
-(defmethod -prevent-extensions ((this -symbol-prototype))
+(defmethod -prevent-extensions ((this -symbol-proto))
   )
 
-(defmethod -get-own-property ((this -symbol-prototoype) key)
+(defmethod -get-own-property ((this -symbol-proto) key)
   )
 
-(defmethod -has-property ((this -symbol-prototype) key)
+(defmethod -has-property ((this -symbol-proto) key)
   )
 
-(defmethod -get ((this -symbol-prototype) key receiver)
+(defmethod -get ((this -symbol-proto) key receiver)
   )
 
-(defmethod -set ((this -symbol-prototype) key value receiver)
+(defmethod -set ((this -symbol-proto) key value receiver)
   )
 
-(defmethod -delete ((this -symbol-prototype) key)
+(defmethod -delete ((this -symbol-proto) key)
   )
 
-(defmethod -define-own-property ((this -symbol-prototype) key descriptor)
+(defmethod -define-own-property ((this -symbol-proto) key descriptor)
   )
 
-(defmethod -enumerate ((this -symbol-prototype))
+(defmethod -enumerate ((this -symbol-proto))
   )
 
-(defmethod -own-property-keys ((this -symbol-prototype))
+(defmethod -own-property-keys ((this -symbol-proto))
   )
 
-(defmethod -call ((this -symbol) &rest args)
-  )
-
-(defmethod -construct ((this -symbol) args object)
-  )
-
-(defmethod to-string ((this -symbol-prototype) &optional radix)
+(defmethod to-string ((this -symbol-proto) &optional radix)
   (declare (ignore radix))
   )
 
-(defmethod value-of ((this -symbol-prototype))
+(defmethod value-of ((this -symbol-proto))
   )
 
-(defmethod to-primitive ((this -symbol-prototype) hint)
+(defmethod to-primitive ((this -symbol-proto) hint)
   )
 

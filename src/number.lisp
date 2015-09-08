@@ -45,18 +45,17 @@
 (defparameter +decimal-digits+ "0123456789")
 (defparameter +exponent-indicator+ "eE")
 
-(defclass -number-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype)
+(defclass -number-proto (-object-proto)
+  ((-prototype :initform (find-class '-object-proto))
    (-number-data :type number-raw :accessor -number-data
 		 :initarg :-number-data)
-   (constructor :initform '-number :allocation :class)
-   (properties
-    :initform
-    (append (fetch-properties (find-class '-object-prototype))
-	    '((to-exponential . (make-property :value 'to-exponential))
-	      (to-fixed . (make-property :value 'to-fixed))
-	      (to-precision . (make-property :value 'to-precision))))
-    :allocation :class))
+   (constructor :initform (make-property :value -number) :allocation :class)
+   (to-exponential :type property :allocation :class
+		   :initform (make-property :value !to-exponential))
+   (to-fixed :type property :allocation :class
+	     :initform (make-property :value !to-fixed))
+   (to-precision :type property :allocation :class
+		 :initform (make-property :value !to-precision)))
   (:documentation "Number prototype, provides inherited properties."))
 
 (defun -to-number (arg)

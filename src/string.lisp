@@ -24,59 +24,64 @@
 ;;;; Builtin string type definitions.
 (in-package :lesp-builtin)
 
-(defclass -string-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype)
+(defclass -string-proto (-object-proto)
+  ((-prototype :initform (find-class '-object-prototype))
    (-string-data :type string-raw :initarg :-string-data)
    (length :type property :initarg :length :initform (make-property :value 0))
-   (constructor :initform '-string :allocation :class)
-   (properties
-    :initform
-    (append (fetch-properties (find-class '-object-prototype))
-	    '((char-at . (make-property :value 'char-at))
-	      (char-code-at . (make-property :value 'char-code-at))
-	      (code-point-at . (make-property :value 'code-point-at))
-	      (concat . (make-property :value 'concat))
-	      (ends-with . (make-property :value 'ends-with))
-	      (includes . (make-property :value 'includes))
-	      (index-of . (make-property :value 'index-of))
-	      (last-index-of . (make-property :value 'last-index-of))
-	      (locale-compare . (make-property :value 'locale-compare))
-	      (match . (make-property :value 'match))
-	      (normalize . (make-property :value 'normalize))
-	      (repeat . (make-property :value 'repeat))
-	      (replace . (make-property :value 'replace))
-	      (search . (make-property :value 'search))
-	      (slice . (make-property :value 'slice))
-	      (split . (make-property :value 'split))
-	      (starts-with . (make-property :value 'starts-with))
-	      (substring . (make-property :value 'substring))
-	      (to-locale-lower-case . (make-property :value 'to-locale-lower-case))
-	      (to-locale-upper-case . (make-property :value 'to-locale-upper-case))
-	      (to-lower-case . (make-property :value 'to-lower-case))
-	      (to-upper-case . (make-property :value 'to-upper-case))
-	      (trim . (make-property :value 'trim))
-	      (iterator . (make-property :value 'iterator))))
-    :allocation :class))
+   (constructor :initform (make-property :value -string) :allocation :class)
+   (char-at :type property :allocation :class
+	    :initform (make-property :value !char-at))
+   (char-code-at :type property :allocation :class
+		 :initform (make-property :value !char-code-at))
+   (code-point-at :type property :allocation :class
+		  :initform (make-property :value !code-point-at))
+   (concat :type property :allocation :class
+	   :initform (make-property :value !concat))
+   (ends-with :type property :allocation :class
+	      :initform (make-property :value !ends-with))
+   (includes :type property :allocation :class
+	     :initform (make-property :value !includes))
+   (index-of :type property :allocation :class
+	     :initform (make-property :value !index-of))
+   (last-index-of :type property :allocation :class
+		  :initform (make-property :value !last-index-of))
+   (locale-compare :type property :allocation :class
+		   :initform (make-property :value !locale-compare))
+   (match :type property :allocation :class
+	  :initform (make-property :value !match))
+   (normalize :type property :allocation :class
+	      :initform (make-property :value !normalize))
+   (repeat :type property :allocation :class
+	   :initform (make-property :value !repeat))
+   (replace :type property :allocation :class
+	    :initform (make-property :value !replace))
+   (search :type property :allocation :class
+	   :initform (make-property :value !search))
+   (slice :type property :allocation :class
+	  :initform (make-property :value !slice))
+   (split :type property :allocation :class
+	  :initform (make-property :value !split))
+   (starts-with :type property :allocation :class
+		:initform (make-property :value !starts-with))
+   (substring :type property :allocation :class
+	      :initform (make-property :value !substring))
+   (to-locale-lower-case :type property :allocation :class
+			 :initform (make-property :value !to-locale-lower-case))
+   (to-locale-upper-case :type property :allocation :class
+			 :initform (make-property :value !to-locale-upper-case))
+   (to-lower-case :type property :allocation :class
+		  :initform (make-property :value !to-lower-case))
+   (to-upper-case :type property :allocation :class
+		  :initform (make-property :value !to-upper-case))
+   (trim :type property :allocation :class
+	 :initform (make-property :value !trim))
+   (iterator :type property :allocation :class
+	     :initform (make-property :value !iterator)))
   (:documentation "String prototype, provides inherited properties."))
 
-(defclass -string (-function-prototype)
-  ((-prototype :initform '-function-prototype)
-   (length :initform (make-property :value 1) :allocation :class)
-   (prototype :type (or property -null) :allocation :class :accessor prototype
-	      :initarg :prototype
-	      :initform (make-property :value '-string-prototype))
-   (properties
-    :initform
-    (append (fetch-properties (find-class '-function-prototype))
-	    '((from-char-code . (make-property :value 'from-char-code))
-	      (from-code-point . (make-property :value 'from-code-point))
-	      (raw . (make-property :value 'raw))))
-    :allocation :class))
-  (:documentation "String constructor, used with new operator."))
-
-(defclass -string-iterator-prototype (-iterator-prototype)
-  ((-prototype :initform '-iterator-prototype)
-   (-iterated-string :type -string-prototype :initarg :-iterated-string)
+(defclass -string-iterator-proto (-iterator-proto)
+  ((-prototype :initform '-iterator-proto)
+   (-iterated-string :type -string-proto :initarg :-iterated-string)
    (-string-iterator-next-index :type integer
 				:initarg :-string-iterator-next-index)
    (properties
@@ -89,11 +94,45 @@
   (:documentation "String iterator prototype, provides inherited properties to
 all string iterator objects."))
 
-(defmethod fetch-properties ((this -string-prototype))
+(defmethod fetch-properties ((this -string-proto))
   (properties (make-instance (class-name this))))
 
-(defmethod fetch-properties ((this -string))
-  (properties (make-instance (class-name this))))
+;;; Internal methods.
+(defmethod -get-prototype-of ((this -string-proto))
+  )
+
+(defmethod -set-prototype-of ((this -string-proto) proto)
+  )
+
+(defmethod -is-extensible ((this -string-proto))
+  )
+
+(defmethod -prevent-extensions ((this -string-proto))
+  )
+
+(defmethod -get-own-property ((this -string-proto) key)
+  )
+
+(defmethod -has-property ((this -string-proto) key)
+  )
+
+(defmethod -get ((this -string-proto) key receiver)
+  )
+
+(defmethod -set ((this -string-proto) key value receiver)
+  )
+
+(defmethod -delete ((this -string-proto) key)
+  )
+
+(defmethod -define-own-property ((this -string-proto) key descriptor)
+  )
+
+(defmethod -enumerate ((this -string-proto))
+  )
+
+(defmethod -own-property-keys ((this -string-proto))
+  )
 
 (defun from-char-code (&rest code-units)
   )
@@ -104,11 +143,11 @@ all string iterator objects."))
 (defun raw (template &rest substitutions)
   )
 
-(defmethod to-string ((this -string-prototype))
+(defmethod to-string ((this -string-proto))
   )
 
-(defmethod to-locale-string ((this -string-prototype))
+(defmethod to-locale-string ((this -string-proto))
   )
 
-(defmethod value-of ((this -string-prototype))
+(defmethod value-of ((this -string-proto))
   )

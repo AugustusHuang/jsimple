@@ -24,61 +24,71 @@
 (in-package :lesp-builtin)
 
 ;;;; Builtin array definitions.
-(defclass -array-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype)
-   (length :type integer :initarg :length
+(defclass -array-proto (-object-proto)
+  ((-prototype :initform (find-class '-object-proto))
+   (-array-data :type array :initarg :-array-data)
+   (length :type property :initarg :length
 	   :initform (make-property :value 0 :writable :true))
-   (constructor :initform '-array :allocation :class)
-   (properties
-    :initform
-    (append (fetch-properties (find-class '-object-prototype))
-	    '((concat . (make-property :value 'concat))
-	      (copy-within . (make-property :value 'copy-within))
-	      (entries . (make-property :value 'entries))
-	      (every . (make-property :value 'every))
-	      (fill . (make-property :value 'fill))
-	      (filter . (make-property :value 'filter))
-	      (find . (make-property :value '!find))
-	      (find-index . (make-property :value 'find-index))
-	      (for-each . (make-property :value 'for-each))
-	      (index-of . (make-property :value 'index-of))
-	      (join . (make-property :value 'join))
-	      (keys . (make-property :value 'keys))
-	      (last-index-of . (make-property :value 'last-index-of))
-	      (map . (make-property :value '!map))
-	      (pop . (make-property :value '!pop))
-	      (push . (make-property :value '!push))
-	      (reduce . (make-property :value '!reduce))
-	      (reduce-right . (make-property :value 'reduce-right))
-	      (reverse . (make-property :value '!reverse))
-	      (shift . (make-property :value 'shift))
-	      (slice . (make-property :value 'slice))
-	      (some . (make-property :value '!some))
-	      (sort . (make-property :value '!sort))
-	      (splice . (make-property :value 'splice))
-	      (unshift . (make-property :value 'unshift))
-	      (values . (make-property :value '!values))
-	      (iterator . (make-property :value 'iterator))
-	      ;; Refer to ECMA-262 version 6 p.424.
-	      (unscopables . (make-property :value (create)
-			      :configurable :true))))
-    :allocation :class)
+   (constructor :initform (make-property :value -array) :allocation :class)
+   (concat :type property :allocation :class
+	   :initform (make-property :value !concat))
+   (copy-within :type property :allocation :class
+		:initform (make-property :value !copy-within))
+   (entries :type property :allocation :class
+	    :initform (make-property :value !entries))
+   (every :type property :allocation :class
+	  :initform (make-property :value !every))
+   (fill :type property :allocation :class
+	 :initform (make-property :value !fill))
+   (filter :type property :allocation :class
+	   :initform :filter (make-property :value !filter))
+   (find :type property :allocation :class
+	 :initform (make-property :value !find))
+   (find-index :type property :allocation :class
+	       :initform (make-property :value !find-index))
+   (for-each :type property :allocation :class
+	     :initform (make-property :value !for-each))
+   (index-of :type property :allocation :class
+	     :initform (make-property :value !index-of))
+   (join :type property :allocation :class
+	 :initform (make-property :value !join))
+   (keys :type property :allocation :class
+	 :initform (make-property :value !keys))
+   (last-index-of :type property :allocation :class
+		  :initform (make-property :value !last-index-of))
+   (map :type property :allocation :class
+	:initform (make-property :value !map))
+   (pop :type property :allocation :class
+	:initform (make-property :value !pop))
+   (push :type property :allocation :class
+	 :initform (make-property :value !push))
+   (reduce :type property :allocation :class
+	   :initform (make-property :value !reduce))
+   (reduce-right :type property :allocation :class
+		 :initform (make-property :value !reduce-right))
+   (reverse :type property :allocation :class
+	    :initform (make-property :value !reverse))
+   (shift :type property :allocation :class
+	  :initform (make-property :value !shift))
+   (slice :type property :allocation :class
+	  :initform (make-property :value !slice))
+   (some :type property :allocation :class
+	 :initform (make-property :value !some))
+   (sort :type property :allocation :class
+	 :initform (make-property :value !sort))
+   (splice :type property :allocation :class
+	   :initform (make-property :value !splice))
+   (unshift :type property :allocation :class
+	    :initform (make-property :value !unshift))
+   (values :type property :allocation :class
+	   :initform (make-property :value !values))
+   (iterator :type property :allocation :class
+	     :initform (make-property :value !iterator))
+   ;; Refer to ECMA-262 version 6 p.424.
+   (unscopables :type property :allocation :class
+		:initform (make-property :value !unscopables
+					 :configurable :true)))
   (:documentation "Array prototype, provides inherited properties."))
-
-(defclass -array (-function-prototype)
-  ((-prototype :initform '-function-prototype)
-   (length :initform (make-property :value 1) :allocation :class)
-   (prototype :type (or property -null) :allocation :class :initarg :prototype
-	      :initform '-array-prototype)
-   (properties
-    :initform
-    (append (fetch-properties (find-class '-function-prototype))
-	    '((from . (make-property :value 'from))
-	      (is-array . (make-property :value 'is-array))
-	      (of . (make-property :value 'of))
-	      (species . (make-property :get 'species))))
-    :allocation :class))
-  (:documentation "Builtin array prototype."))
 
 (defclass -array-iterator-prototype (-iterator-prototype)
   ((-prototype :initform '-iterator-prototype :allocation :class)
@@ -99,75 +109,40 @@
 properties"))
 
 ;;; Typed arrays.
-(defclass -int8-array-prototype ()
+(defclass -int8-array-proto (-array-proto)
   ()
-  (:documentation ""))
+  (:documentation "Int8 array prototype."))
 
-(defclass -int8-array ()
+(defclass -int16-array-proto (-array-proto)
   ()
-  (:documentation ""))
+  (:documentation "Int16 array prototype."))
 
-(defclass -int16-array-prototype ()
+(defclass -int32-array-proto (-array-proto)
   ()
-  (:documentation ""))
+  (:documentation "Int32 array prototype."))
 
-(defclass -int16-array ()
+(defclass -float32-array-proto (-array-proto)
   ()
-  (:documentation ""))
+  (:documentation "Float32 array prototype."))
 
-(defclass -int32-array-prototype ()
+(defclass -float64-array-proto (-array-proto)
   ()
-  (:documentation ""))
+  (:documentation "Float64 array prototype."))
 
-(defclass -int32-array ()
+(defclass -uint8-array-proto (-array-proto)
   ()
-  (:documentation ""))
+  (:documentation "Unsigned int8 array prototype."))
 
-(defclass -float32-array-prototype ()
+(defclass -uint8-clamped-array-proto (-array-proto)
   ()
-  (:documentation ""))
+  (:documentation "Unsigned clamped int8 array prototype."))
 
-(defclass -float32-array ()
+(defclass -uint16-array-proto (-array-proto)
   ()
-  (:documentation ""))
+  (:documentation "Unsigned int16 array prototype."))
 
-(defclass -float64-array-prototype ()
+(defclass -uint32-array-proto (-array-proto)
   ()
-  (:documentation ""))
+  (:documentation "Unsigned int32 array prototype."))
 
-(defclass -float64-array ()
-  ()
-  (:documentation ""))
-
-(defclass -uint8-array-prototype ()
-  ()
-  (:documentation ""))
-
-(defclass -uint8-array ()
-  ()
-  (:documentation ""))
-
-(defclass -uint8-clamped-array-prototype ()
-  ()
-  (:documentation ""))
-
-(defclass -uint8-clamped-array ()
-  ()
-  (:documentation ""))
-
-(defclass -uint16-array-prototype ()
-  ()
-  (:documentation ""))
-
-(defclass -uint16-array ()
-  ()
-  (:documentation ""))
-
-(defclass -uint32-array-prototype ()
-  ()
-  (:documentation ""))
-
-(defclass -uint32-array ()
-  ()
-  (:documentation ""))
 

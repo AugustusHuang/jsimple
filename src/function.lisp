@@ -65,75 +65,71 @@
 				    :configurable :true))
    (name :initform (make-property :value ""
 				  :configurable :true))
-   (apply :type property :initarg :apply :allocation :class
+   (constructor :initform -function :allocation :class)
+   (prototype :initform nil)
+   (apply :type property :allocation :class
 	  :initform (make-property :value !apply))
-   (bind :type property :initarg :bind :allocation :class
+   (bind :type property :allocation :class
 	 :initform (make-property :value !bind))
-   (call :type property :initarg :call :allocation :class
+   (call :type property :allocation :class
 	 :initform (make-property :value !call))
-   (properties :initform
-	       '((constructor . (make-property :value -function)))))
-   ;; FunctionPrototype doesn't have a prototype property, directly
-   ;; inherit :NULL.
+   (properties :initform nil)
   (:metaclass funcallable-standard-class)
   (:documentation "Function prototype, provides inherited properties."))
 
 ;;; Helper functions.
-(defmethod fetch-own-properties ((this -function-prototype))
+(defmethod fetch-own-properties ((this -function-proto))
   (properties (make-instance (class-name this))))
 
-(defmethod fetch-own-properties ((this -function))
-  (properties (make-instance (class-name this))))
-
-(defmethod -get-prototype-of ((this -function-prototype))
+(defmethod -get-prototype-of ((this -function-proto))
   )
 
-(defmethod -set-prototype-of ((this -function-prototype) proto)
+(defmethod -set-prototype-of ((this -function-proto) proto)
   )
 
-(defmethod -is-extensible ((this -function-prototype))
+(defmethod -is-extensible ((this -function-proto))
   )
 
-(defmethod -prevent-extensions ((this -function-prototype))
+(defmethod -prevent-extensions ((this -function-proto))
   )
 
-(defmethod -get-own-property ((this -function-prototype) key)
+(defmethod -get-own-property ((this -function-proto) key)
   )
 
-(defmethod -has-property ((this -function-prototype) key)
+(defmethod -has-property ((this -function-proto) key)
   )
 
-(defmethod -get ((this -function-prototype) key receiver)
+(defmethod -get ((this -function-proto) key receiver)
   )
 
-(defmethod -set ((this -function-prototype) key value receiver)
+(defmethod -set ((this -function-proto) key value receiver)
   )
 
-(defmethod -delete ((this -function-prototype) key)
+(defmethod -delete ((this -function-proto) key)
   )
 
-(defmethod -define-own-property ((this -function-prototype) key descriptor)
+(defmethod -define-own-property ((this -function-proto) key descriptor)
   )
 
-(defmethod -enumerate ((this -function-prototype))
+(defmethod -enumerate ((this -function-proto))
   )
 
-(defmethod -own-property-keys ((this -function-prototype))
+(defmethod -own-property-keys ((this -function-proto))
   )
 
 ;;; Function prototype property methods.
-(defmethod apply ((this -function-prototype) this-arg args)
+(defmethod apply ((this -function-proto) this-arg args)
   )
 
-(defmethod bind ((this -function-prototype) this-arg &rest args)
+(defmethod bind ((this -function-proto) this-arg &rest args)
   )
 
-(defmethod call ((this -function-prototype) this-arg &rest args)
+(defmethod call ((this -function-proto) this-arg &rest args)
   )
 
-(defmethod to-string ((this -function-prototype) &optional radix)
+(defmethod to-string ((this -function-proto) &optional radix)
   (declare (ignore radix))
   )
 
-(defmethod has-instance ((this -function-prototype) value)
+(defmethod has-instance ((this -function-proto) value)
   )

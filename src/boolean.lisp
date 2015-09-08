@@ -24,14 +24,12 @@
 ;;;; Boolean builtin type definitions.
 (in-package :lesp-builtin)
 
-(defclass -boolean-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype)
+(defclass -boolean-proto (-object-proto)
+  ((-prototype :initform (find-class '-object-proto))
    ;; Extensible is the same.
-   (-boolean-data :type boolean-raw :initarg :-boolean-data)
-   (constructor :initform (make-property :value '-boolean) :allocation :class)
-   (properties
-    :initform (fetch-properties (find-class '-object-prototype))
-    :allocation :class))
+   (-boolean-data :type boolean-raw :initarg :-boolean-data
+		  :initform :false)
+   (constructor :initform (make-property :value -boolean) :allocation :class))
   (:documentation "Boolean prototype, provides inherited properties."))
 
 (defun -to-boolean (arg)
@@ -54,65 +52,56 @@
     (-object-proto
      (-boolean :true))))
 
-(defmethod fetch-properties ((this -boolean-prototype))
+(defmethod fetch-properties ((this -boolean-proto))
   (properties (make-instance (class-name this))))
 
-(defmethod fetch-properties ((this -boolean))
-  (properties (make-instance (class-name this))))
-
-(defmethod print-object ((this -boolean-prototype) stream)
+(defmethod print-object ((this -boolean-proto) stream)
   (format stream (if (eql (slot-value this '-boolean-data) :true)
 		     "true"
 		     "false")))
 
-(defmethod -get-prototype-of ((this -boolean-prototype))
+(defmethod -get-prototype-of ((this -boolean-proto))
   )
 
-(defmethod -set-prototype-of ((this -boolean-prototype) proto)
+(defmethod -set-prototype-of ((this -boolean-proto) proto)
   )
 
-(defmethod -is-extensible ((this -boolean-prototype))
+(defmethod -is-extensible ((this -boolean-proto))
   )
 
-(defmethod -prevent-extensions ((this -boolean-prototype))
+(defmethod -prevent-extensions ((this -boolean-proto))
   )
 
-(defmethod -get-own-property ((this -boolean-prototype) key)
+(defmethod -get-own-property ((this -boolean-proto) key)
   )
 
-(defmethod -has-property ((this -boolean-prototype) key)
+(defmethod -has-property ((this -boolean-proto) key)
   )
 
-(defmethod -get ((this -boolean-prototype) key receiver)
+(defmethod -get ((this -boolean-proto) key receiver)
   )
 
-(defmethod -set ((this -boolean-prototype) key value receiver)
+(defmethod -set ((this -boolean-proto) key value receiver)
   )
 
-(defmethod -delete ((this -boolean-prototype) key)
+(defmethod -delete ((this -boolean-proto) key)
   )
 
-(defmethod -define-own-property ((this -boolean-prototype) key descriptor)
+(defmethod -define-own-property ((this -boolean-proto) key descriptor)
   )
 
-(defmethod -enumerate ((this -boolean-prototype))
+(defmethod -enumerate ((this -boolean-proto))
   )
 
-(defmethod -own-property-keys ((this -boolean-prototype))
+(defmethod -own-property-keys ((this -boolean-proto))
   )
 
-(defmethod -call ((this -boolean) &rest args)
-  )
-
-(defmethod -construct ((this -boolean) args object)
-  )
-
-(defmethod to-string ((this -boolean-prototype) &optional radix)
+(defmethod to-string ((this -boolean-proto) &optional radix)
   (declare (ignore radix))
   (if (eql (slot-value this '-boolean-data) :true)
       "true"
       "false"))
 
-(defmethod value-of ((this -boolean-prototype))
+(defmethod value-of ((this -boolean-proto))
   (slot-value this '-boolean-data))
 

@@ -23,31 +23,17 @@
 
 (in-package :lesp-builtin)
 
-(defclass -array-buffer-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype)
-   (-array-buffer-data :type (or array -null) :initarg :-array-buffer-data)
+(defclass -array-buffer-proto (-object-proto)
+  ((-prototype :initform (find-class '-object-proto))
+   (-array-buffer-data :type (or array null) :initarg :-array-buffer-data)
    (-array-buffer-data-length :type integer :initarg :-array-buffer-data-length)
-   (constructor :initform (make-property :value '-array-buffer)
+   (constructor :initform (make-property :value -array-buffer)
 		:allocation :class)
-   (properties
-    :initform
-    (append '((byte-length . (make-property :get 'byte-length))
-	      (slice . (make-property :value 'slice))
-	      (to-string-tag . (make-property :value "ArrayBuffer"
-				:configurable :true)))
-	    (fetch-properties (find-class '-object-prototype)))
-    :allocation :class))
-  (:documentation ""))
+   (byte-length :type property :allocation :class
+		:initform (make-property :get !byte-length))
+   (slice :type property :allocation :class
+	  :initform (make-property :value !slice))
+   (to-string-tag :type property :allocation :class
+		  :initform "ArrayBuffer"))
+  (:documentation "Array buffer prototype, provides inherited properties."))
 
-(defclass -array-buffer (-function-prototype)
-  ((-prototype :initform '-function-prototype)
-   (length :initform (make-property :value 1) :allocation :class)
-   (prototype :type (or property -null) :allocation :class :initarg :prototype
-	      :initform (make-property :value '-array-buffer-prototype))
-   (properties
-    :initform
-    (append '((is-view . (make-property :value 'is-view))
-	      (species . (make-property :value 'species)))
-	    (fetch-properties (find-class '-function-prototype)))
-    :allocation :class))
-  (:documentation "Array buffer constructor, used only with new operator."))

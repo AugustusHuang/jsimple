@@ -48,30 +48,25 @@
 (defclass -object-proto (proto)
   ((-prototype :initform :null)
    (-extensible :initform :true)
-   (has-own-property :type property :initarg :has-own-property
-		     :allocation :class
+   (-primitive-value :initform :undefined)
+   (constructor :initform (make-property :value -object) :allocation :class)
+   (has-own-property :type property :allocation :class
 		     :initform
 		     (make-property :value (-builtin-function #'has-own-property)))
-   (is-prototype-of :type property :initarg :is-prototype-of :allocation :class
+   (is-prototype-of :type property :allocation :class
 		    :initform
 		    (make-property :value (-builtin-function #'is-prototype-of)))
-   (property-is-enumerable :type property :initarg :property-is-enumerable
-			   :allocation :class
+   (property-is-enumerable :type property :allocation :class
 			   :initform
 			   (make-property :value (-builtin-function #'property-is-enumerable)))
-   (to-locale-string :type property :initarg :to-locale-string
-		     :allocation :class
+   (to-locale-string :type property :allocation :class
 		     :initform
 		     (make-property :value (-builtin-function #'to-locale-string)))
-   (to-string :type property :initarg :to-string :allocation :class
-	      :initform
-	      (make-property :value (-builtin-function #'to-string)))
-   (value-of :type property :initarg :value-of :allocation :class
-	     :initform
-	     (make-property :value (-builtin-function #'value-of)))
-   (properties :type list :initarg :properties
-	       :initform
-	       '((constructor . (make-property :value -object)))))
+   (to-string :type property :allocation :class
+	      :initform (make-property :value (-builtin-function #'to-string)))
+   (value-of :type property :allocation :class
+	     :initform (make-property :value (-builtin-function #'value-of)))
+   (properties :initform nil))
   (:documentation "Object prototype, provides inherited properties."))
 
 ;;; %Object% Object Constructor: [[Prototype]] = %FunctionPrototype%,
@@ -84,7 +79,7 @@
 
 ;;; Helpers to make access to PROPERTIES when
 ;;; we are creating new class objects.
-(defmethod fetch-properties ((this -object-prototype))
+(defmethod fetch-properties ((this -object-proto))
   (properties (make-instance (class-name this))))
 
 ;;; We need PRINT-OBJECT methods for all mixins and original object type.
@@ -94,7 +89,7 @@
 ;;; String object style:
 ;;; <String: <0: "s"> <1: "t"> <2: "r"> <length: 3> <primitive-value: "str">>
 ;;; Symbol object style: <Symbol: <primitive-value: 'sym>>.
-(defmethod print-object ((this -object-prototype) stream)
+(defmethod print-object ((this -object-proto) stream)
   ;; ALIST looks like ((a . b) (c . d) (e . f)).
   ;; Make it into form ((a b) (c d) (e f)).
   (labels ((pair-out (lst)
@@ -118,40 +113,63 @@
     (reverse alist)))
 
 ;;; Internal methods.
-(defmethod -get-prototype-of ((this -object-prototype))
+(defmethod -get-prototype-of ((this -object-proto))
+  (slot-value this '-prototype))
+
+;;; PROTO is a class object or :NULL.
+(defmethod -set-prototype-of ((this -object-proto) proto)
+  (assert (or (eql (find-class '-object-proto))
+	      (eql :null))
+	  (this proto)
+	  "PROTO is not of type Object or Null.")
+  (let ((extensible (slot-value this '-extensible))
+	(current (slot-value this '-prototype)))
+    (when (eql proto current)
+      (-boolean :true))
+    (when (eql extensible :false)
+      (-boolean :false))
+    (let ((done nil)
+	  (p proto))
+      (loop
+	 (when done (return))
+	 (if (eql p :null)
+	     (setf done t)
+	     (if (eql p (class-of this))
+		 (return-from -set-prototype-of (-boolean :false))
+		 (setf p (-get-prototype-of p)))))
+      (setf (slot-value this '-prototype) p)
+      (-boolean :true))))
+
+(defmethod -is-extensible ((this -object-proto))
+  (slot-value this '-extensible))
+
+(defmethod -prevent-extensions ((this -object-proto))
+  (progn
+    (setf (slot-value this '-extensible) :false)
+    (-boolean :true)))
+
+(defmethod -get-own-property ((this -object-proto) key)
   )
 
-(defmethod -set-prototype-of ((this -object-prototype) proto)
+(defmethod -has-property ((this -object-proto) key)
   )
 
-(defmethod -is-extensible ((this -object-prototype))
+(defmethod -get ((this -object-proto) key receiver)
   )
 
-(defmethod -prevent-extensions ((this -object-prototype))
+(defmethod -set ((this -object-proto) key value receiver)
   )
 
-(defmethod -get-own-property ((this -object-prototype) key)
+(defmethod -delete ((this -object-proto) key)
   )
 
-(defmethod -has-property ((this -object-prototype) key)
+(defmethod -define-own-property ((this -object-proto) key descriptor)
   )
 
-(defmethod -get ((this -object-prototype) key receiver)
+(defmethod -enumerate ((this -object-proto))
   )
 
-(defmethod -set ((this -object-prototype) key value receiver)
-  )
-
-(defmethod -delete ((this -object-prototype) key)
-  )
-
-(defmethod -define-own-property ((this -object-prototype) key descriptor)
-  )
-
-(defmethod -enumerate ((this -object-prototype))
-  )
-
-(defmethod -own-property-keys ((this -object-prototype))
+(defmethod -own-property-keys ((this -object-proto))
   )
 
 ;;; Object property methods and Object prototype property methods.
@@ -209,21 +227,21 @@
 
 ;;; Prototype property methods are handled with 'this', so define them as
 ;;; methods.
-(defmethod has-own-property ((this -object-prototype) value)
+(defmethod has-own-property ((this -object-proto) value)
   )
 
-(defmethod is-prototype-of ((this -object-prototype) value)
+(defmethod is-prototype-of ((this -object-proto) value)
   )
 
-(defmethod property-is-enumerable ((this -object-prototype) value)
+(defmethod property-is-enumerable ((this -object-proto) value)
   )
 
-(defmethod to-locale-string ((this -object-prototype))
+(defmethod to-locale-string ((this -object-proto))
   )
 
-(defmethod to-string ((this -object-prototype) &optional radix)
+(defmethod to-string ((this -object-proto) &optional radix)
   (declare (ignore radix))
   )
 
-(defmethod value-of ((this -object-prototype))
+(defmethod value-of ((this -object-proto))
   )

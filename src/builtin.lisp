@@ -83,29 +83,40 @@
   ;; an accessor property, or change its attributes will fail.
   (configurable :false :type boolean-raw))
 
+;;; In all classes, NIL means this slot is not present in this instance,
+;;; it is present as a slot only because of it's possible to have this
+;;; slot non-NIL. :UNDEFINED means this slot is present but not initialized,
+;;; and others mean their own corresponding meanings.
 (defclass proto ()
-  ((-prototype :type (or object-raw null-raw) :initarg :-prototype
-	       :initform :null)
-   (-extensible :type (or boolean-raw undefined-raw) :initarg :-extensible
-		:initform :undefined)
-   (constructor :type (or object-raw null-raw) :initarg :constructor
-		:allocation :class :accessor properties :initform :null)
+  ((-prototype :type (or object-raw null-raw null) :initarg :-prototype
+	       :initform nil)
+   (-extensible :type (or boolean-raw undefined-raw null) :initarg :-extensible
+		:initform nil)
+   (-primitive-value :type (or +js-primitive-value-types+ null)
+		     :initarg :-primitive-value :initform nil)
+   (constructor :type (or object-raw null-raw null) :initarg :constructor
+		:allocation :class :accessor properties :initform nil)
    (properties :type list :initarg :properties :accessor properties
 	       :initform nil))
   (:documentation "General prototype class, used as a helper basis class,
 it is implementation specific."))
 
 (defclass builtin-function ()
-  ((-prototype :type (or object-raw null-raw) :initarg :-prototype
-	       :initform :null)
-   (-extensible :type (or boolean-raw undefined-raw) :initarg :-extensible
-		:initform :undefined)
+  ((-prototype :type (or object-raw null) :initarg :-prototype
+	       :initform nil)
+   (-extensible :type (or boolean-raw undefined-raw null) :initarg :-extensible
+		:initform nil)
    ;; LENGTH and NAME are present no matter in which function, make them
-   ;; outstanding. Only CONSTRUCTOR, LENGTH, NAME can be out.
-   (length :type (or property null-raw) :initarg :length :accessor length
-	   :initform (make-property :value 0))
-   (name :type (or property null-raw) :initarg :name :accessor name
-	 :initform (make-property :value ""))
+   ;; outstanding. Only globally inherited properties will be present.
+   (length :type (or property null) :initarg :length :accessor length
+	   :initform nil)
+   (name :type (or property null) :initarg :name :accessor name
+	 :initform nil)
+   (constructor :type (or property null) :initarg :constructor
+		:accessor constructor :allocation :class :initform nil)
+   ;; Only ObjectPrototype has a :NULL prototype.
+   (prototype :type (or property null) :initarg :prototype :accessor prototype
+	      :initform nil)
    (properties :type list :initarg :properties
 	       :accessor properties :initform nil))
   (:metaclass funcallable-standard-class)
@@ -143,107 +154,159 @@ funcallable class, it is implementation specific."))
 ;;; add ! as a prefix.
 (setf !eval
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "eval")
 		     :length (make-property :value 1))
       !is-finite
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "isFinite")
 		     :length (make-property :value 1))
       !is-nan
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "isNaN")
 		     :length (make-property :value 1))
       !parse-float
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "parseFloat")
 		     :length (make-property :value 1))
       !parse-int
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "parseInt")
 		     :length (make-property :value 2))
       !decode-uri
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "decodeURI")
 		     :length (make-property :value 1))
       !decode-uri-component
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "decodeURIComponent")
 		     :length (make-property :value 1))
       !encode-uri
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "encodeURI")
 		     :length (make-property :value 1))
       !encode-uri-component
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "encodeURIComponent")
 		     :length (make-property :value 1)))
 
 (setf !assign
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "assign")
 		     :length (make-property :value 2))
       !create
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "create")
 		     :length (make-property :value 2))
       !define-properties
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "defineProperties")
 		     :length (make-property :value 2))
       !define-property
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "defineProperty")
 		     :length (make-property :value 3))
       !freeze
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "freeze")
 		     :length (make-property :value 1))
       !get-own-property-descriptor
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "getOwnPropertyDescriptor")
 		     :length (make-property :value 2))
       !get-own-property-names
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "getOwnPropertyNames")
 		     :length (make-property :value 1))
       !get-own-property-symbols
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "getOwnPropertySymbols")
 		     :length (make-property :value 1))
       !get-prototype-of
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "getPrototypeOf")
 		     :length (make-property :value 1))
       !is
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "is")
 		     :length (make-property :value 2))
       !is-extensible
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "isExtensible")
 		     :length (make-property :value 1))
       !is-frozen
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "isFrozen")
 		     :length (make-property :value 1))
       !is-sealed
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "isSealed")
 		     :length (make-property :value 1))
       !keys
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "keys")
 		     :length (make-property :value 1))
       !prevent-extensions
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "preventExtensions")
 		     :length (make-property :value 1))
       !seal
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "seal")
 		     :length (make-property :value 1))
       !set-prototype-of
       (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
 		     :name (make-property :value "setPrototypeOf")
 		     :length (make-property :value 2))
       )
@@ -253,9 +316,9 @@ funcallable class, it is implementation specific."))
 		     :-prototype (find-class '-function-proto)
 		     :name (make-property :value "Object")
 		     :length (make-property :value 1 :configurable :true)
+		     :prototype (make-property :value (find-class '-object-proto))
 		     :properties
-		     '((prototype . (make-property :value (find-class '-object-proto')))
-		       (assign . (make-property :value !assign))
+		     '((assign . (make-property :value !assign))
 		       (create . (make-property :value !create))
 		       (define-properties . (make-property :value !define-properties))
 		       (define-property . (make-property :value !define-property))
@@ -277,94 +340,89 @@ funcallable class, it is implementation specific."))
 		     :-prototype '-function-proto
 		     :name (make-property :value "Function")
 		     :length (make-property :value 1 :configurable :true)
-		     :properties
-		     '((prototype . (make-property :value (find-class '-function-proto)))))
+		     :prototype (make-property :value (find-class '-function-proto)))
       -boolean
       (make-instance '-function-proto
 		     :-prototype '-function-proto
 		     :name (make-property :value "Boolean")
 		     :length (make-property :value 1)
-		     :properties
-		     '((prototype . (make-property :value (find-class '-boolean-proto)))))
+		     :prototype (make-property :value (find-class '-boolean-proto)))
       -symbol
       (make-instance '-function-proto
 		     :-prototype '-function-proto
 		     :name (make-property :value "Symbol")
 		     :length (make-property :value 0)
-		     :properties
-		     '(()))
+		     :prototype (make-property :value (find-class '-symbol-proto)))
       -error
       (make-instance '-function-proto
 		     :-prototype '-function-proto
 		     :name (make-property :value "Error")
 		     :length (make-property :value 1)
-		     :properties
-		     '(()))
+		     :prototype (make-property :value (find-class '-error-proto)))
       -eval-error
       (make-instance '-function-proto
 		     :-prototype '-function-proto
 		     :name (make-property :value "EvalError")
 		     :length (make-property :value 1)
-		     :properties
-		     '(()))
+		     :prototype (make-property :value (find-class '-eval-error-proto)))
       -range-error
       (make-instance '-function-proto
 		     :-prototype '-function-proto
 		     :name (make-property :value "RangeError")
 		     :length (make-property :value 1)
-		     :properties
-		     '(()))
+		     :prototype (make-property :value (find-class '-eval-error-proto)))
       -reference-error
       (make-instance '-function-proto
 		     :-prototype '-function-proto
 		     :name (make-property :value "ReferenceError")
 		     :length (make-property :value 1)
-		     :properties
-		     '(()))
+		     :prototype (make-property :value (find-class '-reference-error-proto)))
+      )
 
 (declaim (inline !eval))
 (defun !eval (x)
   )
 
 (defun is-finite (number)
-  (let ((num (to-number number)))
-    (case num
-      (((-number :nan) (-number :infinity) (-number :-infinity))
-       :false)
+  (let ((data (slot-value (to-number number) 'number-data)))
+    (case data
+      ((:nan :infinity :-infinity)
+       (-boolean :false))
       (t
-       :true))))
+       (-boolean :true)))))
 
 (defun is-nan (number)
-  (let ((num (to-number number)))
-    (case num
-      ((-number :nan)
-       :true)
+  (let ((data (slot-value (to-number number) 'number-data)))
+    (case data
+      (:nan
+       (-boolean :true))
       (t
-       :false))))
+       (-boolean :false)))))
 
 ;;; Helper function to parse a general number...
 ;;; PARSE-INT is internal...
 (defun parse-float (string)
   ;; Firstly check the first two chars, if they match 0x/0X, 0o/0O, 0b/0B,
   ;; use corresponding radix PARSE-INTEGER. Or handle decimal values.
-  (declare (type string string))
-  (let ((sign 1))
-    (when (> (length string) 2)
-      (let ((first-char (char string 0))
-	    (second-char (char string 1)))
+  (let ((str (slot-value (-to-string string) 'string-data)))
+    (declare (type string str))
+    (when (> (length str) 2)
+      (let ((first-char (char str 0))
+	    (second-char (char str 1)))
 	(when (char= first-char #\0)
 	  (case second-char
 	    ((#\x #\X)
 	     (return-from parse-number
-	       (parse-integer string :start 2 :radix 16)))
+	       (-number (parse-integer str :start 2 :radix 16))))
 	    ((#\o #\O)
 	     (return-from parse-number
-	       (parse-integer string :start 2 :radix 8)))
+	       (-number (parse-integer str :start 2 :radix 8))))
 	    ((#\b #\B)
 	     (return-from parse-number
-	       (parse-integer string :start 2 :radix 2)))))))
+	       (-number (parse-integer str :start 2 :radix 2))))))))
     ;; Now we must be parsing a decimal, or NaN.
-    (let ((integer-part 0)
+    (let ((sign 1)
+	  (integer-part 0)
 	  (decimal-part 0.0d0)
 	  (saw-integer-digits nil)
 	  (saw-decimal-digits nil)
@@ -377,10 +435,10 @@ funcallable class, it is implementation specific."))
       (declare (type integer integer-part)
 	       (type double-float decimal-part exponent-value))
       (flet ((peek ()
-	       (when (< position (length string))
-		 (char string position)))
+	       (when (< position (length str))
+		 (char str position)))
 	     (consume ()
-	       (prog1 (char string position)
+	       (prog1 (char str position)
 		 (incf position))))
 	;; Check for a leading sign.
 	(case (peek)
@@ -389,7 +447,7 @@ funcallable class, it is implementation specific."))
 	  (#\+ (consume)))
 	;; Remaining string must not be empty.
 	(when (null (peek))
-	  (return-from parse-number (values :nan 0)))
+	  (return-from parse-number (-number :nan)))
 	;; Parse the integer portion.
 	(loop
 	   (let ((weight (position (peek) +decimal-digits+)))
@@ -407,7 +465,7 @@ funcallable class, it is implementation specific."))
 	  (when (and (not (or (not saw-integer-digits)
 			      (find (peek) +exponent-indicator+)))
 		     (not (find (peek) +decimal-digits+)))
-	    (return-from parse-number (values :nan 0)))
+	    (return-from parse-number (-number :nan)))
 	  ;; Accumulate decimal digits.
 	  (let ((first-decimal position))
 	    (loop
@@ -417,7 +475,7 @@ funcallable class, it is implementation specific."))
 	       (consume))
 	    ;; Now works backwards and build the decimal part.
 	    (dotimes (i (- position first-decimal))
-	      (incf decimal-part (digit-char-p (char string (- position i 1))))
+	      (incf decimal-part (digit-char-p (char str (- position i 1))))
 	      (setf decimal-part (/ decimal-part 10.0d0)))))
 	;; And look for an exponent.
 	(when (find (peek) +exponent-indicator+)
@@ -430,7 +488,7 @@ funcallable class, it is implementation specific."))
 	  ;; and one digit in the integer part
 	  (when (or (not (find (peek) +decimal-digits+))
 		    (not saw-integer-digits))
-	    (return-from parse-number (values :nan 0)))
+	    (return-from parse-number (-number :nan)))
 	  ;; Read exponent part.
 	  (loop (when (not (find (peek) +decimal-digits+))
 		  (return))
@@ -438,13 +496,14 @@ funcallable class, it is implementation specific."))
 				     (digit-char-p (consume))))))
 	;; Must be at the end.
 	(when (peek)
-	  (return-from parse-number (values :nan 0)))
-	(* sign
-	   (+ integer-part decimal-part)
-	   (expt 10.0d0 (* exponent-sign exponent-value)))))))
+	  (return-from parse-number (-number :nan)))
+	(-number
+	 (* sign
+	    (+ integer-part decimal-part)
+	    (expt 10.0d0 (* exponent-sign exponent-value))))))))
 
 (defun parse-int (string radix)
-  (parse-integer string :radix radix))
+  (-number (parse-integer (slot-value string 'string-data) :radix radix)))
 
 (defun decode-uri (encoded)
   )
