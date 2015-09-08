@@ -47,7 +47,7 @@
 (deftype symbol-raw ()
   'symbol)
 (deftype object-raw ()
-  'standard-object)
+  `(or standard-class -function))
 
 (deftype +js-value-types+ ()
   `(or undefined-raw null-raw boolean-raw number-raw symbol-raw string-raw
@@ -55,6 +55,10 @@
 
 (deftype +js-primitive-value-types+ ()
   `(or undefined-raw null-raw boolean-raw number-raw symbol-raw string-raw))
+
+;;; Integer index is a canonical numeric string value in [0, 2^53-1],
+;;; array index is an integer index in [0, 2^32-1>. -- ECMA V6.
+(deftype integer-index-numeric () `(integer 0 ,(- (expt 2 53) 1)))
 
 ;;; In an object, property list is an associative list with CARs keys (symbols
 ;;; or strings) and CDRs property structures.
@@ -87,7 +91,7 @@
    (constructor :type (or object-raw null-raw) :initarg :constructor
 		:allocation :class :accessor properties :initform :null)
    (properties :type (or null list) :initarg :properties
-	       :accessor properties :allocation :class :initform nil))
+	       :accessor properties :initform nil))
   (:documentation "General prototype class, used as a helper basis class,
 it is implementation specific."))
 
@@ -98,11 +102,21 @@ it is implementation specific."))
 		:initform :undefined)
    (prototype :type (or property null-raw) :initarg :prototype
 	      :allocation :class :initform :null)
+   ;; LENGTH and NAME are present no matter in which function, make them
+   ;; outstanding. Only PROTOTYPE, CONSTRUCTOR, LENGTH, NAME can be out.
+   (length :type (or property null-raw) :initarg :length :accessor length
+	   :initform (make-property :value 0))
+   (name :type (or property null-raw) :initarg :name :accessor name
+	 :initform (make-property :value ""))
    (properties :type (or null list) :initarg :properties
-	       :accessor properties :allocation :class :initform nil))
+	       :accessor properties :initform nil))
   (:metaclass funcallable-standard-class)
   (:documentation "Builtin function prototype class, used as a helper
 funcallable class, it is implementation specific."))
+
+;;; All the funcallable class should have at least one instance,
+;;; all funcallable instances acts like a wrapper, which contains properties
+;;; information.
 
 (declaim (inline !eval))
 (defun !eval (x)
@@ -423,56 +437,3 @@ funcallable class, it is implementation specific."))
    '(js-add js-delete js-has)
    ))
 
-;;; Integer index is a canonical numeric string value in [0, 2^53-1],
-;;; array index is an integer index in [0, 2^32-1>. -- ECMA V6.
-(deftype integer-index-numeric () `(integer 0 ,(- (expt 2 53) 1)))
-
-;;; In order to avoid re-definition of global functions and variables,
-;;; make a hashtable to store those already created, and check every time
-;;; when we have to define a global one instead of a scoped one.
-;;; Since ES/JS know upper and lowercase, use STRING= instead of EQL or EQUAL.
-(defvar *global-names*
-  (make-hash-table :test 'string=))
-
-;;; Essential internal methods, generic or some?
-(defun js-get-prototype-of (obj)
-  )
-
-(defun js-set-prototype-of (obj proto)
-  )
-
-(defun js-is-extensible (obj)
-  )
-
-(defun js-prevent-extensions (obj key)
-  )
-
-(defun js-get-own-property (obj key)
-  )
-
-(defun js-has-property (obj)
-  )
-
-(defun js-get (obj key receiver)
-  )
-
-(defun js-set (obj key value receiver)
-  )
-
-(defun js-delete (obj key)
-  )
-
-(defun js-define-own-property (obj key descriptor)
-  )
-
-(defun js-enumerate (obj)
-  )
-
-(defun js-own-property-keys (obj)
-  )
-
-(defun js-call (obj args)
-  )
-
-(defun js-construct (obj args)
-  )

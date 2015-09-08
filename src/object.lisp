@@ -45,42 +45,32 @@
 ;;; [[Extensible]] = true, constructor = %Object%, hasOwnProperty = t,
 ;;; isPrototypeOf = t, propertyIsEnumerable = t, toLocaleString = t,
 ;;; toString = t, valueOf = t.
-(defclass -object-prototype ()
-  ((-prototype :type (or symbol-raw -null)
-	       :initarg :-prototype
-	       :initform :null)
-   (-extensible :type (or boolean-raw -undefined)
-		:initarg :-extensible
-		:iniform :true)
-   (constructor :type (or property -null) :accessor constructor
-		:initarg :constructor :allocation :class
-		:initform (make-property :value (find-class '-object)))
-   (has-own-property :type property :accessor has-own-property
-		     :initarg :has-own-property :allocation :class
+(defclass -object-proto (proto)
+  ((-prototype :initform :null)
+   (-extensible :initform :true)
+   (constructor	:initform (make-property :value (find-class '-object)))
+   (has-own-property :type property :initarg :has-own-property
+		     :allocation :class
 		     :initform
 		     (make-property :value (-builtin-function #'has-own-property)))
-   (is-prototype-of :type property :accessor is-prototype-of
-		    :initarg :is-prototype-of :allocation :class
+   (is-prototype-of :type property :initarg :is-prototype-of :allocation :class
 		    :initform
 		    (make-property :value (-builtin-function #'is-prototype-of)))
-   (property-is-enumerable :type property :accessor property-is-enumerable
-			   :initarg :property-is-enumerable :allocation :class
+   (property-is-enumerable :type property :initarg :property-is-enumerable
+			   :allocation :class
 			   :initform
 			   (make-property :value (-builtin-function #'property-is-enumerable)))
-   (to-locale-string :type property :accessor to-locale-string
-		     :initarg :to-locale-string :allocation :class
+   (to-locale-string :type property :initarg :to-locale-string
+		     :allocation :class
 		     :initform
 		     (make-property :value (-builtin-function #'to-locale-string)))
-   (to-string :type property :accessor to-string
-	      :initarg :to-string :allocation :class
+   (to-string :type property :initarg :to-string :allocation :class
 	      :initform
 	      (make-property :value (-builtin-function #'to-string)))
-   (value-of :type property :accessor value-of
-	     :initarg :value-of :allocation :class
+   (value-of :type property :initarg :value-of :allocation :class
 	     :initform
 	     (make-property :value (-builtin-function #'value-of)))
-   (properties :accessor properties :type list
-	       :initarg :properties :initform nil))
+   (properties :type list :initarg :properties :initform nil))
   (:documentation "Object prototype, provides inherited properties."))
 
 ;;; %Object% Object Constructor: [[Prototype]] = %FunctionPrototype%,

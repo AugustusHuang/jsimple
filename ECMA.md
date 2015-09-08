@@ -113,4 +113,13 @@ Now we have two classes, `b extends a`, then:
     b.prototype[[Prototype]] === a.prototype
     a.prototype[[Prototype]] === Object.prototype === -object-prototype
 
+### Notes
 
+    (defmethod initialize-instance :after ((c constructor) &key)
+	  (with-slots (name) c
+	    (set-funcallable-instance-function 
+	     c
+	     (eval `(function (lambda ,(generic-function-lambda-list (symbol-function name))
+	               (,name ,(car (generic-function-lambda-list (symbol-function name))))))))))
+
+Use this kind of wrapper funcall.

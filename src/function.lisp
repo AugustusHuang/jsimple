@@ -30,9 +30,9 @@
 ;;; it will be parsed into !this-type, and then the problem will be trivial...
 ;;; See builtin-util.lisp
 
-(defclass -function-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype)
-   ;; Extensible is the same.
+(defclass -function-prototype (builtin-function)
+  ((-prototype :initform (find-class '-object-prototype))
+   (-extensible :initform :true)
    ;; Internal slots of function objects:
    ;; The lexical environment that the function was closed over. Used as the
    ;; outer environment when evaluating the code of the function.
@@ -61,34 +61,25 @@
    ;; If the function uses 'super' this is the object whose [[GetPrototypeOf]]
    ;; provides the object where 'super' property lookups begin.
    (-home-object :type symbol-raw :initarg :-home-object)
-   (constructor :initform (make-property :value '-function) :allocation :class)
-   (length :type (or property -null) :accessor length :allocation :class
-	   :initarg :length :initform (make-property :value 0
-						     :configurable :true))
-   (name :type (or property -null) :accessor name :allocation :class
-	 :initarg :name :initform (make-property :value ""
-						 :configurable :true))
-   ;; FunctionPrototype doesn't have a prototype property.
-   (properties
-    :initform
-    (append (fetch-properties (find-class '-object-prototype))
-	    '((apply . (make-property :value 'apply))
-	      (bind . (make-property :value 'bind))
-	      (call . (make-property :value 'call))
-	      ;; 'name' property of this function is
-	      ;; "[Symbol.hasInstance]".
-	      (has-instance . (make-property :value 'has-instance))))
-    :allocation :class))
+   (constructor :initform (make-property :value (find-class '-function))
+		:allocation :class)
+   (length :initform (make-property :value 0
+				    :configurable :true))
+   (name :initform (make-property :value ""
+				  :configurable :true))
+   (apply :type property :initarg :apply :allocation :class
+	  :initform (make-property :value ()))
+  ;; FunctionPrototype doesn't have a prototype property, directly
+  ;; inherit :NULL.
+  (:metaclass funcallable-standard-class)
   (:documentation "Function prototype, provides inherited properties."))
 
 (defclass -function (-function-prototype)
   ((-prototype :initform '-function-prototype)
    ;; Extensible is the same.
-   (length :allocation :class :initform (make-property :value 1
-						       :configurable :true))
-   (prototype :type (or property -null) :accessor prototype
-	      :initarg :prototype :initform (make-property :value '-function-prototype)
-	      :allocation :class)
+   (length :initform (make-property :value 1
+				    :configurable :true))
+   (prototype :initform (make-property :value (find-class '-function-prototype)))
    (properties
     :initform (fetch-properties (find-class '-function-prototype))
     :allocation :class))
