@@ -46,8 +46,10 @@
   'string)
 (deftype symbol-raw ()
   'symbol)
+(deftype function-raw ()
+  '-function-proto)
 (deftype object-raw ()
-  `(or standard-class -function-proto))
+  `(or -object-proto -function-proto))
 
 (deftype +js-value-types+ ()
   `(or undefined-raw null-raw boolean-raw number-raw symbol-raw string-raw
@@ -74,6 +76,10 @@
 			      (not -string-proto)
 			      (not -symbol-proto)))
 
+(deftype +js-types+ ()
+  `(or undefined-type null-type boolean-type number-type string-type
+       symbol-type object-type))
+
 ;;; In an object, property list is an associative list with CARs keys (symbols
 ;;; or strings) and CDRs property structures.
 (defstruct property
@@ -84,11 +90,11 @@
   ;; be both function and object. The function's [[Call]] method is called
   ;; with an empty argument list to retrieve the property value each time
   ;; a get access of the property is performed.
-  (get :undefined :type (or undefined-raw -function-proto))
+  (get :undefined :type (or undefined-raw function-raw))
   ;; If not :UNDEFINED must be a function object, the function's [[Call]]
   ;; method is called with an argument list containing assigned value,
   ;; assigns the property with this argument.
-  (set :undefined :type (or undefined-raw -function-proto))
+  (set :undefined :type (or undefined-raw function-raw))
   ;; If :FALSE, attempts to change [[Value]] attribute using [[Set]] failes.
   (writable :false :type boolean-raw)
   ;; If :TRUE, the property will be enumerable by a for-in.
@@ -185,7 +191,17 @@ funcallable class, it is implementation specific."))
   )
 
 (defun -is-array (arg)
-  )
+  (when (not (eql (-type arg) 'object-type))
+    (return-from -is-array *boolean-false*))
+  ;; Do it in lisp level.
+  (cond ((typep arg '-array-proto)
+	 *boolean-true*)
+	((typep arg '-proxy-proto)
+	 (if (eql :null (slot-value arg '-proxy-handler))
+	     (error "")
+	     (-is-array (slot-value arg '-proxy-target))))
+	(t
+	 *boolean-false*)))
 
 (defun -is-callable (arg)
   )
