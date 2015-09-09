@@ -24,16 +24,60 @@
 (in-package :lesp-builtin)
 
 (defclass module-namespace ()
-  ((-module :initarg :-module)
+  ((-module :initarg :-module :type module-record)
    (-exports :initarg :-exports :type (list string))
-   (properties
-    :initform '((to-string-tag . (make-property :value "Module"
-				  :configurable :true))
-		(iterator . (make-property :value 'iterator)))
-    :allocation :class))
+   (to-string-tag :type property :initarg :to-string-tag
+		  :initform (make-property :value "Module"
+					   :configurable :true))
+   (iterator :type property :initarg :iterator
+	     :initform (make-property :value !iterator)))
   (:documentation "Module namespace object."))
+
+(defstruct module-record
+  (-realm :undefined :type (or -undefined realm-record))
+  (-environment :undefined :type (or -undefined lexical-environment))
+  (-namespace :undefined :type (or module-namespace -undefined))
+  (-evaluated :false :type boolean-raw))
 
 (defmethod -get-prototype-of ((this module-namespace))
   :null)
 
-;;; And so on.
+(defmethod -set-prototype-of ((this module-namespace) proto)
+  (assert (or (type-of proto -object-prototype)
+	      (type-of proto -null))
+	  (this proto)
+	  "PROTO is not of type Object or Null.")
+  (-boolean :false))
+
+(defmethod -is-extensible ((this module-namespace))
+  (-boolean :false))
+
+(defmethod -prevent-extensions ((this module-namespace))
+  (-boolean :true))
+
+(defmethod -get-own-property ((this module-namespace) key)
+  )
+
+(defmethod -define-own-property ((this module-namespace) key descriptor)
+  (-boolean :false))
+
+(defmethod -has-property ((this module-namespace) key)
+  )
+
+(defmethod -get ((this module-namespace) key receiver)
+  )
+
+(defmethod -set ((this module-namespace) key value receiver)
+  (-boolean :false))
+
+(defmethod -delete ((this module-namespace) key)
+  )
+
+(defmethod -enumerate ((this module-namespace))
+  )
+
+(defmethod -own-property-keys ((this module-namespace))
+  )
+
+(defun create-module-namespace (module exports)
+  )

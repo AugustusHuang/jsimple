@@ -60,6 +60,20 @@
 ;;; array index is an integer index in [0, 2^32-1>. -- ECMA V6.
 (deftype integer-index-numeric () `(integer 0 ,(- (expt 2 53) 1)))
 
+;;; Interface of type.
+(deftype undefined-type () 'undefined-raw)
+(deftype null-type () 'null-raw)
+(deftype boolean-type () '-boolean-proto)
+(deftype number-type () '-number-proto)
+(deftype string-type () '-string-proto)
+(deftype symbol-type () '-symbol-proto)
+(deftype function-type () '-function-proto)
+(deftype object-type () `(and (or -object-proto -function-proto)
+			      (not -boolean-proto)
+			      (not -number-proto)
+			      (not -string-proto)
+			      (not -symbol-proto)))
+
 ;;; In an object, property list is an associative list with CARs keys (symbols
 ;;; or strings) and CDRs property structures.
 (defstruct property
@@ -145,7 +159,61 @@ funcallable class, it is implementation specific."))
 	     (eval `(function (lambda ,arg-list
 		      (,name ,(remove-& arg-list)))))))))))
 
+(defun -type (arg)
+  (typecase arg
+    (undefined-type
+     'undefined-type)
+    (null-type
+     'null-type)
+    (boolean-type
+     'boolean-type)
+    (number-type
+     'number-type)
+    (string-type
+     'string-type)
+    (symbol-type
+     'symbol-type)
+    (function-type
+     'function-type)
+    ;; Function is an object, but it is more exact.
+    (object-type
+     'object-type)
+    (t
+     (error "Invalid argument"))))
+
 (defun to-primitive (arg &key (hint 'default))
+  )
+
+(defun -is-array (arg)
+  )
+
+(defun -is-callable (arg)
+  )
+
+(defun -is-constructor (arg)
+  (when (not (eql (type-of arg) '-object-proto))
+    (return-from -is-constructor (-boolean :false))
+  ))
+
+(defun -is-integer (arg)
+  (when (not (eql (type-of arg) '-number-proto))
+    (-boolean :false))
+  (let ((data (slot-value arg '-number-data)))
+    (if (or (eql :nan data)
+	    (eql :infinity data)
+	    (eql :-infinity data))
+	(-boolean :false)
+	(when (/= (floor (abs data)) (abs data))
+	  (-boolean :false)))
+    (-boolean :true)))
+
+(defun -is-property-key (arg)
+  (when (or (eql (type-of arg) '-string-proto)
+	    (eql (type-of arg) '-symbol-proto))
+    (-boolean :true))
+  (-boolean :false))
+
+(defun -is-reg-exp (arg)
   )
 
 ;;; Internal methods will have name camel-to-hyphen ed. Constructor instances

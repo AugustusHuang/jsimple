@@ -94,8 +94,51 @@
   (:documentation "String iterator prototype, provides inherited properties to
 all string iterator objects."))
 
+(defparameter *string-undefined* (-string "undefined"))
+(defparameter *string-null* (-string "null"))
+(defparameter *string-true* (-string "true"))
+(defparameter *string-false* (-string "false"))
+(defparameter *string-nan* (-string "NaN"))
+(defparameter *string-0* (-string "0"))
+(defparameter *string-infinity* (-string "Infinity"))
+(defparameter *string--infinity* (-string "-Infinity"))
+
 (defmethod fetch-properties ((this -string-proto))
   (properties (make-instance (class-name this))))
+
+(defun -to-string (arg)
+  (typecase arg
+    (undefined-type
+     *string-undefined*)
+    (null-type
+     *string-null*)
+    (boolean-type
+     (if (eq arg *boolean-true*)
+	 *string-true*
+	 *string-false*))
+    (number-type
+     (cond ((eq arg *number-nan*)
+	    *string-nan*)
+	   ;; We need 0.0d0 equal 0. This is a safe operation.
+	   ((equalp arg *number-0*)
+	    *string-0*)
+	   ((eq arg *number-infinity*)
+	    *string-infinity*)
+	   ((eq arg *number--infinity*)
+	    *string--infinity*)
+	   ((< (slot-value arg '-number-data) 0)
+	    (-string (concatenate 'string
+				  "-"
+				  (-to-string (-number (- (slot-value arg '-nubmer-data)))))))
+	   (t
+	    ;; FIXME: Complete this.
+	    )))
+    (string-type
+     arg)
+    (symbol-type
+     (error "Invalid type conversion from symbol to string"))
+    (object-type
+     (-to-string (-to-primitive arg :hint 'string)))))
 
 ;;; Internal methods.
 (defmethod -get-prototype-of ((this -string-proto))

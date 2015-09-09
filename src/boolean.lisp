@@ -32,25 +32,29 @@
    (constructor :initform (make-property :value -boolean) :allocation :class))
   (:documentation "Boolean prototype, provides inherited properties."))
 
+;;; Since there will be only two boolean instance, make them global.
+(defparameter *boolean-true* (-boolean :true))
+(defparameter *boolean-false* (-boolean :false))
+
 (defun -to-boolean (arg)
   (typecase arg
-    (undefined-raw
-     (-boolean :false))
-    (null-raw
-     (-boolean :false))
-    (-boolean-proto
+    (undefined-type
+     *boolean-false*)
+    (null-type
+     *boolean-false*)
+    (boolean-type
      arg)
-    (-number-proto
+    (number-type
      (if (or (= 0 (slot-value arg '-number-data))
-	     (= :nan (slot-value arg '-number-data)))
-	 (-boolean :false)
-	 (-boolean :true)))
-    (-string-proto
-     (-boolean :true))
-    (-symbol-proto
-     (-boolean :true))
-    (-object-proto
-     (-boolean :true))))
+	     (eql :nan (slot-value arg '-number-data)))
+	 *boolean-false*
+	 *boolean-true*))
+    (string-type
+     *boolean-true*)
+    (symbol-type
+     *boolean-true*)
+    (object-type
+     *boolean-true*)))
 
 (defmethod fetch-properties ((this -boolean-proto))
   (properties (make-instance (class-name this))))

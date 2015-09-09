@@ -58,23 +58,29 @@
 		 :initform (make-property :value !to-precision)))
   (:documentation "Number prototype, provides inherited properties."))
 
+;;; Make special number instance global.
+(defparameter *number-nan* (-number :nan))
+(defparameter *number-infinity* (-number :infinity))
+(defparameter *number--infinity* (-number :-infinity))
+(defparameter *number-0* (-number 0))
+
 (defun -to-number (arg)
   (typecase arg
-    (undefined-raw
-     (-number :nan))
-    (null-raw
-     (-number 0))
-    (-boolean-proto
+    (undefined-type
+     *number-nan*)
+    (null-type
+     *number-0*)
+    (boolean-type
      (if (eql (slot-value arg '-boolean-data) :true)
 	 (-number 1)
-	 (-number 0)))
-    (-number-proto
+	 *number-0*))
+    (number-type
      arg)
-    (-string-proto
+    (string-type
      (-number (string-to-number arg)))
-    (-symbol-proto
-     (error (find-property message '-type-error-proto)))
-    (-object-proto
+    (symbol-type
+     (error "Can't convert symbol to number"))
+    (object-type
      (-number (-to-primitive arg :hint 'number)))))
 
 (defun -to-integer (arg)
@@ -82,7 +88,7 @@
 	 (data (slot-value number '-number-data)))
     (case data
       (:nan
-       (-number 0))
+       *number-0*)
       ((0 :infinity :-infinity)
        number)
       (t
@@ -93,7 +99,7 @@
   (let ((data (slot-value (-to-number arg) '-number-data)))
     (case data
       ((:nan 0 :infinity :-infinity)
-       (-number 0))
+       *number-0*)
       (t
        (let ((int-32bit (mod (* (signum data)
 				(floor (abs data))) (expt 2 32))))
@@ -105,7 +111,7 @@
   (let ((data (slot-value (-to-number arg) '-number-data)))
     (case data
       ((:nan 0 :infinity :-infinity)
-       (-number 0))
+       *number-0*)
       (t
        (let ((int-32bit (mod (* (signum data)
 				(floor (abs data))) (expt 2 32))))
@@ -115,7 +121,7 @@
   (let ((data (slot-value (-to-number arg) '-number-data)))
     (case data
       ((:nan 0 :infinity :-infinity)
-       (-number 0))
+       *number-0*)
       (t
        (let ((int-16bit (mod (* (signum data)
 				(floor (abs data))) (expt 2 16))))
@@ -127,11 +133,49 @@
   (let ((data (slot-value (-to-number arg) '-number-data)))
     (case data
       ((:nan 0 :infinity :-infinity)
-       (-number 0))
+       *number-0*)
       (t
        (let ((int-16bit (mod (* (signum data)
 				(floor (abs data))) (expt 2 16))))
 	 (-number int-16bit))))))
+
+(defun -to-int8 (arg)
+  (let ((data (slot-value (-to-number arg) '-number-data)))
+    (case data
+      ((:nan 0 :infinity :-infinity)
+       *number-0*)
+      (let ((int-8bit (mod (* (signum data)
+			      (floor (abs data))) (expt 2 8))))
+	(if (>= int-8bit (expt 2 7))
+	    (-number (- int-8bit (expt 2 8)))
+	    (-number int-8bit))))))
+
+(defun -to-uint8 (arg)
+  (let ((data (slot-value (-to-number arg) '-number-data)))
+    (case data
+      ((:nan 0 :infinity :-infinity)
+       *number-0*)
+      (let ((int-8bit (mod (* (signum data)
+			      (floor (abs data))) (expt 2 8))))
+	(-number int-8bit)))))
+
+(defun -to-uint8-clamp (arg)
+  (let ((data (slot-value (-to-number arg) '-number-data)))
+    (cond ((eql data :nan)
+	   *number-0*)
+	  ((<= data 0)
+	   *number-0*)
+	  ((>= data 255)
+	   (-number 255))
+	  (t
+	   (let ((f (floor data)))
+	     (if (< (+ f 0.5d0) data)
+		 (-number (1+ f))
+		 (if (> (+ f 0.5d0) data)
+		     (-number f)
+		     (if (oddp f)
+			 (-number (1+ f))
+			 (-number f)))))))))
 
 (defmethod fetch-properties ((this -number-proto))
   (properties (make-instance (class-name this))))

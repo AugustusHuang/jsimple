@@ -112,6 +112,23 @@
     (setf alist (acons "length" len alist))
     (reverse alist)))
 
+(defun -to-object (arg)
+  (typecase arg
+    (undefined-type
+     (error "Invalid conversion from undefined to object"))
+    (null-type
+     (error "Invalid conversion from null to object"))
+    (boolean-type
+     (-object (slot-value arg 'boolean-data)))
+    (number-type
+     (-object (slot-value arg 'number-data)))
+    (string-type
+     (-object (slot-value arg 'string-data)))
+    (symbol-type
+     (-object (slot-value arg 'symbol-data)))
+    (object-type
+     arg)))
+
 ;;; Internal methods.
 (defmethod -get-prototype-of ((this -object-proto))
   (slot-value this '-prototype))
@@ -149,6 +166,7 @@
     (-boolean :true)))
 
 (defmethod -get-own-property ((this -object-proto) key)
+  (declare (type (or -string-proto -symbol-proto) key))
   )
 
 (defmethod -has-property ((this -object-proto) key)

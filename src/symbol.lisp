@@ -35,6 +35,9 @@
 (defmethod print-object ((this -symbol-proto) stream)
   )
 
+(defun -to-symbol (arg)
+  )
+
 (defmethod -get-prototype-of ((this -symbol-proto))
   )
 

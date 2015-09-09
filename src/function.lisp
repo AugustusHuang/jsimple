@@ -61,6 +61,8 @@
    ;; If the function uses 'super' this is the object whose [[GetPrototypeOf]]
    ;; provides the object where 'super' property lookups begin.
    (-home-object :type symbol-raw :initarg :-home-object)
+   (-call :type (or object-raw undefined-raw nil) :initarg :-call)
+   (-construct :type (or object-raw undefined-raw nil) :initarg :-construct)
    (length :initform (make-property :value 0
 				    :configurable :true))
    (name :initform (make-property :value ""
