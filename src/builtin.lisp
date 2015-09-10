@@ -188,7 +188,22 @@ funcallable class, it is implementation specific."))
      (error "Invalid argument"))))
 
 (defun to-primitive (arg &key (hint 'default))
-  )
+  (assert (eql (-type arg) 'object-type)
+	  (arg hint)
+	  "Type of ARG is not object.")
+  (let ((h hint)
+	(result nil))
+    (when (and (not (eql h 'string))
+	       (not (eql h 'number)))
+      (error "HINT must be STRING, NUMBER or DEFAULT."))
+    (case h
+      ('string
+       (setf result (!to-string arg)))
+      ((number default)
+       (setf result (!value-of arg))))
+    (if (not (eql (-type arg) 'object-type))
+	result
+	(error ""))))
 
 (defun -is-array (arg)
   (when (not (eql (-type arg) 'object-type))
@@ -204,12 +219,18 @@ funcallable class, it is implementation specific."))
 	 *boolean-false*)))
 
 (defun -is-callable (arg)
-  )
+  (when (not (eql (-type arg) 'object-type))
+    (return-from -is-callable *boolean-false*))
+  (if (null (slot-value arg '-call))
+      *boolean-false*
+      *boolean-true*))
 
 (defun -is-constructor (arg)
-  (when (not (eql (type-of arg) '-object-proto))
-    (return-from -is-constructor (-boolean :false))
-  ))
+  (when (not (eql (-type arg) 'object-type))
+    (return-from -is-constructor *boolean-false*))
+  (if (null (slot-value arg '-construct))
+      *boolean-false*
+      *boolean-true*))
 
 (defun -is-integer (arg)
   (when (not (eql (type-of arg) '-number-proto))
@@ -224,10 +245,10 @@ funcallable class, it is implementation specific."))
     (-boolean :true)))
 
 (defun -is-property-key (arg)
-  (when (or (eql (type-of arg) '-string-proto)
-	    (eql (type-of arg) '-symbol-proto))
-    (-boolean :true))
-  (-boolean :false))
+  (if (or (eql (-type arg) 'string-type)
+	  (eql (-type arg) 'symbol-type))
+      *boolean-true*
+      *boolean-false*))
 
 (defun -is-reg-exp (arg)
   )
