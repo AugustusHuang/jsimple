@@ -395,7 +395,7 @@ funcallable class, it is implementation specific."))
 		     :length (make-property :value 2))
       )
 
-(setf -object
+(setf !object
       (make-instance '-function-proto
 		     :-prototype (find-class '-function-proto)
 		     :name (make-property :value "Object")
@@ -419,49 +419,192 @@ funcallable class, it is implementation specific."))
 		       (prevent-extensions . (make-property :value !prevent-extensions))
 		       (seal . (make-property :value !seal))
 		       (set-prototype-of . (make-property :value !set-prototype-of))))
-      -function
+      !function
       (make-instance '-function-proto
-		     :-prototype '-function-proto
+		     :-prototype (find-class '-function-proto)
 		     :name (make-property :value "Function")
 		     :length (make-property :value 1 :configurable :true)
 		     :prototype (make-property :value (find-class '-function-proto)))
-      -boolean
+      !boolean
       (make-instance '-function-proto
-		     :-prototype '-function-proto
+		     :-prototype (find-class '-function-proto)
 		     :name (make-property :value "Boolean")
 		     :length (make-property :value 1)
 		     :prototype (make-property :value (find-class '-boolean-proto)))
-      -symbol
+      !number
       (make-instance '-function-proto
-		     :-prototype '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Number")
+		     :length (make-property :value 1)
+		     :prototype (make-property :value (find-class 'number-proto)))
+      !string
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "String")
+		     :length (make-property :value 1)
+		     :prototype (make-property :value (find-class 'string-proto)))
+      !symbol
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
 		     :name (make-property :value "Symbol")
 		     :length (make-property :value 0)
 		     :prototype (make-property :value (find-class '-symbol-proto)))
-      -error
+      !error
       (make-instance '-function-proto
-		     :-prototype '-function-proto
+		     :-prototype (find-class '-function-proto)
 		     :name (make-property :value "Error")
 		     :length (make-property :value 1)
 		     :prototype (make-property :value (find-class '-error-proto)))
-      -eval-error
+      !eval-error
       (make-instance '-function-proto
-		     :-prototype '-function-proto
+		     :-prototype (find-class '-function-proto)
 		     :name (make-property :value "EvalError")
 		     :length (make-property :value 1)
 		     :prototype (make-property :value (find-class '-eval-error-proto)))
-      -range-error
+      !range-error
       (make-instance '-function-proto
-		     :-prototype '-function-proto
+		     :-prototype (find-class '-function-proto)
 		     :name (make-property :value "RangeError")
 		     :length (make-property :value 1)
 		     :prototype (make-property :value (find-class '-eval-error-proto)))
-      -reference-error
+      !reference-error
       (make-instance '-function-proto
-		     :-prototype '-function-proto
+		     :-prototype (find-class '-function-proto)
 		     :name (make-property :value "ReferenceError")
 		     :length (make-property :value 1)
 		     :prototype (make-property :value (find-class '-reference-error-proto)))
-      )
+      !syntax-error
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "SyntaxError")
+		     :length (make-property :value 1)
+		     :prototype (make-property :value (find-class '-syntax-error-proto)))
+      !type-error
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "TypeError")
+		     :length (make-property :value 1)
+		     :prototype (make-property :value (find-class '-type-error-proto)))
+      !uri-error
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "URIError")
+		     :length (make-property :value 1)
+		     :prototype (make-property :value (find-class '-uri-error-proto)))
+      !array
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Array")
+		     :length (make-property :value 1)
+		     :prototype (make-property :value (find-class '-array-proto)))
+      !float32-array
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Float32Array")
+		     :length (make-property :value 3)
+		     :prototype (make-property :value (find-class '-float32-array-proto)))
+      !float64-array
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Float64Array")
+		     :length (make-property :value 3)
+		     :prototype (make-property :value (find-class '-float64-array-proto)))
+      !int8-array
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Int8Array")
+		     :length (make-property :value 3)
+		     :prototype (make-property :value (find-class '-int8-array-proto)))
+      !int16-array
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Int16Array")
+		     :length (make-property :value 3)
+		     :prototype (make-property :value (find-class '-int16-array-proto)))
+      !int32-array
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Int32Array")
+		     :length (make-property :value 3)
+		     :prototype (make-property :value (find-class '-int32-array-proto)))
+      !uint8-array
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Uint8Array")
+		     :length (make-property :value 3)
+		     :prototype (make-property :value (find-class '-uint8-array-proto)))
+      !uint8-clamped-array
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Uint8ClampedArray")
+		     :length (make-property :value 3)
+		     :prototype (make-property :value (find-class '-uint8-clamped-array-proto)))
+      !uint16-array
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Uint16Array")
+		     :length (make-property :value 3)
+		     :prototype (make-property :value (find-class '-uint16-array-proto)))
+      !uint32-array
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Uint32Array")
+		     :length (make-property :value 3)
+		     :prototype (make-property :value (find-class '-uint32-array-proto)))
+      !date
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Date")
+		     :length (make-property :value 7)
+		     :prototype (make-property :value (find-class '-date-proto)))
+      !reg-exp
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "RegExp")
+		     :length (make-property :value 2)
+		     :prototype (make-property :value (find-class '-reg-exp-proto)))
+      !map
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Map")
+		     :length (make-property :value 0)
+		     :prototype (make-property :value (find-class '-map-proto)))
+      !set
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Set")
+		     :length (make-property :value 0)
+		     :prototype (make-property :value (find-class '-set-proto)))
+      !weak-map
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "WeakMap")
+		     :length (make-property :value 0)
+		     :prototype (make-property :value (find-class '-weak-map-proto)))
+      !weak-set
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "WeakSet")
+		     :length (make-property :value 0)
+		     :prototype (make-property :value (find-class '-weak-set-proto)))
+      !array-buffer
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "ArrayBuffer")
+		     :length (make-property :value 1)
+		     :prototype (make-property :value (find-class '-array-buffer-proto)))
+      !data-view
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "DataView")
+		     :length (make-property :value 1)
+		     :prototype (make-property :value (find-class '-data-view-proto)))
+      !promise
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Promise")
+		     :length (make-property :value 1)
+		     :prototype (make-property :value (find-class '-promise-proto))))
 
 (declaim (inline !eval))
 (defun !eval (x)
