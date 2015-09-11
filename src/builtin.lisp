@@ -84,19 +84,19 @@
 ;;; or strings) and CDRs property structures.
 (defstruct property
   ;; The value retrieved by a get access of the property.
-  (value :undefined :type +js-value-types+)
+  (value :undefined :type (or +js-value-types+ null))
   ;; If not :UNDEFINED must be a function object, in this implementation,
   ;; function is an object, but has parallel status, so there's no way to
   ;; be both function and object. The function's [[Call]] method is called
   ;; with an empty argument list to retrieve the property value each time
   ;; a get access of the property is performed.
-  (get :undefined :type (or undefined-raw function-raw))
+  (get nil :type (or undefined-raw function-raw null))
   ;; If not :UNDEFINED must be a function object, the function's [[Call]]
   ;; method is called with an argument list containing assigned value,
   ;; assigns the property with this argument.
-  (set :undefined :type (or undefined-raw function-raw))
+  (set nil :type (or undefined-raw function-raw null))
   ;; If :FALSE, attempts to change [[Value]] attribute using [[Set]] failes.
-  (writable :false :type boolean-raw)
+  (writable :false :type (or boolean-raw null))
   ;; If :TRUE, the property will be enumerable by a for-in.
   (enumerable :false :type boolean-raw)
   ;; If :FALSE, attempts to delete the property, change the property to be
@@ -164,6 +164,46 @@ funcallable class, it is implementation specific."))
 	     func
 	     (eval `(function (lambda ,arg-list
 		      (,name ,(remove-& arg-list)))))))))))
+
+;;; THIS is an instance of internal type.
+(defun find-property (this key)
+  (let ((slots (class-slots (class-of this))))
+    (typecase key
+      (symbol
+       ;; Firstly try to find as a outer inherited property.
+       (loop for i in slots
+	  if (eql key (slot-definition-name i))
+	  do (return-from find-property (cons key (slot-value this key))))
+       ;; Not found, try to find as a inner property.
+       (let ((assoc-list (slot-value this 'properties)))
+	 (if (assoc key assoc-list)
+	     (assoc key assoc-list)
+	     :undefined)))
+      (string
+       ;; They are fixed, simply case KEY to upper-case and compare.
+       (loop for i in slots
+	  if (string= (symbol-name (slot-definition-name i))
+		      (string-upcase key))
+	  do (return-from find-property
+	       (cons key (slot-value this (slot-definition-name i)))))
+       ;; Not found, then find the exact string property name.
+       (let ((assoc-list (slot-value this 'properties)))
+	 (if (assoc key assoc-list)
+	     (assoc key assoc-list)
+	     :undefined))))))
+
+;;; Remove property function.
+(defun remove-property (this key)
+  (let ((assoc-list (slot-value this 'properties)))
+    ;; We can't remove outer properties, only do it in inner ones.
+    (rplacd (assoc key assoc-list) nil)))
+
+;;; NOTE: Do we need this?
+(defun clean-up-properties (this)
+  (let ((assoc-list (slot-value this 'properties)))
+    (loop for i in assoc-list
+       if (null (cdr i))
+       do (setf assoc-list (remove i assoc-list)))))
 
 (defun -type (arg)
   (typecase arg

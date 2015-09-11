@@ -119,13 +119,13 @@
     (null-type
      (error "Invalid conversion from null to object"))
     (boolean-type
-     (-object (slot-value arg 'boolean-data)))
+     (-object :-primitive-value (slot-value arg 'boolean-data)))
     (number-type
-     (-object (slot-value arg 'number-data)))
+     (-object :-primitive-value (slot-value arg 'number-data)))
     (string-type
-     (-object (slot-value arg 'string-data)))
+     (-object :-primitive-value (slot-value arg 'string-data)))
     (symbol-type
-     (-object (slot-value arg 'symbol-data)))
+     (-object :-primitive-value (slot-value arg 'symbol-data)))
     (object-type
      arg)))
 
@@ -135,16 +135,16 @@
 
 ;;; PROTO is a class object or :NULL.
 (defmethod -set-prototype-of ((this -object-proto) proto)
-  (assert (or (eql (find-class '-object-proto))
-	      (eql :null))
+  (assert (or (eql (-type proto) 'object-type)
+	      (eql proto :null))
 	  (this proto)
 	  "PROTO is not of type Object or Null.")
   (let ((extensible (slot-value this '-extensible))
 	(current (slot-value this '-prototype)))
     (when (eql proto current)
-      (-boolean :true))
+      *boolean-true*)
     (when (eql extensible :false)
-      (-boolean :false))
+      *boolean-false*)
     (let ((done nil)
 	  (p proto))
       (loop
@@ -152,10 +152,11 @@
 	 (if (eql p :null)
 	     (setf done t)
 	     (if (eql p (class-of this))
-		 (return-from -set-prototype-of (-boolean :false))
+		 (return-from -set-prototype-of *boolean-false*)
 		 (setf p (-get-prototype-of p)))))
+      ;; Of course we should change the class in Lisp land.
       (setf (slot-value this '-prototype) p)
-      (-boolean :true))))
+      *boolean-true*)))
 
 (defmethod -is-extensible ((this -object-proto))
   (slot-value this '-extensible))
@@ -163,32 +164,128 @@
 (defmethod -prevent-extensions ((this -object-proto))
   (progn
     (setf (slot-value this '-extensible) :false)
-    (-boolean :true)))
+    *boolean-true*))
 
 (defmethod -get-own-property ((this -object-proto) key)
-  (declare (type (or -string-proto -symbol-proto) key))
-  )
+  (assert (or (eql (-type key) 'string-type)
+	      (eql (-type key) 'symbol-type))
+	  (this key)
+	  "KEY is not a valid property key.")
+  (cdr (find-property this key)))
 
 (defmethod -has-property ((this -object-proto) key)
-  )
+  (let ((desc (-get-own-property this key)))
+    (if (not (eql desc :undefined))
+	;; Since every property is naturally inherited, we have no need
+	;; to check the superclasses.
+	*boolean-true*
+	*boolean-false*)))
 
 (defmethod -get ((this -object-proto) key receiver)
-  )
+  (let ((desc (-get-own-property this key)))
+    (if (eql desc :undefined)
+	;; Also we don't need to check the superclasses.
+	:undefined
+	;; This property is an accessor property or data property.
+	(if (null (property-value desc))
+	    (let ((getter (property-get desc)))
+	      (if (eql getter :undefined)
+		  :undefined
+		  (!call getter receiver)))
+	    (property-value desc)))))
 
 (defmethod -set ((this -object-proto) key value receiver)
-  )
+  (let* ((current (find-property this key))
+	 (desc (cdr current)))
+    (if (eql desc :undefined)
+	(setf desc (make-property :writable :true :enumerable :true
+				  :configurable :true))
+	(if (null (property-value desc))
+	    (let ((setter (property-set desc)))
+	      (if (eql setter :undefined)
+		  *boolean-false*
+		  (progn
+		    (!call setter receiver value)
+		    *boolean-true*)))
+	    (progn
+	      (when (eql (property-writable desc) :false)
+		*boolean-false*)
+	      (when (not (eql (-type receiver) 'object-type))
+		*boolean-false*)
+	      (let ((exist (-get-own-property receiver key)))
+		(if (not (eql exist :undefined))
+		    (progn
+		      (when (not (null (property-set exist)))
+			*boolean-false*)
+		      (when (eql (property-writable exist) :false)
+			*boolean-false*)
+		      (return-from -set
+			(-define-own-property receiver key (make-property :value value))))
+		    (return-from -set
+		      (-define-own-property
+		       receiver key (make-property :value value
+						   :writable :true
+						   :enumerable :true
+						   :configurable :true))))))))))
 
 (defmethod -delete ((this -object-proto) key)
-  )
+  (let ((desc (-get-own-property this key)))
+    (when (eql desc :undefined)
+      *boolean-true*)
+    (when (eql (property-configurable desc) :true)
+      (remove-property this key)
+      *boolean-true*)
+    *boolean-false*))
 
 (defmethod -define-own-property ((this -object-proto) key descriptor)
-  )
+  (declare (type property descriptor))
+  ;; Extension is not allowed, return.
+  (when (not (slot-value this '-extensible))
+    *boolean-false*)
+  (let* ((current (find-property this key))
+	 (pro (cdr current)))
+    (if (eql pro :undefined)
+	;; We don't have this property name yet, create a new one.
+	(progn
+	  (push '(key . descriptor) (slot-value this 'properties))
+	  *boolean-true*)
+	;; We have this property, then test its fields.
+	(if (eql (property-configurable pro) :false)
+	    *boolean-false*
+	    ;; We can change this.
+	    (progn
+	      (setf (cdr current) descriptor)
+	      *boolean-true*)))))
 
+;;; Return an iterator object whose NEXT method iterates over all the
+;;; string-valued keys of enumerable properties of THIS.
 (defmethod -enumerate ((this -object-proto))
   )
 
 (defmethod -own-property-keys ((this -object-proto))
-  )
+  (let ((global-symbol-keys nil)
+	(slots (class-slots (class-of this)))
+	(assoc-list (slot-value this 'properties)))
+    ;; Firstly the internal properties, without those internal slots.
+    (loop for i in slots
+       if (not (char= #\- (char (symbol-name (slot-definition-name i)) 0)))
+       collect (slot-definition-name i) into symbol-keys
+       finally (setf global-symbol-keys symbol-keys))
+    (setf global-symbol-keys (reverse global-symbol-keys))
+    ;; And then the property associative list.
+    (loop for (j . property) in assoc-list
+       if (not (eql (-to-number j) *number-nan*))
+       collect j into integer-keys
+       else
+       if (eql (-type j) 'string-type)
+       collect j into string-keys
+       else
+       collect j into symbol-keys
+       finally
+	 (progn
+	   (setf global-symbol-keys (append global-symbol-keys symbol-keys))
+	   (return-from -own-property-keys
+		 (append integer-keys string-keys global-symbol-keys))))))
 
 ;;; Object property methods and Object prototype property methods.
 ;;; Since Object is called without THIS, define them as functions...
