@@ -29,6 +29,7 @@
 (defclass -symbol-proto (-object-proto)
   ((-prototype :initform (find-class '-object-proto))
    (-symbol-data :type symbol-raw :initarg :-symbol-data)
+   ;; Maybe we need a descriptive string here?
    (constructor :initform (make-property :value -symbol) :allocation :class))
   (:documentation "Symbol prototype, provides inherited properties."))
 

@@ -140,6 +140,13 @@ all string iterator objects."))
     (object-type
      (-to-string (-to-primitive arg :hint 'string)))))
 
+(defun -string (&optional value)
+  (let ((s (if value (if (eql (-type value 'symbol-type)
+			      SymbolDescriptiveString(value)
+			      (to-string value)))
+	       "")))
+    (make-instance '-string-proto :-string-data s)))
+
 ;;; Internal methods.
 (defmethod -get-prototype-of ((this -string-proto))
   )
@@ -177,20 +184,131 @@ all string iterator objects."))
 (defmethod -own-property-keys ((this -string-proto))
   )
 
+;;; How about using CHAR-CODE lib function?
 (defun from-char-code (&rest code-units)
-  )
+  (let* ((len (length code-units))
+	 (out (make-string len)))
+    (loop for next in code-units
+       and i from 0 to (1- len)
+       for next-cu = (to-uint16 next)
+       do (setf (char out i) (code-char next-cu)))
+    (!string out)))
 
 (defun from-code-point (&rest code-points)
-  )
+  (let* ((len (length code-points))
+	 (out (make-array len :element-type 'integer)))
+    (loop for next in code-points
+       and i from 0 to (1- len)
+       for next-cp = (-to-number next)
+       if (or (not (= next-cp (-to-integer next-cp)))
+	      ;; 10FFFF is 1114111
+	      (<= 0 next-cp 1114111))
+	 ;; Range error.
+	 (error "")
+       do (setf (aref out i) (UTF16Encoding next-cp)))
+    (!string out))
 
 (defun raw (template &rest substitutions)
+  (let ((cooked (-to-object template)))
+    ))
+
+(defmethod char-at ((this -string-proto) pos)
+  (let ((posi (-to-integer pos)))
+    (if (or (< 0 posi) (>= posi (slot-value this 'length)))
+	(!string "")
+	(!string (string (char (slot-value this '-string-data) posi))))))
+
+(defmethod char-code-at ((this -string-proto) pos)
+  (let ((posi (-to-integer pos)))
+    (if (or (< 0 posi) (>= posi (slot-value this 'length)))
+	(!number :nan)
+	(!number (char-code (char (slot-value this '-string-data) posi))))))
+
+(defmethod code-point-at ((this -string-proto) pos)
+  (let ((posi (-to-integer pos))
+	(size (slot-value this 'length))
+	(str (slot-value this '-string-data)))
+    (if (or (< 0 posi) (>= posi size))
+	:undefined
+	(let ((fst (char-code (char str posi)))
+	  ;; D800 = 55296, DBFF = 56319.
+	  (if (or (< fst 55296) (> fst 56319) (= (1+ posi) size))
+	      fst
+	      (let ((snd (char-code (char str (1+ posi)))))
+		;; DC00 = 56320, DFFF = 57343.
+		(if (or (< snd 56320) (> snd 57343))
+		    fst
+		    (UTF16Decode(fst,snd))))))))))
+
+(defmethod concat ((this -string-proto) &rest args)
+  (let ((out (slot-value this '-string-raw)))
+    (dolist (arg args)
+      (setf out (concatenate 'string out arg)))
+    (!string out)))
+
+(defmethod ends-with ((this -string-proto) search &optional end)
+  )
+
+(defmethod includes ((this -string-proto) search &optional pos)
+  )
+
+(defmethod index-of ((this -string-proto) search &optional pos)
+  )
+
+(defmethod last-index-of ((this -string-proto) search &optional pos)
+  )
+
+(defmethod locale-compare ((this -string-proto) that)
+  )
+
+(defmethod match ((this -string-proto) regexp)
+  )
+
+(defmethod normalize ((this -string-proto) &optional form)
+  )
+
+(defmethod repeat ((this -string-proto) count)
+  )
+
+(defmethod replace ((this -string-proto) search replace)
+  )
+
+(defmethod search ((this -string-proto) regexp)
+  )
+
+(defmethod slice ((this -string-proto) start end)
+  )
+
+(defmethod split ((this -string-proto) separator limit)
+  )
+
+(defmethod starts-with ((this -string-proto) search &optional pos)
+  )
+
+(defmethod substring ((this -string-proto) start end)
+  )
+
+(defmethod to-locale-lower-case ((this -string-proto))
+  )
+
+(defmethod to-locale-upper-case ((this -string-proto))
+  )
+
+(defmethod to-lower-case ((this -string-proto))
   )
 
 (defmethod to-string ((this -string-proto))
   )
 
-(defmethod to-locale-string ((this -string-proto))
+(defmethod to-upper-case ((this -string-proto))
+  )
+
+(defmethod trim ((this -string-proto))
   )
 
 (defmethod value-of ((this -string-proto))
   )
+
+(defmethod iterator ((this -string-proto))
+  )
+
