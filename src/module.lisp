@@ -47,37 +47,62 @@
 	      (type-of proto -null))
 	  (this proto)
 	  "PROTO is not of type Object or Null.")
-  (-boolean :false))
+  *boolean-false*)
 
 (defmethod -is-extensible ((this module-namespace))
-  (-boolean :false))
+  *boolean-false*)
 
 (defmethod -prevent-extensions ((this module-namespace))
-  (-boolean :true))
+  *boolean-true*)
 
 (defmethod -get-own-property ((this module-namespace) key)
-  )
+  (when (eql (-type key) 'symbol-type)
+    (return-from -get-own-property (cdr (find-property this key))))
+  (let ((exports (slot-value this '-exports)))
+    (if (not (find key exports))
+	:undefined
+	(make-property :value (-get this key this)
+		       :writable :true :enumerable :true :configurable :false))))
 
 (defmethod -define-own-property ((this module-namespace) key descriptor)
-  (-boolean :false))
+  *boolean-false*)
 
 (defmethod -has-property ((this module-namespace) key)
-  )
+  (when (eql (-type key) 'symbol-type)
+    (return-from -has-property ;; OrdinaryHasProperty
+      ))
+  (let ((exports (slot-value this '-exports)))
+    (if (find key exports)
+	*boolean-true*
+	*boolean-false*)))
 
 (defmethod -get ((this module-namespace) key receiver)
   )
 
 (defmethod -set ((this module-namespace) key value receiver)
-  (-boolean :false))
+  *boolean-false*)
 
 (defmethod -delete ((this module-namespace) key)
-  )
+  (let ((exports (slot-value this '-exports)))
+    (if (find key exports)
+	*boolean-false*
+	*boolean-true*)))
 
 (defmethod -enumerate ((this module-namespace))
-  )
+  (let ((exports (slot-value this '-exports)))
+    ;; Return CreateListIterator.
+    ))
 
 (defmethod -own-property-keys ((this module-namespace))
-  )
+  (let ((exports (slot-value this '-exports)))
+    (append exports ;; OwnPropertyKeys on object-proto
+	    )
+    exports))
 
 (defun create-module-namespace (module exports)
-  )
+  (let ((this nil))
+    (setf this
+	  (make-instance 'module-namespace :-module module :-exports exports)
+	  (slot-value module '-namespace) this)
+    this))
+  

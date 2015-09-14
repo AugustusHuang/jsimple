@@ -145,4 +145,23 @@ properties"))
   ()
   (:documentation "Unsigned int32 array prototype."))
 
+(defmethod print-object ((this -array-proto) stream)
+  )
 
+(defmethod -define-own-property ((this -array-proto) key descriptor)
+  )
+
+(defmethod -get-own-property ((this -array-proto) key)
+  )
+
+(defmethod -has-property ((this -array-proto) key)
+  )
+
+(defmethod -get ((this -array-proto) key receiver)
+  )
+
+(defmethod -set ((this -array-proto) key value receiver)
+  )
+
+(defmethod -own-property-keys ((this -array-proto))
+  )
