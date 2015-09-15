@@ -26,7 +26,7 @@
 
 (defclass -date-prototype (-object-prototype)
   ((-prototype :initform '-object-prototype)
-   (-date-value :type date :initarg :-date-value)
+   (-date-value :type timestamp :initarg :-date-value)
    (constructor :initform (make-property :value '-date) :allocation :class)
    (properties
     :initform
@@ -34,16 +34,120 @@
 	    '(()))))
   (:documentation "Date prototype, provides inherited properties."))
 
-;;; Internal DATE structure, uses ideas borrowed from LOCAL-TIME package by
+;;; Internal structures, uses ideas borrowed from LOCAL-TIME package by
 ;;; Daniel Lowe and Attila Lendvai. Here use Millisecond instead of nano one.
 
-(defstruct date
+;;; If we represent the timestamp using only one number, it will be a BIGNUM,
+;;; which will make code slower since we don't need to know the exact
+;;; time value in most of operations, so I adopted this structure.
+;;; All operations will be done on this structure.
+(defstruct timestamp
   ((day 0 :type integer)
    (sec 0 :type integer)
-   (msec 0 :type integer)))
+   (msec 0 :type (integer 0 1000))))
 
-(defmethod fetch-properties ((this -date-prototype))
-  (properties (make-instance (class-name this))))
+(defstruct subzone
+  (abbrev nil)
+  (offset nil)
+  (daylight-p nil))
+
+(defstruct timezone
+  (transitions #(0) :type simple-vector)
+  (indices #(0) :type simple-vector)
+  (subzones #() :type simple-vector)
+  (leap-seconds nil :type list)
+  (name "anonymous" :type string)
+  (loaded nil :type boolean))
+
+(deftype timezone-offset ()
+  '(integer -43199 50400))
+
+(defparameter +short-month-names+
+  #("" "Jan" "Feb" "Mar" "Apr" "May" "Jun"
+    "Jul" "Aug" "Sep" "Oct" "Nov" "Dec"))
+;; 01 Jan 1970 is Thu.
+(defparameter +short-day-names+
+  #("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat"))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defconstant +months/year+ 12)
+  (defconstant +days/week+ 7)
+  (defconstant +hours/day+ 24)
+  (defconstant +minutes/hour+ 60)
+  (defconstant +minutes/day+ 1440)
+  (defconstant +seconds/minute+ 60)
+  (defconstant +seconds/hour+ 3600)
+  (defconstant +seconds/day+ 86400)
+  (defconstant +mseconds/day+ 86400000))
+
+(defparameter +date-format+
+  ;; Tue, 15 Sep 2015 16:10:34 GMT+0800
+  '(:short-day ", " (:date 2) #\Space :short-month #\Space
+    (:year 4) #\Space (:hour 2) #\: (:min 2) #\: (:sec 2) #\Space :gmt))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defparameter +non-leap-year-days+
+    #(31 28 31 30 31 30 31 31 30 31 30 31))
+  (defparameter +leap-year-days+
+    #(31 29 31 30 31 30 31 31 30 31 30 31)))
+
+;;; Helper functions used to generate elements in internal structure.
+;;; They won't be called barely, but wrapped by outer functions.
+(declaim (inline now
+		 time-value-to-day
+		 time-value-to-time-within-day
+		 days-in-year
+		 day-from-year
+		 day-within-year
+		 time-from-year
+		 year-from-time
+		 ))
+
+(defun now ()
+  (multiple-value-bind (sec usec) (sb-ext:get-time-of-day)
+    (make-timestamp :day (floor (/ sec +seconds/day+))
+		    :sec (mod sec +seconds/day+)
+		    :msec (floor usec 1000))))
+
+(defun time-value-to-day (ts)
+  (timestamp-day ts))
+
+(defun time-value-to-time-within-day (ts)
+  (+ (* 1000 (timestamp-sec ts)) (timestamp-msec ts)))
+
+(defun days-in-year (year)
+  (cond ((= 0 (mod year 400))
+	 366)
+	((and (= 0 (mod year 100)) (/= 0 (mod year 400)))
+	 365)
+	((and (= 0 (mod year 4)) (/= 0 (mod year 100)))
+	 366)
+	(t
+	 365)))
+
+(defun day-from-year (year)
+  (+ (* 365 (- y 1970)) (floor (- y 1969) 4) (floor (- y 1901) 100)
+     (floor (- y 1601) 400)))
+
+(defun day-within-year (ts)
+  (- (timestamp-day ts) (day-from-year (year-from-time ts))))
+
+(defun decode-date (day)
+  (declare (type integer day))
+  (multiple-value-bind (year days)))
+
+;;; Is TIMEZONE necessary?
+(defun year-from-time (ts)
+  (nth-value 0 (decode-date (nth-value 1 (adjust-to-timezone ts timezone)))))
+
+(defun leap-year-p (ts)
+  )
+
+(defun month-from-time ())
+
+(defun time-from-year (year)
+  (make-timestamp :day (day-from-year year)
+		  :sec 0 :msec 0))
 
 (defun count-day (year month date)
   )

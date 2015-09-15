@@ -301,158 +301,158 @@ funcallable class, it is implementation specific."))
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "eval")
+		     :name (make-property :value "%eval")
 		     :length (make-property :value 1))
       !is-finite
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "isFinite")
+		     :name (make-property :value "%isFinite")
 		     :length (make-property :value 1))
       !is-nan
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "isNaN")
+		     :name (make-property :value "%isNaN")
 		     :length (make-property :value 1))
       !parse-float
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "parseFloat")
+		     :name (make-property :value "%parseFloat")
 		     :length (make-property :value 1))
       !parse-int
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "parseInt")
+		     :name (make-property :value "%parseInt")
 		     :length (make-property :value 2))
       !decode-uri
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "decodeURI")
+		     :name (make-property :value "%decodeURI")
 		     :length (make-property :value 1))
       !decode-uri-component
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "decodeURIComponent")
+		     :name (make-property :value "%decodeURIComponent")
 		     :length (make-property :value 1))
       !encode-uri
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "encodeURI")
+		     :name (make-property :value "%encodeURI")
 		     :length (make-property :value 1))
       !encode-uri-component
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "encodeURIComponent")
+		     :name (make-property :value "%encodeURIComponent")
 		     :length (make-property :value 1)))
 
 (setf !assign
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "assign")
+		     :name (make-property :value "%assign")
 		     :length (make-property :value 2))
       !create
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "create")
+		     :name (make-property :value "%create")
 		     :length (make-property :value 2))
       !define-properties
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "defineProperties")
+		     :name (make-property :value "%defineProperties")
 		     :length (make-property :value 2))
       !define-property
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "defineProperty")
+		     :name (make-property :value "%defineProperty")
 		     :length (make-property :value 3))
       !freeze
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "freeze")
+		     :name (make-property :value "%freeze")
 		     :length (make-property :value 1))
       !get-own-property-descriptor
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "getOwnPropertyDescriptor")
+		     :name (make-property :value "%getOwnPropertyDescriptor")
 		     :length (make-property :value 2))
       !get-own-property-names
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "getOwnPropertyNames")
+		     :name (make-property :value "%getOwnPropertyNames")
 		     :length (make-property :value 1))
       !get-own-property-symbols
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "getOwnPropertySymbols")
+		     :name (make-property :value "%getOwnPropertySymbols")
 		     :length (make-property :value 1))
       !get-prototype-of
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "getPrototypeOf")
+		     :name (make-property :value "%getPrototypeOf")
 		     :length (make-property :value 1))
       !is
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "is")
+		     :name (make-property :value "%is")
 		     :length (make-property :value 2))
       !is-extensible
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "isExtensible")
+		     :name (make-property :value "%isExtensible")
 		     :length (make-property :value 1))
       !is-frozen
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "isFrozen")
+		     :name (make-property :value "%isFrozen")
 		     :length (make-property :value 1))
       !is-sealed
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "isSealed")
+		     :name (make-property :value "%isSealed")
 		     :length (make-property :value 1))
       !keys
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "keys")
+		     :name (make-property :value "%keys")
 		     :length (make-property :value 1))
       !prevent-extensions
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "preventExtensions")
+		     :name (make-property :value "%preventExtensions")
 		     :length (make-property :value 1))
       !seal
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "seal")
+		     :name (make-property :value "%seal")
 		     :length (make-property :value 1))
       !set-prototype-of
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
-		     :name (make-property :value "setPrototypeOf")
+		     :name (make-property :value "%setPrototypeOf")
 		     :length (make-property :value 2))
       )
 
@@ -667,29 +667,29 @@ funcallable class, it is implementation specific."))
 		     :length (make-property :value 1)
 		     :prototype (make-property :value (find-class '-promise-proto))))
 
-(declaim (inline !eval))
-(defun !eval (x)
+(declaim (inline %eval))
+(defun %eval (x)
   )
 
-(defun is-finite (number)
+(defun %is-finite (number)
   (let ((data (slot-value (to-number number) 'number-data)))
     (case data
       ((:nan :infinity :-infinity)
-       (-boolean :false))
+       (!boolean :false))
       (t
-       (-boolean :true)))))
+       (!boolean :true)))))
 
-(defun is-nan (number)
+(defun %is-nan (number)
   (let ((data (slot-value (to-number number) 'number-data)))
     (case data
       (:nan
-       (-boolean :true))
+       (!boolean :true))
       (t
-       (-boolean :false)))))
+       (!boolean :false)))))
 
 ;;; Helper function to parse a general number...
 ;;; PARSE-INT is internal...
-(defun parse-float (string)
+(defun %parse-float (string)
   ;; Firstly check the first two chars, if they match 0x/0X, 0o/0O, 0b/0B,
   ;; use corresponding radix PARSE-INTEGER. Or handle decimal values.
   (let ((str (slot-value (-to-string string) 'string-data)))
@@ -701,13 +701,13 @@ funcallable class, it is implementation specific."))
 	  (case second-char
 	    ((#\x #\X)
 	     (return-from parse-number
-	       (-number (parse-integer str :start 2 :radix 16))))
+	       (!number (parse-integer str :start 2 :radix 16))))
 	    ((#\o #\O)
 	     (return-from parse-number
-	       (-number (parse-integer str :start 2 :radix 8))))
+	       (!number (parse-integer str :start 2 :radix 8))))
 	    ((#\b #\B)
 	     (return-from parse-number
-	       (-number (parse-integer str :start 2 :radix 2))))))))
+	       (!number (parse-integer str :start 2 :radix 2))))))))
     ;; Now we must be parsing a decimal, or NaN.
     (let ((sign 1)
 	  (integer-part 0)
@@ -735,7 +735,7 @@ funcallable class, it is implementation specific."))
 	  (#\+ (consume)))
 	;; Remaining string must not be empty.
 	(when (null (peek))
-	  (return-from parse-number (-number :nan)))
+	  (return-from parse-number (!number :nan)))
 	;; Parse the integer portion.
 	(loop
 	   (let ((weight (position (peek) +decimal-digits+)))
@@ -776,7 +776,7 @@ funcallable class, it is implementation specific."))
 	  ;; and one digit in the integer part
 	  (when (or (not (find (peek) +decimal-digits+))
 		    (not saw-integer-digits))
-	    (return-from parse-number (-number :nan)))
+	    (return-from parse-number (!number :nan)))
 	  ;; Read exponent part.
 	  (loop (when (not (find (peek) +decimal-digits+))
 		  (return))
@@ -785,23 +785,23 @@ funcallable class, it is implementation specific."))
 	;; Must be at the end.
 	(when (peek)
 	  (return-from parse-number (-number :nan)))
-	(-number
+	(!number
 	 (* sign
 	    (+ integer-part decimal-part)
 	    (expt 10.0d0 (* exponent-sign exponent-value))))))))
 
-(defun parse-int (string radix)
-  (-number (parse-integer (slot-value string 'string-data) :radix radix)))
+(defun %parse-int (string radix)
+  (!number (parse-integer (slot-value string 'string-data) :radix radix)))
 
-(defun decode-uri (encoded)
+(defun %decode-uri (encoded)
   )
 
-(defun decode-uri-component (encoded-component)
+(defun %decode-uri-component (encoded-component)
   )
 
-(defun encode-uri (uri)
+(defun %encode-uri (uri)
   )
 
-(defun encode-uri-component (component)
+(defun %encode-uri-component (component)
   )
 
