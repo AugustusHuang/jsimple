@@ -25,21 +25,22 @@
 (in-package :lesp-builtin)
 
 ;;; In SBCL 32-bit version, it's OK.
-(defconstant +number-max-safe-integer+ (- (expt 2 53) 1))
-(defconstant +number-max-value+ most-positive-double-float)
-(defconstant +number-min-safe-integer+ (- (- (expt 2 53) 1)))
-(defconstant +number-min-value+ least-positive-double-float)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defconstant +number-max-safe-integer+ (- (expt 2 53) 1))
+  (defconstant +number-max-value+ most-positive-double-float)
+  (defconstant +number-min-safe-integer+ (- (- (expt 2 53) 1)))
+  (defconstant +number-min-value+ least-positive-double-float)
 ;;; NOTE: It seems that there's a little mistake... Now ignore it.
-(defconstant +number-epsilon+ (* 2 double-float-epsilon))
+  (defconstant +number-epsilon+ (* 2 double-float-epsilon))
 
-(defconstant +math-e+ (exp 1.0d0))
-(defconstant +math-ln10+ (log 10.0d0))
-(defconstant +math-ln2+ (log 2.0d0))
-(defconstant +math-log10e+ (log +math-e+ 10))
-(defconstant +math-log2e+ (log +math-e+ 2))
-(defconstant +math-pi+ pi)
-(defconstant +math-sqrt-1/2+ (sqrt (/ 1.0d0 2.0d0)))
-(defconstant +math-sqrt-2+ (sqrt 2.0d0))
+  (defconstant +math-e+ (exp 1.0d0))
+  (defconstant +math-ln10+ (log 10.0d0))
+  (defconstant +math-ln2+ (log 2.0d0))
+  (defconstant +math-log10e+ (log +math-e+ 10))
+  (defconstant +math-log2e+ (log +math-e+ 2))
+  (defconstant +math-pi+ pi)
+  (defconstant +math-sqrt-1/2+ (sqrt (/ 1.0d0 2.0d0)))
+  (defconstant +math-sqrt-2+ (sqrt 2.0d0)))
 
 ;;; Get rid of complains, use DEFPARAMETER...
 (defparameter +decimal-digits+ "0123456789")
@@ -59,10 +60,10 @@
   (:documentation "Number prototype, provides inherited properties."))
 
 ;;; Make special number instance global.
-(defparameter *number-nan* (-number :nan))
-(defparameter *number-infinity* (-number :infinity))
-(defparameter *number--infinity* (-number :-infinity))
-(defparameter *number-0* (-number 0))
+(defparameter *number-nan* (!number :nan))
+(defparameter *number-infinity* (!number :infinity))
+(defparameter *number--infinity* (!number :-infinity))
+(defparameter *number-0* (!number 0))
 
 (defun -to-number (arg)
   (typecase arg
@@ -72,16 +73,16 @@
      *number-0*)
     (boolean-type
      (if (eql (slot-value arg '-boolean-data) :true)
-	 (-number 1)
+	 (!number 1)
 	 *number-0*))
     (number-type
      arg)
     (string-type
-     (-number (string-to-number arg)))
+     (!number (string-to-number arg)))
     (symbol-type
      (error "Can't convert symbol to number"))
     (object-type
-     (-number (-to-primitive arg :hint 'number)))))
+     (!number (-to-primitive arg :hint 'number)))))
 
 (defun -to-integer (arg)
   (let* ((number (-to-number arg))
@@ -92,7 +93,7 @@
       ((0 :infinity :-infinity)
        number)
       (t
-       ((-number (* (signum data)
+       ((!number (* (signum data)
 		    (floor (abs data)))))))))
 
 (defun -to-int32 (arg)
@@ -104,8 +105,8 @@
        (let ((int-32bit (mod (* (signum data)
 				(floor (abs data))) (expt 2 32))))
 	 (if (>= int-32bit (expt 2 31))
-	     (-number (- int-32bit (expt 2 32)))
-	     (-number int-32bit)))))))
+	     (!number (- int-32bit (expt 2 32)))
+	     (!number int-32bit)))))))
 
 (defun -to-uint32 (arg)
   (let ((data (slot-value (-to-number arg) '-number-data)))
@@ -115,7 +116,7 @@
       (t
        (let ((int-32bit (mod (* (signum data)
 				(floor (abs data))) (expt 2 32))))
-	 (-number int-32bit))))))
+	 (!number int-32bit))))))
 
 (defun -to-int16 (arg)
   (let ((data (slot-value (-to-number arg) '-number-data)))
@@ -126,8 +127,8 @@
        (let ((int-16bit (mod (* (signum data)
 				(floor (abs data))) (expt 2 16))))
 	 (if (>= int-16bit (expt 2 15))
-	     (-number (- int-16bit (expt 2 16)))
-	     (-number int-16bit)))))))
+	     (!number (- int-16bit (expt 2 16)))
+	     (!number int-16bit)))))))
 
 (defun -to-uint16 (arg)
   (let ((data (slot-value (-to-number arg) '-number-data)))
@@ -137,7 +138,7 @@
       (t
        (let ((int-16bit (mod (* (signum data)
 				(floor (abs data))) (expt 2 16))))
-	 (-number int-16bit))))))
+	 (!number int-16bit))))))
 
 (defun -to-int8 (arg)
   (let ((data (slot-value (-to-number arg) '-number-data)))
@@ -147,8 +148,8 @@
       (let ((int-8bit (mod (* (signum data)
 			      (floor (abs data))) (expt 2 8))))
 	(if (>= int-8bit (expt 2 7))
-	    (-number (- int-8bit (expt 2 8)))
-	    (-number int-8bit))))))
+	    (!number (- int-8bit (expt 2 8)))
+	    (!number int-8bit))))))
 
 (defun -to-uint8 (arg)
   (let ((data (slot-value (-to-number arg) '-number-data)))
@@ -157,7 +158,7 @@
        *number-0*)
       (let ((int-8bit (mod (* (signum data)
 			      (floor (abs data))) (expt 2 8))))
-	(-number int-8bit)))))
+	(!number int-8bit)))))
 
 (defun -to-uint8-clamp (arg)
   (let ((data (slot-value (-to-number arg) '-number-data)))
@@ -166,22 +167,62 @@
 	  ((<= data 0)
 	   *number-0*)
 	  ((>= data 255)
-	   (-number 255))
+	   (!number 255))
 	  (t
 	   (let ((f (floor data)))
 	     (if (< (+ f 0.5d0) data)
-		 (-number (1+ f))
+		 (!number (1+ f))
 		 (if (> (+ f 0.5d0) data)
-		     (-number f)
+		     (!number f)
 		     (if (oddp f)
-			 (-number (1+ f))
-			 (-number f)))))))))
+			 (!number (1+ f))
+			 (!number f)))))))))
 
 (defmethod fetch-properties ((this -number-proto))
   (properties (make-instance (class-name this))))
 
+(defun %is-integer (number)
+  (cond ((not (eql (-type number) 'number-type))
+	 *boolean-false*)
+	((or (eql number *number-nan*)
+	     (eql number *number-infinity*)
+	     (eql number *number--infinity*))
+	 *boolean-false*)
+	((not (= (-to-integer number) number))
+	 *boolean-false*)
+	(t
+	 *boolean-true*)))
+
+(defun %is-safe-integer (number)
+  (let ((int (-to-integer number)))
+    (cond ((not (eql (-type number) 'number-type))
+	   *boolean-false*)
+	  ((or (eql number *number-nan*)
+	       (eql number *number-infinity*)
+	       (eql number *number--infinity*))
+	   *boolean-false*)
+	  ((not (= (slot-value int '-number-data)
+		   (slot-value number '-number-data)))
+	   *boolean-false*)
+	  ((<= (slot-value (!abs int) '-number-data) +number-max-safe-integer+)
+	   *boolean-true*)
+	  (t
+	   *boolean-false*))))
+
 (defmethod to-exponential ((this -number-proto) digits)
-  )
+  (let ((f (if (eql digits :undefined)
+	       0
+	       (slot-value (-to-integer digits) '-number-data)))
+	(x (slot-value this '-number-data)))
+    (case x
+      (:nan
+       "Nan")
+      (:infinity
+       "Infinity")
+      (:-infinity
+       "-Infinity")
+      (t
+       ))))
 
 (defmethod to-fixed ((this -number-proto) digits)
   )
@@ -215,113 +256,585 @@
 	      (sqrt2 . (make-properties :value +math-sqrt-2+))
 	      (to-string-tag . (make-properties :value "Math"
 				:configurable :true))
-	      (abs . (make-properties :value 'abs))
-	      (acos . (make-properties :value 'acos))
-	      (acosh . (make-properties :value 'acosh))
-	      (asin . (make-properties :value 'asin))
-	      (asinh . (make-properties :value 'asinh))
-	      (atan . (make-properties :value 'atan))
-	      (atanh . (make-properties :value 'atanh))
-	      (atan2 . (make-properties :value 'atan2))
-	      (cbrt . (make-properties :value 'cbrt))
-	      (ceil . (make-properties :value 'ceil))
-	      (clz32 . (make-properties :value 'clz32))
-	      (cos . (make-properties :value 'cos))
-	      (cosh . (make-properties :value 'cosh))
-	      (exp . (make-properties :value 'exp))
-	      (expm1 . (make-properties :value 'expm1))
-	      (floor . (make-properties :value 'floor))
-	      (fround . (make-properties :value 'fround))
-	      (hypot . (make-properties :value 'hypot))
-	      (imul . (make-properties :value 'imul))
-	      (log . (make-properties :value 'log))
-	      (log1p . (make-properties :value 'log1p))
-	      (log10 . (make-properties :value 'log10))
-	      (log2 . (make-properties :value 'log2))
-	      (max . (make-properties :value 'max))
-	      (min . (make-properties :value 'min))
-	      (pow . (make-properties :value 'pow))
-	      (random . (make-properties :value 'random))
-	      (round . (make-properties :value 'round))
-	      (sign . (make-properties :value 'sign))
-	      (sin . (make-properties :value 'sin))
-	      (sinh . (make-properties :value 'sinh))
-	      (sqrt . (make-properties :value 'sqrt))
-	      (tan . (make-properties :value 'tan))
-	      (tanh . (make-properties :value 'tanh))
-	      (trunc . (make-properties :value 'trunc))))))
+	      (abs . (make-properties :value '!abs))
+	      (acos . (make-properties :value '!acos))
+	      (acosh . (make-properties :value '!acosh))
+	      (asin . (make-properties :value '!asin))
+	      (asinh . (make-properties :value '!asinh))
+	      (atan . (make-properties :value '!atan))
+	      (atanh . (make-properties :value '!atanh))
+	      (atan2 . (make-properties :value '!atan2))
+	      (cbrt . (make-properties :value '!cbrt))
+	      (ceil . (make-properties :value '!ceil))
+	      (clz32 . (make-properties :value '!clz32))
+	      (cos . (make-properties :value '!cos))
+	      (cosh . (make-properties :value '!cosh))
+	      (exp . (make-properties :value '!exp))
+	      (expm1 . (make-properties :value '!expm1))
+	      (floor . (make-properties :value '!floor))
+	      (fround . (make-properties :value '!fround))
+	      (hypot . (make-properties :value '!hypot))
+	      (imul . (make-properties :value '!imul))
+	      (log . (make-properties :value '!log))
+	      (log1p . (make-properties :value '!log1p))
+	      (log10 . (make-properties :value '!log10))
+	      (log2 . (make-properties :value '!log2))
+	      (max . (make-properties :value '!max))
+	      (min . (make-properties :value '!min))
+	      (pow . (make-properties :value '!pow))
+	      (random . (make-properties :value '!random))
+	      (round . (make-properties :value '!round))
+	      (sign . (make-properties :value '!sign))
+	      (sin . (make-properties :value '!sin))
+	      (sinh . (make-properties :value '!sinh))
+	      (sqrt . (make-properties :value '!sqrt))
+	      (tan . (make-properties :value '!tan))
+	      (tanh . (make-properties :value '!tanh))
+	      (trunc . (make-properties :value '!trunc))))))
   (:documentation "Number object, used as a reference type."))
 
 ;;; Some wrapper functions.
 ;;; FIXME: Some of them are not done, note the :NAN and :INFINITY!
-(declaim (inline atan2 cbrt ceil clz32 expm1 hypot imul log1p log10 log2
-		 pow sign trunc))
+(declaim (inline %abs %acos %acosh %asin %asinh %atan %atanh %atan2
+		 %cbrt %ceil %clz32 %cos %cosh %exp %expm1 %floor %fround
+		 %hypot %imul %log %log1p %log10 %log2 %max %min %pow
+		 %random %round %sign %sin %sinh %sqrt %tan %tanh %trunc))
 
-(defun atan2 (y x)
-  (atan y x))
+(defun %abs (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (case n
+      (:nan
+       *number-nan*)
+      (:-infinity
+       *number-infinity*)
+      (t
+       x))))
 
-(defun cbrt (x)
-  (case x
-    (:nan
-     :nan)
-    (:infinity
-     :infinity)
-    (:-infinity
-     :-infinity)
-    (t
-     (expt x (coerce 1/3 'double-float)))))
+(defun %acos (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (cond ((eql n :nan)
+	   *number-nan*)
+	  ((> n 1)
+	   *number-nan*)
+	  ((< n -1)
+	   *number-nan*)
+	  ((= x 1)
+	   *number-0*)
+	  (t
+	   (!number (acos n))))))
 
-(defun ceil (x)
-  (case x
-    (:nan
-     :nan)
-    (:infinity
-     :infinity)
-    (:-infinity
-     :-infinity)
-    (t
-     (ceiling x))))
+(defun %acosh (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (cond ((eql n :nan)
+	   *number-nan*)
+	  ((< n 1)
+	   *number-nan*)
+	  ((= n 1)
+	   *number-0*)
+	  ((eql n :infinity)
+	   *number-infinity*)
+	  (t
+	   (!number (acosh n))))))
 
-(defun clz32 (x)
-  (- 32 (integer-length x)))
+(defun %asin (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (cond ((eql n :nan)
+	   *number-nan*)
+	  ((> n 1)
+	   *number-nan*)
+	  ((< n -1)
+	   *number-nan*)
+	  ((zerop n)
+	   *number-0*)
+	  (t
+	   (!number (asin n))))))
 
-(defun expm1 (x)
-  (- (exp x) 1))
+(defun %asinh (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (cond ((eql n :nan)
+	   *number-nan*)
+	  ((zerop n)
+	   *number-0*)
+	  ((eql n :infinity)
+	   *number-infinity*)
+	  ((eql n :-infinity)
+	   *number--infinity*)
+	  (t
+	   (!number (asinh n))))))
 
-(defun hypot (value1 value2 &rest values)
-  )
+(defun %atan (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (cond ((eql n :nan)
+	   *number-nan*)
+	  ((zerop n)
+	   *number-0*)
+	  ((eql n :infinity)
+	   (!number (/ +number-pi+ 2)))
+	  ((eql n :-infinity)
+	   (!number (- (/ +number-pi+ 2))))
+	  (t
+	   (!number (atan x))))))
 
-(defun imul (x y)
-  )
+(defun %atanh (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (cond ((eql n :nan)
+	   *number-nan*)
+	  ((< n -1)
+	   *number-nan*)
+	  ((> n 1)
+	   *number-nan*)
+	  ((= n -1)
+	   *number--infinity*)
+	  ((= n -1)
+	   *number-infinity*)
+	  ((zerop n)
+	   *number-0*)
+	  (t
+	   (!number (atanh n))))))
 
-(defun log1p (x)
-  (log (1+ x)))
+(defun %atan2 (y x)
+  (declare (type number-type y x))
+  (let ((n (slot-value y '-number-data))
+	(m (slot-value x '-number-data)))
+    (cond ((or (eql n :nan) (eql m :nan))
+	   *number-nan*)
+	  ((and (> n 0) (zerop m))
+	   (!number (/ +number-pi+ 2)))
+	  ((and (> m 0) (zerop n))
+	   *number-0*)
+	  ((and (zerop n) (zerop m))
+	   ;; Here since we don't tell the different between +0 and -0,
+	   ;; use 0 as output.
+	   *number-0*)
+	  ((and (< m 0) (zerop n))
+	   (!number +number-pi+))
+	  ((and (< n 0) (zerop m))
+	   (!number (/ +number-pi+ 2)))
+	  ((and (> n 0) (eql m :infinity))
+	   *number-0*)
+	  ((and (> n 0) (eql m :-infinity))
+	   (!number +number-pi+))
+	  ((and (< n 0) (eql m :infinity))
+	   *number-0*)
+	  ((and (< n 0) (eql m :-infinity))
+	   (!number (- +number-pi+)))
+	  ((and (eql n :infinity) (eql m :infinity))
+	   (!number (/ +number-pi+ 4)))
+	  ((and (eql n :infinity) (eql m :-infinity))
+	   (!number (/ (* 3 +number-pi+) 4)))
+	  ((and (eql n :-infinity) (eql m :infinity))
+	   (!number (- (/ +number-pi+ 4))))
+	  ((and (eql n :-infinity) (eql m :-infinity))
+	   (!number (- (/ (* 3 +number-pi+) 4))))
+	  ((eql n :infinity)
+	   (!number (/ +number-pi+ 2)))
+	  ((eql n :-infinity)
+	   (!number (- (/ +number-pi+ 2))))
+	  (t
+	   (!number (atan y x))))))
 
-(defun log10 (x)
-  (log x 10))
+(defun %cbrt (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (case n
+      (:nan
+       *number-nan*)
+      (0
+       *number-0*)
+      (:infinity
+       *number-infinity*)
+      (:-infinity
+       *number--infinity*)
+      (t
+       (!number (expt n (coerce 1/3 'double-float)))))))
 
-(defun log2 (x)
-  (log x 2))
+(defun %ceil (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (case n
+      (:nan
+       *number-nan*)
+      (0
+       *number-0*)
+      (:infinity
+       *number-infinity*)
+      (:-infinity
+       *number--infinity*)
+      (t
+       (!number (ceiling x))))))
 
-(defun pow (x y)
-  (expt x y))
+(defun %clz32 (x)
+  (declare (type number-type x))
+  (let ((n (slot-value (-to-uint32 x) '-number-data)))
+    (!number (- 32 (integer-length n)))))
 
-(defun sign (x)
-  (case x
-    (:nan
-     :nan)
-    ((:infinity :-infinity)
-     :nan)
-    (t
-     (signum x))))
+(defun %cos (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (case n
+      (:nan
+       *number-nan*)
+      (0
+       (!number 1))
+      ((:infinity :-infinity)
+       *number-nan*)
+      (t
+       (!number (cos n))))))
 
-(defun trunc (x)
-  (case x
-    (:nan
-     :nan)
-    (:infinity
-     :infinity)
-    (:-infinity
-     :-infinity)
-    (t
-     (truncate x))))
+(defun %cosh (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (case n
+      (:nan
+       *number-nan*)
+      (0
+       (!number 1))
+      ((:infinity :-infinity)
+       *number-infinity*)
+      (t
+       (!number (cosh n))))))
+
+(defun %exp (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (case n
+      (:nan
+       *number-nan*)
+      (0
+       (!number 1))
+      (:infinity
+       *number-infinity*)
+      (:-infinity
+       *number-0*)
+      (t
+       (!number (exp n))))))
+
+(defun %expm1 (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (case n
+      (:nan
+       *number-nan*)
+      (0
+       *number-0*)
+      (:infinity
+       *number-infinity*)
+      (:-infinity
+       (!number -1))
+      (t
+       (!number (- (exp x) 1))))))
+
+(defun %floor (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (case n
+      (:nan
+       *number-nan*)
+      (0
+       *number-0*)
+      (:infinity
+       *number-infinity*)
+      (:-infinity
+       *number--infinity*)
+      (t
+       (!number (floor n))))))
+
+(defun %fround (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (case n
+      (:nan
+       *number-nan*)
+      ((0 :infinity :-infinity)
+       x)
+      (t
+       (!number (fround n))))))
+
+;;; In order to implement the no argument clause in standard,
+;;; we use optional arguments to pretend to be a length 0 function
+;;; with generated length 2.
+(defun %hypot (&optional value1 value2 &rest values)
+  (declare (type (or null number-type) value1 value2)
+	   (type list values)))
+  (let* ((val1 (if value1 (slot-value value1 '-number-data) 0))
+	 (val2 (if value2 (slot-value value2 '-number-data) 0))
+	 (valuel
+	  (loop for elem in values collect (slot-value elem '-number-data)))
+	 (value-list (progn (push val1 valuel) (push val2 valuel)))
+	 (total 0)))
+    (dolist (a value-list)
+      (if (or (eql a :infinity) (eql a :-infinity))
+	  (return-from %hypot *number-infinity*)
+	  (if (eql a :nan)
+	      (return-from %hypot *number-nan*)
+	      (incf total (* a a)))))
+    (!number (sqrt total)))
+
+(defun %imul (x y)
+  (declare (type number-type x y))
+  (let* ((a (slot-value (-to-uint32 x) '-number-data))
+	 (b (slot-value (-to-uint32 y) '-number-data))
+	 (product (mod (* a b) (expt 2 32))))
+    (if (>= product (expt 2 31))
+	(!number (- product (expt 2 32)))
+	(!number product))))
+
+(defun %log (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (cond ((or (eql n :nan) (< n 0) (eql n :-infinity))
+	   *number-nan*)
+	  ((zerop n)
+	   *number--infinity*)
+	  ((= n 1)
+	   *number-0*)
+	  ((eql n :infinity)
+	   *number-infinity*)
+	  (t
+	   (!number (log n))))))
+
+(defun %log1p (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (cond ((or (eql n :nan) (< n -1) (eql n :-infinity))
+	   *number-nan*)
+	  ((= n -1)
+	   *number--infinity*)
+	  ((zerop n)
+	   *number-0*)
+	  ((eql n :infinity)
+	   *number-infinity)
+	  (t
+	   (!number (log (1+ x)))))))
+
+(defun %log10 (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (cond ((or (eql n :nan) (eql n :-infinity) (< n 0))
+	   *number-nan*)
+	  ((zerop n)
+	   *number--infinity*)
+	  ((= n 1)
+	   *number-0*)
+	  ((eql n :infinity)
+	   *number-infinity*)
+	  (t
+	   (!number (log x 10))))))
+
+(defun %log2 (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (cond ((or (eql n :nan) (eql n :-infinity) (< n 0))
+	   *number-nan*)
+	  ((zerop n)
+	   *number--infinity*)
+	  ((= n 1)
+	   *number-0*)
+	  ((eql n :infinity)
+	   *number-infinity*)
+	  (t
+	   (!number (log x 2))))))
+
+(defun %max (&optional value1 value2 &rest values)
+  (declare (type (or null number-type) value1 value2)
+	   (type list values))
+  (let ((val1 (if value1 (slot-value value1 '-number-data) :-infinity))
+	(val2 (if value2 (slot-value value2 '-number-data) :-infinity))
+	(valuel
+	 (loop for elem in values collect (slot-value elem '-number-data)))
+	(value-list (progn (push val1 valuel) (pusl val2 valuel)))
+	(maximum :-infinity))
+    (dolist (a value-list)
+      (case a
+	(:nan
+	 (return-from %max *number-nan*))
+	(:-infinity
+	 nil)
+	(:infinity
+	 (return-from %max *number-infinity*))
+	(t
+	 (if (eql maximum :-infinity)
+	     (setf maximum a)
+	     (setf maximum (max a maximum))))))
+    (!number maximum)))
+
+(defun %min (&optional value1 value2 &rest values)
+  (declare (type (or null number-type) value1 value2)
+	   (type list values))
+  (let ((val1 (if value1 (slot-value value1 '-number-data) :infinity))
+	(val2 (if value2 (slot-value value2 '-number-data) :infinity))
+	(valuel
+	 (loop for elem in values collect (slot-value elem '-number-data)))
+	(value-list (progn (push val1 valuel) (push val2 valuel)))
+	(minimum :infinity))
+    (dolist (a value-list)
+      (case a
+	(:nan
+	 (return-from %min *number-nan*))
+	(:infinity
+	 nil)
+	(:-infinity
+	 (return-from %min *number--infinity*))
+	(t
+	 (if (eql minimum :infinity)
+	     (setf minimum a)
+	     (setf minimum (min a minimum))))))
+    (!number minimum)))
+
+(defun %pow (x y)
+  (declare (type number-type x y))
+  (let ((m (slot-value x '-number-data))
+	(n (slot-value y '-number-data)))
+    (cond ((eql n :nan)
+	   *number-nan*)
+	  ((zerop n)
+	   (!number 1))
+	  ;; We fall through, so N won't be 0.
+	  ((eql m :nan)
+	   *number-nan*)
+	  ((and (> (abs m) 1) (eql n :infinity))
+	   *number-infinity*)
+	  ((and (> (abs m) 1) (eql n :-infinity))
+	   *number-0*)
+	  ((and (= (abs m) 1) (or (eql n :infinity) (eql n :-infinity)))
+	   *number-nan*)
+	  ((and (< (abs m) 1) (eql n :infinity))
+	   *number-0*)
+	  ((and (< (abs m) 1) (eql n :-infinity))
+	   *number-infinity*)
+	  ((and (eql m :infinity) (> n 0))
+	   *number-infinity*)
+	  ((and (eql m :infinity) (< n 0))
+	   *number-infinity*)
+	  ((and (eql m :-infinity) (> n 0) (oddp n))
+	   *number--infinity*)
+	  ((and (eql m :-infinity) (> n 0) (evenp n))
+	   *number-infinity*)
+	  ((and (eql m :-infinity) (< n 0))
+	   *number-0*)
+	  ;; We are facing +/-0 problem, now ignore it.
+	  ((and (zerop m) (> n 0))
+	   *number-0*)
+	  ((and (zerop m) (< n 0))
+	   *number-infinity*)
+	  ((and (< m 0)
+		(eql :false (slot-value (-is-integer y) '-boolean-data)))
+	   *number-nan*)
+	  (t
+	   (!number (expt m n))))))
+
+(defun %random ()
+  (!number (coerce (/ (random most-positive-fixnum) most-positive-fixnum)
+		   'double-float)))
+
+(defun %round (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (case n
+      (:nan
+       *number-nan*)
+      (0
+       *number-0*)
+      (:infinity
+       *number-infinity*)
+      (:-infinity
+       *number--infinity*)
+      (t
+       (!number (round n))))))
+
+(defun %sign (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (cond ((eql n :nan)
+	   *number-nan*)
+	  ((zerop n)
+	   *number-0*)
+	  ((or (< n 0) (eql n :-infinity))
+	   (!number -1))
+	  ((or (> n 0) (eql n :infinity))
+	   (!number 1)))))
+
+(defun %sin (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (case n
+      ((:nan :infinity :-infinity)
+       *number-nan*)
+      (0
+       *number-0*)
+      (t
+       (!number (sin n))))))
+
+(defun %sinh (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (case n
+      (:nan
+       *number-nan*)
+      (0
+       *number-0*)
+      (:infinity
+       *number-infinity*)
+      (:-infinity
+       *number--infinity*)
+      (t
+       (!number (sinh n))))))
+
+(defun %sqrt (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (cond ((or (eql n :nan) (< n 0) (eql n :-infinity))
+	   *number-nan*)
+	  ((zerop n)
+	   *number-0*)
+	  ((eql n :infinity)
+	   *number-infinity*)
+	  (t
+	   (!number (sqrt n))))))
+
+(defun %tan (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (case n
+      ((:nan :infinity :-infinity)
+       *number-nan*)
+      (0
+       *number-0*)
+      (t
+       (!number (tan n))))))
+
+(defun %tanh (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (case n
+      (:nan
+       *number-nan*)
+      (0
+       *number-0*)
+      (:infinity
+       (!number 1))
+      (:-infinity
+       (!number -1))
+      (t
+       (!number (tanh n))))))
+
+(defun %trunc (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (cond ((eql n :nan)
+	   *number-nan*)
+	  ((zerop n)
+	   *number-0*)
+	  ((eql n :infinity)
+	   *number-infinity*)
+	  ((eql n :-infinity)
+	   *number--infinity*)
+	  (t	  
+	   (!number (truncate n))))))

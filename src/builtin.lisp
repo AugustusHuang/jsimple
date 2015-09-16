@@ -671,6 +671,9 @@ funcallable class, it is implementation specific."))
 (defun %eval (x)
   )
 
+;;; NOTE: It seems that the isFinite and isNaN function in Math class
+;;; will not coerce its parameter to number, so they may output different
+;;; answer, we have to handle this problem. -- Augustus, 16 Sep 2015.
 (defun %is-finite (number)
   (let ((data (slot-value (to-number number) 'number-data)))
     (case data
@@ -790,8 +793,14 @@ funcallable class, it is implementation specific."))
 	    (+ integer-part decimal-part)
 	    (expt 10.0d0 (* exponent-sign exponent-value))))))))
 
-(defun %parse-int (string radix)
-  (!number (parse-integer (slot-value string 'string-data) :radix radix)))
+(defun %parse-int (string &optional radix)
+  (when (and (or (= radix 0) (= radix 16) (not radix))
+	     (char= (char string 0) #\0)
+	     (char= (char string 1) #\x))
+    (!number (parse-integer (slot-value string '-string-data) :radix 16
+			    :junk-allowed t)))
+  (!number (parse-integer (slot-value string '-string-data) :radix radix
+			  :junk-allowed t)))
 
 (defun %decode-uri (encoded)
   )
