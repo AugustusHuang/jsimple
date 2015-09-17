@@ -108,6 +108,12 @@
   (:documentation "Array iterator prototype, provides inherited array iterator
 properties"))
 
+(defun -array-0 (&optional len)
+  )
+
+(defun -array-1 (item1 item2 &rest items)
+  )
+
 ;;; Typed arrays.
 (defclass -int8-array-proto (-array-proto)
   ()
@@ -145,6 +151,33 @@ properties"))
   ()
   (:documentation "Unsigned int32 array prototype."))
 
+(defun -int8-array ()
+  )
+
+(defun -int16-array ()
+  )
+
+(defun -int32-array ()
+  )
+
+(defun -float32-array ()
+  )
+
+(defun -float64-array ()
+  )
+
+(defun -uint8-array ()
+  )
+
+(defun -uint8-clamped-array ()
+  )
+
+(defun -uint16-array ()
+  )
+
+(defun -uint32-array ()
+  )
+
 (defmethod print-object ((this -array-proto) stream)
   )
 
@@ -164,4 +197,97 @@ properties"))
   )
 
 (defmethod -own-property-keys ((this -array-proto))
+  )
+
+(defun %from (items &optional mapfn arg)
+  )
+
+(defun %is-array (arg)
+  )
+
+(defun %of (&rest items)
+  )
+
+(defun concat ((this -array-proto) &rest args)
+  )
+
+(defun copy-within ((this -array-proto) target start &optional end)
+  )
+
+(defun entries ((this -array-proto))
+  )
+
+(defun every ((this -array-proto) callback &optional arg)
+  )
+
+(defun fill ((this -array-proto) value &optional start end)
+  )
+
+(defun filter ((this -array-proto) callback &optional arg)
+  )
+
+(defun find ((this -array-proto) predicate &optional arg)
+  )
+
+(defun find-index ((this -array-proto) predicate &optional arg)
+  )
+
+(defun for-each ((this -array-proto) callback &optional arg)
+  )
+
+(defun index-of ((this -array-proto) search &optional from)
+  )
+
+(defun join ((this -array-proto) separator)
+  )
+
+(defun keys ((this -array-proto))
+  )
+
+(defun map ((this -array-proto) callback &optional arg)
+  )
+
+(defun pop ((this -array-proto))
+  )
+
+(defun push ((this -array-proto) &rest items)
+  )
+
+(defun reduce ((this -array-proto) callback &optional initial)
+  )
+
+(defun reduce-right ((this -array-proto) callback &optional initial)
+  )
+
+(defun reverse ((this -array-proto))
+  )
+
+(defun shift ((this -array-proto))
+  )
+
+(defun slice ((this -array-proto) start end)
+  )
+
+(defun some ((this -array-proto) callback &optional arg)
+  )
+
+(defun sort ((this -array-proto) compare)
+  )
+
+(defun splice ((this -array-proto) start delete &rest items)
+  )
+
+(defun to-locale-string ((this -array-proto))
+  )
+
+(defun to-string ((this -array-proto))
+  )
+
+(defun unshift ((this -array-proto) &rest items)
+  )
+
+(defun values ((this -array-proto))
+  )
+
+(defun iterator ((this -array-proto))
   )
