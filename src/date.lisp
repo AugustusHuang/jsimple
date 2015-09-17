@@ -26,7 +26,8 @@
 
 (defclass -date-prototype (-object-prototype)
   ((-prototype :initform '-object-prototype)
-   (-date-value :type timestamp :initarg :-date-value)
+   ;; -DATE-VALUE could be :NAN if we try to set :INFINITY as a time.
+   (-date-value :type (or timestamp keyword) :initarg :-date-value)
    (constructor :initform (make-property :value '-date) :allocation :class)
    (properties
     :initform
@@ -34,320 +35,330 @@
 	    '(()))))
   (:documentation "Date prototype, provides inherited properties."))
 
-;;; Internal structures, uses ideas borrowed from LOCAL-TIME package by
-;;; Daniel Lowe and Attila Lendvai. Here use Millisecond instead of nano one.
+(defun -date-1 (year month &optional date hours minutes seconds ms)
+  (let ((y (slot-value (-to-number year) '-number-data))
+	(m (slot-value (-to-number month) '-number-data))
+	(dt (if date (slot-value (-to-number date) '-number-data) 1))
+	(h (if hours (slot-value (-to-number hours) '-number-data) 0))
+	(min (if minutes (slot-value (-to-number minutes) '-number-data) 0))
+	(s (if seconds (slot-value (-to-number seconds) '-number-data) 0))
+	(milli (if ms (slot-value (-to-number ms) '-number-data) 0)))
+    (let ((y-int (slot-value (-to-integer year) '-number-data))
+	  (yr 0))
+      (if (and (not (eql y :nan))
+	       (<= 0 y-int 99))
+	  (setf yr (+ 1900 y-int))
+	  (setf yr y))
+      (make-instance '-date-proto
+		     :-date-value (encode-timestamp
+				   (* milli 1000) s min h dt m yr)))))
 
-;;; If we represent the timestamp using only one number, it will be a BIGNUM,
-;;; which will make code slower since we don't need to know the exact
-;;; time value in most of operations, so I adopted this structure.
-;;; All operations will be done on this structure.
-(defstruct timestamp
-  ((day 0 :type integer)
-   (sec 0 :type integer)
-   (msec 0 :type (integer 0 1000))))
+(defun -date-0 (&optional value)
+  (if value
+      (if (eql (type-of value) '-date-proto)
+	  value
+	  (let ((v (-to-primitive) value))
+	    (if (eql (-type v) 'string-type)
+		(make-instance '-date-proto
+			       :-date-value (unix-to-timestamp
+					     (floor (!parse v) 1000)))
+		(make-instance '-date-proto
+			       :-date-value (unix-to-timestamp
+					     (-to-number v))))))
+      (make-instance '-date-proto :-date-value (now))))
 
-(defstruct subzone
-  (abbrev nil)
-  (offset nil)
-  (daylight-p nil))
-
-(defstruct timezone
-  (transitions #(0) :type simple-vector)
-  (indices #(0) :type simple-vector)
-  (subzones #() :type simple-vector)
-  (leap-seconds nil :type list)
-  (name "anonymous" :type string)
-  (loaded nil :type boolean))
-
-(deftype timezone-offset ()
-  '(integer -43199 50400))
-
-(defparameter +short-month-names+
-  #("" "Jan" "Feb" "Mar" "Apr" "May" "Jun"
-    "Jul" "Aug" "Sep" "Oct" "Nov" "Dec"))
-;; 01 Jan 1970 is Thu.
-(defparameter +short-day-names+
-  #("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat"))
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defconstant +months/year+ 12)
-  (defconstant +days/week+ 7)
-  (defconstant +hours/day+ 24)
-  (defconstant +minutes/hour+ 60)
-  (defconstant +minutes/day+ 1440)
-  (defconstant +seconds/minute+ 60)
-  (defconstant +seconds/hour+ 3600)
-  (defconstant +seconds/day+ 86400)
-  (defconstant +mseconds/day+ 86400000))
-
-(defparameter +date-format+
-  ;; Tue, 15 Sep 2015 16:10:34 GMT+0800
-  '(:short-day ", " (:date 2) #\Space :short-month #\Space
-    (:year 4) #\Space (:hour 2) #\: (:min 2) #\: (:sec 2) #\Space :gmt))
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defparameter +non-leap-year-days+
-    #(31 28 31 30 31 30 31 31 30 31 30 31))
-  (defparameter +leap-year-days+
-    #(31 29 31 30 31 30 31 31 30 31 30 31)))
-
-;;; Helper functions used to generate elements in internal structure.
-;;; They won't be called barely, but wrapped by outer functions.
-(declaim (inline now
-		 time-value-to-day
-		 time-value-to-time-within-day
-		 days-in-year
-		 day-from-year
-		 day-within-year
-		 time-from-year
-		 year-from-time
-		 ))
-
-(defun now ()
+;;; XXX: Use library instead if we want to be portable.
+(defun %now ()
   (multiple-value-bind (sec usec) (sb-ext:get-time-of-day)
-    (make-timestamp :day (floor (/ sec +seconds/day+))
-		    :sec (mod sec +seconds/day+)
-		    :msec (floor usec 1000))))
+    (+ (* sec 1000) (floor usec 1000))))
 
-(defun time-value-to-day (ts)
-  (timestamp-day ts))
+;;; Unrecognizable strings or dates containing illegal element values in the
+;;; format string shall cause this function to return :NAN. -- ECMA-262.
+(defun %parse (string)
+  (let ((str (slot-value (-to-string string) '-string-data)))
+    ))
 
-(defun time-value-to-time-within-day (ts)
-  (+ (* 1000 (timestamp-sec ts)) (timestamp-msec ts)))
-
-(defun days-in-year (year)
-  (cond ((= 0 (mod year 400))
-	 366)
-	((and (= 0 (mod year 100)) (/= 0 (mod year 400)))
-	 365)
-	((and (= 0 (mod year 4)) (/= 0 (mod year 100)))
-	 366)
-	(t
-	 365)))
-
-(defun day-from-year (year)
-  (+ (* 365 (- y 1970)) (floor (- y 1969) 4) (floor (- y 1901) 100)
-     (floor (- y 1601) 400)))
-
-(defun day-within-year (ts)
-  (- (timestamp-day ts) (day-from-year (year-from-time ts))))
-
-(defun decode-date (day)
-  (declare (type integer day))
-  (multiple-value-bind (year days)))
-
-;;; Is TIMEZONE necessary?
-(defun year-from-time (ts)
-  (nth-value 0 (decode-date (nth-value 1 (adjust-to-timezone ts timezone)))))
-
-(defun leap-year-p (ts)
-  )
-
-(defun month-from-time ())
-
-(defun time-from-year (year)
-  (make-timestamp :day (day-from-year year)
-		  :sec 0 :msec 0))
-
-(defun count-day (year month date)
-  )
-
-(defun count-sec (hour minute second)
-  )
-
-;;; In this constructor function we don't assume UTC time, so we need to
-;;; consider the timezone information.
-(defun -date
-    (&optional value year month &optional date hours minutes seconds ms)
-  (if (null value)
-      (if (null year)
-	  (make-instance '-date-proto
-			 :-date-value (make-date :day (get-current-day)
-						 :sec (get-current-sec)
-						 :msec (get-current-msec)))
-	  (let ((y (-to-number year))
-		(yr 0)
-		(m (-to-number month))
-		(dt (if date (-to-number date) 1))
-		(h (if hours (-to-number hours) 0))
-		(min (if minutes (-to-number minutes) 0))
-		(s (if seconds (-to-number seconds) 0))
-		(milli (if ms (-to-number ms) 0)))
-	    (when (not (eql y :nan))
-	      (let ((int-y (to-integer y)))
-		(if (<= 0 int-y 99)
-		    (setf yr (+ 1900 int-y))
-		    (setf yr y))))
-	    (make-instance '-date-proto
-			   :-date-value (make-date :day (count-day yr m dt)
-						   :sec (count-sec h min s)
-						   :msec milli))))
-      (let ((tv nil))
-	(if (and (eql (-type value 'object-type))
-		 (slot-exists-p value '-date-value))
-	    (setf tv (slot-value value '-date-value))
-	    (let ((v (to-primitive value)))
-	      (if (eql (-type v 'string-type))
-		  (setf tv (!parse v))
-		  (setf tv (-to-number v)))))
-	(make-instance '-date-proto
-		       :-date-value tv))))
-
-(defun !now ()
-  (multiple-value-bind (sec usec) (sb-ext:get-time-of-day)
-    (+ (* 1000 sec) (/ usec 1000))))
-
-(defun !parse ()
-  )
-
-(defun !utc (year month &optional date hours minutes seconds ms)
-  (let ((y (-to-number year))
+(defun !utc (&optional year month date hours minutes seconds ms)
+  (let ((y (if year (slot-value (-to-number year) '-number-data) 1970))
 	(yr 0)
-	(m (-to-number month))
-	(dt (if date (-to-number date) 1))
-	(h (if hours (-to-number hours) 0))
-	(min (if minutes (-to-number minutes) 0))
-	(s (if seconds (-to-number seconds) 0))
-	(milli (if ms (-to-number ms) 0)))
+	(m (if month (slot-value (-to-number month) '-number-data) 1))
+	(dt (if date (slot-value (-to-number date) '-number-data) 1))
+	(h (if hours (slot-value (-to-number hours) '-number-data) 0))
+	(min (if minutes (slot-value (-to-number minutes) '-number-data) 0))
+	(s (if seconds (slot-value (-to-number seconds) '-number-data) 0))
+	(milli (if ms (slot-value (-to-number ms) '-number-data) 0)))
     (when (not (eql y :nan))
-      (let ((int-y (to-integer y)))
+      (let ((int-y (slot-value (-to-integer year) '-number-data)))
 	(if (<= 0 int-y 99)
 	    (setf yr (+ 1900 int-y))
 	    (setf yr y))))
     ;; Here the time is UTC, so do nothing on top of it.
-    (make-date :day (count-day yr m dt)
-	       :sec (count-sec h min s)
-	       :msec milli)))
+    (!number (* 1000 (timestamp-to-unix (encode-timestamp
+					 (* 1000000 milli) s min h dt m yr))))))
 
-;;; Here in es land, date means the date of the month, and day means the day
-;;; of the week, don't be confused.
 (defmethod get-date ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    (DateFromTime(LocalTime(t)))))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts)
+      (!number day))))
 
 (defmethod get-day ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    (WeekDay(LocalTime(t)))))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts)
+      (!number day-of-weak))))
 
 (defmethod get-full-year ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    (YearFromTime(LocalTime(t)))))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts)
+      (!number year))))
 
 (defmethod get-hours ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    (HourFromTime(LocalTime(t)))))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts)
+      (!number hh))))
 
 (defmethod get-milliseconds ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    (msFromTime(LocalTime(t)))))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts)
+      (!number (floor ns 1000000)))))
 
 (defmethod get-minutes ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    ))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts)
+      (!number mm))))
 
 (defmethod get-month ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    ))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts)
+      (!number month))))
 
 (defmethod get-seconds ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    ))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts)
+      (!number ss))))
 
-;;; XXX: Return the raw local time value, not the structure.
 (defmethod get-time ((this -date-prototype))
-  (slot-value this '-date-value))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (!number (* 1000 (timestamp-to-unix ts)))))
 
 (defmethod get-timezone-offset ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    ))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts)
+      (!number timezone-offset))))
 
 (defmethod get-utc-date ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    ))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts :timezone +utc-zone+)
+      (!number day))))
 
 (defmethod get-utc-day ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    ))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts :timezone +utc-zone+)
+      (!number day-of-weak))))
 
 (defmethod get-utc-full-year ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    ))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts :timezone +utc-zone+)
+      (!number year))))
 
 (defmethod get-utc-hours ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    ))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts :timezone +utc-zone+)
+      (!number hh))))
 
 (defmethod get-utc-milliseconds ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    ))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts :timezone +utc-zone+)
+      (!number (* ns 1000000)))))
 
 (defmethod get-utc-minutes ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    ))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts :timezone +utc-zone+)
+      (!number mm))))
 
 (defmethod get-utc-month ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    ))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts :timezone +utc-zone+)
+      (!number month))))
 
 (defmethod get-utc-seconds ((this -date-prototype))
-  (let ((tv (slot-value this '-date-value)))
-    ))
+  (let ((ts (slot-value this '-date-value)))
+    (when (eql ts :nan)
+      (return-from get-date *number-nan*))
+    (multiple-value-bind
+	  (ns ss mm hh day month year day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts :timezone +utc-zone+)
+      (!number ss))))
 
 (defmethod set-date ((this -date-prototype) date)
-  (let ((tv (slot-value this '-date-value))
-	(dt (-to-number date)))
-    ))
+  (let ((ts (slot-value this '-date-value))
+	(dt (slot-value (-to-number date) '-number-data)))
+    (when (eql dt :nan)
+      (error "Reference error."))
+    (when (or (eql dt :infinity) (eql dt :-infinity) (eql ts :nan))
+      (return-from set-date *number-nan*))
+    (setf (slot-value this '-date-value)
+	  (adjust-timestamp! ts (offset :day date)))
+    (* 1000 (timestamp-to-unix ts))))
 
 (defmethod set-full-year ((this -date-prototype) year &optional month date)
-  (let* ((tv (slot-value this '-date-value))
-	 (y (-to-number year))
-	 (m (if month (-to-number month) (count-month tv)))
-	 (dt (if date (-to-number date) (count-date tv))))
-    ))
+  (let ((ts (slot-value this '-date-value))
+	(y (slot-value (-to-number year) '-number-data)))
+    (multiple-value-bind
+	  (ns ss mm hh dd mon yy day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts)
+      (let ((m (if month (slot-value (-to-number month) '-number-data) mon))
+	    (dt (if date (slot-value (-to-number date) '-number-data) dd)))
+	(when (or (eql y :nan) (eql m :nan) (eql dt :nan))
+	  (error "Reference error."))
+	(when (or (eql ts :nan) (eql y :infinity) (eql y :-infinity)
+		  (eql m :infinity) (eql m :-infinity)
+		  (eql dt :infinity) (eql dt :-infinity))
+	  (return-from set-full-year *number-nan*))
+	(setf (slot-value this '-date-value)
+	      (adjust-timestamp! ts (offset :day dt :month mon :year y)))
+	(* 1000 (timestamp-to-unix ts))))))
 
 (defmethod set-hours ((this -date-prototype) hour &optional min sec ms)
-  (let* ((tm (local-time (slot-value this '-date-value)))
-	 (h (-to-number hour))
-	 (m (if min (-to-number min) (count-minute tm)))
-	 (s (if sec (-to-number sec) (count-second tm)))
-	 (milli (if ms (-to-number ms) (count-ms tm))))
-    ))
+  (let* ((ts (slot-value this '-date-value))
+	 (h (slot-value (-to-number hour) '-number-data)))
+    (multiple-value-bind
+	  (ns ss mm hh dd mon yy day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts)
+      (let* ((m (if min (slot-value (-to-number min) '-number-data) mm))
+	     (s (if sec (slot-value (-to-number sec) '-number-data) ss))
+	     ;; Of course MILLI /= NS, only a trick.
+	     (milli (if ms (slot-value (-to-number ms) '-number-data) ns))
+	     (nano (if (or (eql milli :nan) (eql milli :infinity)
+			   (eql milli :-infinity))
+		       :nan milli)))
+	(when (or (eql h :nan) (eql m :nan) (eql s :nan) (eql nano :nan))
+	  (error "Reference error."))
+	(when (or (eql ts :nan) (eql h :infinity) (eql h :-infinity)
+		  (eql m :infinity) (eql m :-infinity) (eql s :infinity)
+		  (eql s :-infinity) (eql nano :infinity) (eql nano :-infinity))
+	  (return-from set-hours *number-nan*))
+	(setf (slot-value this '-date-value)
+	      (adjust-timestamp! ts (offset :hour h :minute m :sec s :nsec nano)))
+	(* 1000 (timestamp-to-unix ts))))))
 
 (defmethod set-milliseconds ((this -date-prototype) ms)
-  (let ((tm (local-time (slot-value this '-date-value)))
-	(milli (-to-number ms)))
-    ))
+  (let ((ts (slot-value this '-date-value))
+	(milli (slot-value (-to-number ms) '-number-data)))
+    (when (or (eql ts :nan) (eql milli :infinity) (eql milli :-infinity))
+      (return-from set-milliseconds *number-nan*))
+    (when (eql milli :nan)
+      (error "Reference error."))
+    (setf (slot-value this '-date-value)
+	  (adjust-timestamp! ts (offset :nsec (* milli 1000000))))
+    (* 1000 (timestamp-to-unix ts))))
 
-(defmethod set-minutes ((this -date-prototype) min sec ms)
-  (let ((tm (local-time (slot-value this '-date-value)))
-	(m (-to-number min))
-	(s (if sec (-to-number sec) (count-second tm)))
-	(milli (if ms (-to-number ms) (count-ms tm))))
-    ))
+(defmethod set-minutes ((this -date-prototype) min &optional sec ms)
+  (let ((ts (slot-value this '-date-value))
+	(m (slot-value (-to-number min) '-number-data)))
+    (multiple-value-bind
+	  (ns ss mm hh dd mon yy day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts)
+      (let* ((s (if sec (slot-value (-to-number sec) '-number-data) ss))
+	     (milli (if milli (slot-value (-to-number ms) '-number-data) ns))
+	     (nano (if (or (eql milli :nan) (eql milli :infinity)
+			   (eql milli :-infinity))
+		       :nan milli)))
+	(when (or (eql m :nan) (eql s :nan) (eql nano :nan))
+	  (error "Reference error."))
+	(when (or (eql ts :nan) (eql m :infinity) (eql m :-infinity)
+		  (eql s :infinity) (eql s :-infinity) (eql nano :infinity)
+		  (eql nano :-infinity))
+	  (return-from set-minutes *number-nan*))
+	(setf (slot-value this '-date-value)
+	      (adjust-timestamp! ts (offset :minute m :sec s :nsec nano)))
+	(* 1000 (timestamp-to-unix ts))))))
 
 (defmethod set-month ((this -date-prototype) month &optional date)
-  (let ((tm (local-time (slot-value this '-date-value)))
-	(m (-to-number month))
-	(dt (if date (-to-number date) (count-date tm))))
-    ))
+  (let ((ts (slot-value this '-date-value))
+	(m (slot-value (-to-number month) '-number-data)))
+    (multiple-value-bind
+	  (ns ss mm hh dd mon yy day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts)
+      (let ((dt (if date (slot-value (-to-number date) '-number-data) dd)))
+	(when (or (eql m :nan) (eql dt :nan))
+	  (error "Reference error."))
+	(when (or (eql ts :nan) (eql m :infinity) (eql m :-infinity)
+		  (eql dt :infinity) (eql dt :-infinity))
+	  (return-from set-month *number-nan*))
+	(setf (slot-value this '-date-value)
+	      (adjust-timestamp! ts (offset :month m :day dt)))
+	(* 1000 (timestamp-to-unix ts))))))
 
 (defmethod set-seconds ((this -date-prototype) sec &optional ms)
-  (let ((tm (local-time (slot-value this '-date-value)))
-	(s (-to-number sec))
-	(milli (if ms (-to-number ms) (count-ms tm))))
-    ))
+  (let ((ts (slot-value this '-date-value))
+	(s (slot-value (-to-number sec) '-number-data)))
+    (multiple-value-bind
+	  (ns ss mm hh dd mon yy day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts)
+      (let ((nano (if ms (* 1000000 (slot-value (-to-number ms) '-number-data))
+		      ns)))
+	(setf (slot-value this '-date-value)
+	      (adjust-timestamp! ts (offset :sec s :nsec nano)))
+	(* 1000 (timestamp-to-unix ts))))))
 
-;;; The internal function is not currently definite.
 (defmethod set-time ((this -date-prototype) time)
-  (let ((tm (-to-number time)))
-    (setf (slot-value this '-date-value) (make-date :day (count-day time)
-						    :sec (count-sec time)
-						    :ms (count-ms time)))))
+  (let* ((tm (slot-value (-to-number time) '-number-data))
+	 (nano (* 1000000 (mod tm 1000))))
+    (setf (slot-value this '-date-value) (unix-to-timestamp tm :nsec nano))
+    tm))
 
 (defmethod set-utc-date ((this -date-prototype) date)
-  (let ((tm (slot-value this '-date-value))
-	(dt (-to-number date)))
-    ))
+  (let ((ts (slot-value this '-date-value))
+	(dt (slot-value (-to-number date) '-number-data)))
+    (multiple-value-bind
+	  (ns ss mm hh dd mon yy day-of-weak daylight-saving-time-p timezone-offset timezone-abbr) (decode-timestamp ts :timezone +utc-zone+)
+      (setf (slot-value this '-date-value)
+	    (adjust-timestamp! ts (offset :day date))))
+    (* 1000 (timestamp-to-unix ts))))
 
 (defmethod set-utc-full-year ((this -date-prototype) year &optional month date)
   (let ((tm (slot-value this '-date-value))

@@ -612,10 +612,16 @@ funcallable class, it is implementation specific."))
 		     :name (make-property :value "Uint32Array")
 		     :length (make-property :value 3)
 		     :prototype (make-property :value (find-class '-uint32-array-proto)))
-      !date
+      !date-0
       (make-instance '-function-proto
 		     :-prototype (find-class '-function-proto)
-		     :name (make-property :value "Date")
+		     :name (make-property :value "Date-0")
+		     :length (make-property :value 7)
+		     :prototype (make-property :value (find-class '-date-proto)))
+      !date-1
+      (make-instance '-function-proto
+		     :-prototype (find-class '-function-proto)
+		     :name (make-property :value "Date-1")
 		     :length (make-property :value 7)
 		     :prototype (make-property :value (find-class '-date-proto)))
       !reg-exp
