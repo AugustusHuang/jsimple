@@ -247,6 +247,7 @@ all string iterator objects."))
       (setf out (concatenate 'string out arg)))
     (!string out)))
 
+;;; Do we need !MIN and !MAX, or just conditional comparing?
 (defmethod ends-with ((this -string-proto) search &optional end)
   (when (eql (type-of search) '-reg-exp-proto)
     (error "Type error."))
