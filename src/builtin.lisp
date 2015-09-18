@@ -107,9 +107,16 @@
 ;;; it is present as a slot only because of it's possible to have this
 ;;; slot non-NIL. :UNDEFINED means this slot is present but not initialized,
 ;;; and others mean their own corresponding meanings.
+;;; NOTE: Here we change the status, PROTO means the 'real' proto, -PROTOTYPE
+;;; means the instance proto, and PROTOTYPE will only appear in functions.
+;;; e.g. 123, as a number, is an instance of class NUMBER-PROTO, which has
+;;; superclass OBJECT-PROTO, so its PROTO slot will be OBJECT-PROTO, its
+;;; -PROTOTYPE slot will be NUMBER-PROTO, and it won't have a PROTOTYPE slot.
 (defclass proto ()
-  ((-prototype :type (or object-raw null-raw null) :initarg :-prototype
-	       :initform nil)
+  ((proto :type (or object-raw null-raw null) :initarg :proto :initform nil
+	  :allocation :class)
+   (-prototype :type (or object-raw null) :initarg :-prototype
+	       :initform nil :allocation :class)
    (-extensible :type (or boolean-raw undefined-raw null) :initarg :-extensible
 		:initform nil)
    (-primitive-value :type (or +js-primitive-value-types+ null)

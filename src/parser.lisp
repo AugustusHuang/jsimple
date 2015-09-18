@@ -75,10 +75,10 @@
 ;;; FIXME: Print more elegantly...
 (define-condition parser-error (general-error)
   ((char :initarg :char
-	 :initform jsimple-parser:*char* :reader parser-error-char)
+	 :initform lesp-parser:*char* :reader parser-error-char)
    (line :initarg :line
-	 :initform jsimple-parser:*line* :reader parser-error-line))
-  (:documentation "Jsimple parser error."))
+	 :initform lesp-parser:*line* :reader parser-error-line))
+  (:documentation "Lesp parser error."))
 
 (defmethod print-object ((err parser-error) stream)
   (call-next-method)

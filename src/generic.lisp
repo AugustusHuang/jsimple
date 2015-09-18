@@ -98,119 +98,119 @@ are called constructors. A function object is not necessarily a constructor
 and such non-constructor function objects do not have a [[Construct]] internal
 method."))
 
-(defgeneric has-own-property (this value)
+(defgeneric %has-own-property (this value)
   (:documentation ""))
 
-(defgeneric is-prototype-of (this value)
+(defgeneric %is-prototype-of (this value)
   (:documentation ""))
 
-(defgeneric property-is-enumerable (this value)
+(defgeneric %property-is-enumerable (this value)
   (:documentation ""))
 
-(defgeneric to-locale-string (this)
+(defgeneric %to-locale-string (this)
   (:documentation ""))
 
 ;;; A prototype other than Number simple (DECLARE (IGNORE RADIX)).
-(defgeneric to-string (this &optional radix)
+(defgeneric %to-string (this &optional radix)
   (:documentation ""))
 
-(defgeneric value-of (this)
+(defgeneric %value-of (this)
   (:documentation "Return a type converted value of THIS."))
 
-(defgeneric apply (this this-arg args)
+(defgeneric %apply (this this-arg args)
   (:documentation ""))
 
-(defgeneric bind (this this-arg &rest args)
+(defgeneric %bind (this this-arg &rest args)
   (:documentation ""))
 
-(defgeneric call (this this-arg &rest args)
+(defgeneric %call (this this-arg &rest args)
   (:documentation ""))
 
-(defgeneric has-instance (this value)
+(defgeneric %has-instance (this value)
   (:documentation ""))
 
-(defgeneric to-exponential (this digits)
+(defgeneric %to-exponential (this digits)
   (:documentation ""))
 
-(defgeneric to-fixed (this digits)
+(defgeneric %to-fixed (this digits)
   (:documentation ""))
 
-(defgeneric to-precision (this precision)
+(defgeneric %to-precision (this precision)
   (:documentation ""))
 
-(defgeneric char-at (this pos)
+(defgeneric %char-at (this pos)
   (:documentation ""))
 
-(defgeneric char-code-at (this pos)
+(defgeneric %char-code-at (this pos)
   (:documentation ""))
 
-(defgeneric code-point-at (this pos)
+(defgeneric %code-point-at (this pos)
   (:documentation ""))
 
-(defgeneric concat (this &rest args)
+(defgeneric %concat (this &rest args)
   (:documentation ""))
 
-(defgeneric ends-with (this search &optional end)
+(defgeneric %ends-with (this search &optional end)
   (:documentation ""))
 
-(defgeneric includes (this search &optional pos)
+(defgeneric %includes (this search &optional pos)
   (:documentation ""))
 
-(defgeneric index-of (this search &optional pos)
+(defgeneric %index-of (this search &optional pos)
   (:documentation ""))
 
-(defgeneric last-index-of (this search &optional pos)
+(defgeneric %last-index-of (this search &optional pos)
   (:documentation ""))
 
-(defgeneric locale-compare (this that)
+(defgeneric %locale-compare (this that)
   (:documentation ""))
 
-(defgeneric match (this regexp)
+(defgeneric %match (this regexp)
   (:documentation ""))
 
-(defgeneric normalize (this &optional form)
+(defgeneric %normalize (this &optional form)
   (:documentation ""))
 
-(defgeneric repeat (this count)
+(defgeneric %repeat (this count)
   (:documentation ""))
 
-(defgeneric replace (this search replace)
+(defgeneric %replace (this search replace)
   (:documentation ""))
 
-(defgeneric search (this regexp)
+(defgeneric %search (this regexp)
   (:documentation ""))
 
-(defgeneric slice (this start end)
+(defgeneric %slice (this start end)
   (:documentation ""))
 
-(defgeneric split (this separator limit)
+(defgeneric %split (this separator limit)
   (:documentation ""))
 
-(defgeneric starts-with (this search &optional pos)
+(defgeneric %starts-with (this search &optional pos)
   (:documentation ""))
 
-(defgeneric substring (this start end)
+(defgeneric %substring (this start end)
   (:documentation ""))
 
-(defgeneric to-locale-lower-case (this)
+(defgeneric %to-locale-lower-case (this)
   (:documentation ""))
 
-(defgeneric to-locale-upper-case (this)
+(defgeneric %to-locale-upper-case (this)
   (:documentation ""))
 
-(defgeneric to-lower-case (this)
+(defgeneric %to-lower-case (this)
   (:documentation ""))
 
-(defgeneric to-upper-case (this)
+(defgeneric %to-upper-case (this)
   (:documentation ""))
 
-(defgeneric trim (this)
+(defgeneric %trim (this)
   (:documentation ""))
 
-(defgeneric iterator (this)
+(defgeneric %iterator (this)
   (:documentation ""))
 
-(defgeneric next (this)
+(defgeneric %next (this)
   (:documentation ""))
 
 

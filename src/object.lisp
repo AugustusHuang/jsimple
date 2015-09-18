@@ -49,24 +49,21 @@
   ((-prototype :initform :null)
    (-extensible :initform :true)
    (-primitive-value :initform :undefined)
-   (constructor :initform (make-property :value -object) :allocation :class)
+   (constructor :initform (make-property :value '!object) :allocation :class)
    (has-own-property :type property :allocation :class
-		     :initform
-		     (make-property :value (-builtin-function #'has-own-property)))
+		     :initform (make-property :value '!has-own-property))
    (is-prototype-of :type property :allocation :class
-		    :initform
-		    (make-property :value (-builtin-function #'is-prototype-of)))
+		    :initform (make-property :value '!is-prototype-of))
    (property-is-enumerable :type property :allocation :class
 			   :initform
-			   (make-property :value (-builtin-function #'property-is-enumerable)))
+			   (make-property :value '!property-is-enumerable))
    (to-locale-string :type property :allocation :class
-		     :initform
-		     (make-property :value (-builtin-function #'to-locale-string)))
+		     :initform (make-property :value '!to-locale-string))
    (to-string :type property :allocation :class
-	      :initform (make-property :value (-builtin-function #'to-string)))
+	      :initform (make-property :value '!to-string))
    (value-of :type property :allocation :class
-	     :initform (make-property :value (-builtin-function #'value-of)))
-   (properties :initform nil))
+	     :initform (make-property :value '!value-of))
+   (properties :type list :initarg :properties :initform nil))
   (:documentation "Object prototype, provides inherited properties."))
 
 ;;; %Object% Object Constructor: [[Prototype]] = %FunctionPrototype%,
@@ -80,7 +77,7 @@
 ;;; Helpers to make access to PROPERTIES when
 ;;; we are creating new class objects.
 (defmethod fetch-properties ((this -object-proto))
-  (properties (make-instance (class-name this))))
+  (slot-value this 'properties))
 
 ;;; We need PRINT-OBJECT methods for all mixins and original object type.
 ;;; Object style: <Object: <a: 1> <b: 2>>
@@ -142,9 +139,9 @@
   (let ((extensible (slot-value this '-extensible))
 	(current (slot-value this '-prototype)))
     (when (eql proto current)
-      *boolean-true*)
+      (return-from -set-prototype-of :true))
     (when (eql extensible :false)
-      *boolean-false*)
+      (return-from -set-prototype-of :false))
     (let ((done nil)
 	  (p proto))
       (loop
@@ -152,11 +149,11 @@
 	 (if (eql p :null)
 	     (setf done t)
 	     (if (eql p (class-of this))
-		 (return-from -set-prototype-of *boolean-false*)
+		 (return-from -set-prototype-of :false)
 		 (setf p (-get-prototype-of p)))))
-      ;; Of course we should change the class in Lisp land.
+      ;; FIXME: Of course we should change the class in Lisp land.
       (setf (slot-value this '-prototype) p)
-      *boolean-true*)))
+      :true)))
 
 (defmethod -is-extensible ((this -object-proto))
   (slot-value this '-extensible))
@@ -164,7 +161,7 @@
 (defmethod -prevent-extensions ((this -object-proto))
   (progn
     (setf (slot-value this '-extensible) :false)
-    *boolean-true*))
+    :true))
 
 (defmethod -get-own-property ((this -object-proto) key)
   (assert (or (eql (-type key) 'string-type)
@@ -178,10 +175,10 @@
     (if (not (eql desc :undefined))
 	;; Since every property is naturally inherited, we have no need
 	;; to check the superclasses.
-	*boolean-true*
-	*boolean-false*)))
+	:true
+	:false)))
 
-(defmethod -get ((this -object-proto) key receiver)
+(defmethod -get ((this -object-proto) key &optional receiver)
   (let ((desc (-get-own-property this key)))
     (if (eql desc :undefined)
 	;; Also we don't need to check the superclasses.
@@ -190,11 +187,11 @@
 	(if (null (property-value desc))
 	    (let ((getter (property-get desc)))
 	      (if (eql getter :undefined)
-		  :undefined
+		  (return-from -get :undefined)
 		  (!call getter receiver)))
 	    (property-value desc)))))
 
-(defmethod -set ((this -object-proto) key value receiver)
+(defmethod -set ((this -object-proto) key value &optional receiver)
   (let* ((current (find-property this key))
 	 (desc (cdr current)))
     (if (eql desc :undefined)
@@ -203,22 +200,22 @@
 	(if (null (property-value desc))
 	    (let ((setter (property-set desc)))
 	      (if (eql setter :undefined)
-		  *boolean-false*
+		  :false
 		  (progn
 		    (!call setter receiver value)
-		    *boolean-true*)))
+		    :true)))
 	    (progn
 	      (when (eql (property-writable desc) :false)
-		*boolean-false*)
+		(return-from -set :false))
 	      (when (not (eql (-type receiver) 'object-type))
-		*boolean-false*)
+		(return-from -set :false))
 	      (let ((exist (-get-own-property receiver key)))
 		(if (not (eql exist :undefined))
 		    (progn
 		      (when (not (null (property-set exist)))
-			*boolean-false*)
+			(return-from -set :false))
 		      (when (eql (property-writable exist) :false)
-			*boolean-false*)
+			(return-from -set :false))
 		      (return-from -set
 			(-define-own-property receiver key (make-property :value value))))
 		    (return-from -set
@@ -231,31 +228,31 @@
 (defmethod -delete ((this -object-proto) key)
   (let ((desc (-get-own-property this key)))
     (when (eql desc :undefined)
-      *boolean-true*)
+      (return-from -delete :true))
     (when (eql (property-configurable desc) :true)
       (remove-property this key)
-      *boolean-true*)
-    *boolean-false*))
+      (return-from -delete :true))
+    :false))
 
 (defmethod -define-own-property ((this -object-proto) key descriptor)
   (declare (type property descriptor))
   ;; Extension is not allowed, return.
   (when (not (slot-value this '-extensible))
-    *boolean-false*)
+    (return-from -define-own-property :false))
   (let* ((current (find-property this key))
 	 (pro (cdr current)))
     (if (eql pro :undefined)
 	;; We don't have this property name yet, create a new one.
 	(progn
-	  (push '(key . descriptor) (slot-value this 'properties))
-	  *boolean-true*)
+	  (acons key descriptor (slot-value this 'properties))
+	  :true)
 	;; We have this property, then test its fields.
 	(if (eql (property-configurable pro) :false)
-	    *boolean-false*
+	    :false
 	    ;; We can change this.
 	    (progn
 	      (setf (cdr current) descriptor)
-	      *boolean-true*)))))
+	      :true)))))
 
 ;;; Return an iterator object whose NEXT method iterates over all the
 ;;; string-valued keys of enumerable properties of THIS.
@@ -289,74 +286,166 @@
 
 ;;; Object property methods and Object prototype property methods.
 ;;; Since Object is called without THIS, define them as functions...
-(defun assign (target &rest sources)
+(defun -object.assign (target &rest sources)
+  "The function is used to copy the values of all of the enumerable own properties from one or more source objects to a TARGET object."
+  (when (eql sources nil)
+    (return-from -object.assign target))
+  (let ((to (-to-object target)))
+    (loop for next in sources
+       for keys = ()
+       if (not (or (eql next :undefined) (eql next :null)))
+       do (let ((from (-to-object next)))
+	    (setf keys (-own-property-keys from))
+	    (loop for key in keys
+	       for desc = (-get-own-property from key)
+	       if (and (not (eql desc :undefined))
+		       (eql (property-enumerable desc) :true))
+	       do (let ((prop (-get from key)))
+		    (-set to key prop :true)))))
+    to))
+
+(defun object-define-properties (object properties)
+  (let* ((props (-to-object properties))
+	 (keys (-own-property-keys props))
+	 (descriptors ()))
+    (loop for next in keys
+       for prop-desc = (-get-own-property props next)
+       if (and (not (eql prop-desc :undefined))
+	       (eql (property-enumerable prop-desc) :true))
+       do (let ((desc (-get props next)))
+	    (acons next desc descriptors)))
+    (loop for every in descriptors
+       for key = (car every)
+       for desc = (cdr every)
+       do (-define-own-property object key desc))
+    object))
+
+(defun -object.create (object &optional properties)
+  "The function creates a new object with a specified prototype."
+  (when (not (or (eql (-type object) 'object-type)
+		 (eql (-type object) 'null-type)))
+    (error "Type error."))
+  (if (null properties)
+      object
+      (object-define-properties object properties)))
+
+(defun -object.define-properties (object properties)
+  "The function is used to add own properties and/or update the attributes of existing own properties of an object."
+  (object-define-properties object properties))
+
+(defun -object.define-property (object property attributes)
+  "The function is used to add an own property and/or update the attributes of an existing own property of an object."
+  (when (not (eql (-type object) 'object-type))
+    (error "Type error."))
+  (let ((key (-to-property-key property))
+	(desc (-to-property-descriptor attributes)))
+    (-define-own-property object key desc)
+    object))
+
+(defun -object.freeze (object)
+  (if (not (eql (-type object) 'object-type))
+      object
+      (progn
+	(-set-integrity-level object "frozen")
+	object)))
+
+(defun -object.get-own-property-descriptor (object property)
+  (let* ((obj (-to-object object))
+	 (key (-to-property-key property))
+	 (desc (-get-own-property obj key)))
+    (-from-property-descriptor desc)))
+
+(defun -get-own-property-keys (o type)
+  ())
+
+(defun -object.get-own-property-names (object)
+  (-get-own-property-keys object 'string-type))
+
+(defun -object.get-own-property-symbols (object)
+  (-get-own-property-keys object 'symbol-type))
+
+(defun -object.get-prototype-of (object)
+  (-get-prototype-of object))
+
+(defun -object.is (value1 value2)
   )
 
-(defun create (object &optional property-list)
+(defun -object.is-extensible (object)
+  (if (eql (-is-extensible object) :false)
+      *boolean-false*
+      *boolean-true*))
+
+(defun -object.is-frozen (object)
+  (if (not (eql (-type object) 'object-type))
+      *boolean-true*
+      (if (eql (-test-integrity-level object "frozen") :false)
+	  *boolean-false*
+	  *boolean-true*)))
+
+(defun -object.is-sealed (object)
+  (if (not (eql (-type object) 'object-type))
+      *boolean-true*
+      (if (eql (-test-integrity-level object "sealed") :false)
+	  *boolean-false*
+	  *boolean-true*)))
+
+(defun -object.keys (object)
   )
 
-(defun define-properties (object property-list)
-  )
+(defun -object.prevent-extensions (object)
+  (if (not (eql (-type object) 'object-type))
+      object
+      (progn
+	(-prevent-extensions object)
+	object)))
 
-(defun define-property (object property attributes)
-  )
+(defun -object.seal (object)
+  (if (not (eql (-type object) 'object-type))
+      object
+      (progn
+	(-set-integrity-level object "sealed")
+	object)))
 
-(defun freeze (object)
-  )
-
-(defun get-own-property-descriptor (object property)
-  )
-
-(defun get-own-property-names (object)
-  )
-
-(defun get-own-property-symbols (object)
-  )
-
-(defun get-prototype-of (object)
-  )
-
-(defun is (value1 value2)
-  )
-
-(defun is-extensible (object)
-  )
-
-(defun is-frozen (object)
-  )
-
-(defun is-sealed (object)
-  )
-
-(defun keys (object)
-  )
-
-(defun prevent-extensions (object)
-  )
-
-(defun seal (object)
-  )
-
-(defun set-prototype-of (object prototype)
+(defun -object.set-prototype-of (object prototype)
   )
 
 ;;; Prototype property methods are handled with 'this', so define them as
 ;;; methods.
-(defmethod has-own-property ((this -object-proto) value)
-  )
+(defmethod %has-own-property ((this -object-proto) value)
+  (let ((p (-to-property-key value))
+	(o (-to-object this)))
+    (if (eql (-get-own-property o p) :undefined)
+	*boolean-false*
+	*boolean-true*)))
 
-(defmethod is-prototype-of ((this -object-proto) value)
-  )
+(defmethod %is-prototype-of ((this -object-proto) value)
+  (if (not (eql (-type this) 'object-type))
+      *boolean-false*
+      (loop for value = (-get-prototype-of value)
+	 if (eql value :null)
+	 do (return-from %is-prototype-of *boolean-false*)
+	 ;; XXX: What does the standard mean? The instance itself as a
+	 ;; prototype or the class object? -- Augustus, 18 Sep 2015.
+	 if (eql value (class-of this))
+	 do (return-from %is-prototype-of *boolean-true*))))
 
-(defmethod property-is-enumerable ((this -object-proto) value)
-  )
+(defmethod %property-is-enumerable ((this -object-proto) value)
+  (let* ((p (-to-property-key value))
+	 (o (-to-object this))
+	 (desc (-get-own-property o p)))
+    (if (eql desc :undefined)
+	*boolean-false*
+	(if (eql (property-enumerable desc) :false)
+	    *boolean-false*
+	    *boolean-true*))))
 
-(defmethod to-locale-string ((this -object-proto))
-  )
+(defmethod %to-locale-string ((this -object-proto))
+  (%to-string this))
 
-(defmethod to-string ((this -object-proto) &optional radix)
+;;; I don't know what does the standard mean!
+(defmethod %to-string ((this -object-proto) &optional radix)
   (declare (ignore radix))
   )
 
-(defmethod value-of ((this -object-proto))
-  )
+(defmethod %value-of ((this -object-proto))
+  (-to-object this))

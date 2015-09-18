@@ -24,195 +24,127 @@
 (in-package :lesp-builtin)
 
 ;;;; Error related definitions and methods.
-(defclass -error-prototype (-object-prototype)
-  ((-prototype :initform '-object-prototype)
+(defclass -error-proto (-object-proto)
+  ((-prototype :initform (find-class '-object-proto))
    (-error-data :type -undefined :initarg :-error-data :initform :undefined)
-   (constructor :initform (make-property :value '-error) :allocation :class)
-   (properties
-    :initform
-    (append (fetch-properties (find-class '-object-prototype))
-	    '((message . (make-property :value ""))
-	      (name . (make-property :value "Error"))))
-    :allocation :class))
+   (constructor :initform (make-property :value '!error) :allocation :class)
+   ;; Message is not a class allocation.
+   (message :type property :initform (make-property :value "")
+	    :initarg :message)
+   (name :type property :allocation :class
+	 :initform (make-property :value "Error")))
   (:documentation "Error prototype, provides inherited properties."))
-
-(defclass -error (-function-prototype)
-  ((-prototype :initform '-function-prototype)
-   (length :initform (make-property :value 1) :accessor length
-	   :allocation :class)
-   (prototype :type (or property -null) :allocation :class :accessor prototype
-	      :initarg :prototype
-	      :initform (make-property :value '-error-prototype))
-   (properties
-    :initform (fetch-properties (find-class '-function-prototype))
-    :allocation :class))
-  (:documentation "Error constructor."))
 
 ;;; Now we handle all kinds of errors the same way. It can be merged
 ;;; into Lisp style condition system.
-(defclass -eval-error-prototype (-error-prototype)
-  ((-prototype :initform '-error-prototype)
-   (constructor :initform (make-property :value '-eval-error)
+(defclass -eval-error-proto (-error-proto)
+  ((-prototype :initform '-error-proto)
+   (constructor :initform (make-property :value '!eval-error)
 		:allocation :class))
   (:documentation "Evaluation error prototype."))
 
-(defclass -eval-error (-error)
-  ((-prototype :initform '-error)
-   (prototype :initform (make-property :value '-eval-error-prototype)
-	      :allocation :class))
-  (:documentation "Evaluation error. Currently not used."))
-
-(defclass -range-error-prototype (-error-prototype)
-  ((-prototype :initform '-error-prototype)
-   (constructor :initform (make-property :value '-range-error)
+(defclass -range-error-proto (-error-proto)
+  ((-prototype :initform '-error-proto)
+   (constructor :initform (make-property :value '!range-error)
 		:allocation :class))
   (:documentation "Range error prototype."))
 
-(defclass -range-error (-error)
-  ((-prototype :initform '-error)
-   (prototype :initform (make-property :value '-range-error-prototype)
-	      :allocation :class))
-  (:documentation "Range error. Indicates a value that is not in the set or
-range of allowable values."))
-
-(defclass -reference-error-prototype (-error-prototype)
-  ((-prototype :initform '-error-prototype)
-   (constructor :initform (make-property :value '-reference-error)
+(defclass -reference-error-proto (-error-proto)
+  ((-prototype :initform '-error-proto)
+   (constructor :initform (make-property :value '!reference-error)
 		:allocation :class))
   (:documentation "Reference error prototype."))
 
-(defclass -reference-error (-error)
-  ((-prototype :initform '-error)
-   (prototype :initform (make-property :value '-reference-error-prototype)
-	      :allocation :class))
-  (:documentation "Reference error. Indicates that an invalid reference value
-has been detected."))
-
-(defclass -syntax-error-prototype (-error-prototype)
-  ((-prototype :initform '-error-prototype)
-   (constructor :initform (make-property :value '-syntax-error)
+(defclass -syntax-error-proto (-error-proto)
+  ((-prototype :initform '-error-proto)
+   (constructor :initform (make-property :value '!syntax-error)
 		:allocation :class))
   (:documentation "Syntax error prototype."))
 
-(defclass -syntax-error (-error)
-  ((-prototype :initform '-error)
-   (prototype :initform (make-property :value '-syntax-error-prototype)
-	      :allocation :class))
-  (:documentation "Syntax error. Indicates that a parsing error has occured."))
-
-(defclass -type-error-prototype (-error-prototype)
-  ((-prototype :initform '-error-prototype)
-   (constructor :initform (make-property :value '-type-error)
+(defclass -type-error-proto (-error-proto)
+  ((-prototype :initform '-error-proto)
+   (constructor :initform (make-property :value '!type-error)
 		:allocation :class))
   (:documentation "Type error prototype."))
 
-(defclass -type-error (-error)
-  ((-prototype :initform '-error)
-   (prototype :initform (make-property :value '-type-error-prototype)
-	      :allocation :class))
-  (:documentation "Type error. Indicates the actual type of an operand is
-different than the expected type."))
-
-(defclass -uri-error-prototype (-error-prototype)
-  ((-prototype :initform '-error-prototype)
-   (constructor :initform (make-property :value '-uri-error)
+(defclass -uri-error-proto (-error-proto)
+  ((-prototype :initform '-error-proto)
+   (constructor :initform (make-property :value '!uri-error)
 		:allocation :class))
   (:documentation "URI error prototype."))
 
-(defclass -uri-error (-error)
-  ((-prototype :initform '-error)
-   (prototype :initform (make-property :value '-uri-error-prototype)
-	      :allocation :class))
-  (:documentation "URI error. Indicates that one of the global URI handling
-functions was used in a way that is incompatible with its definition."))
-
-(defmethod fetch-properties ((this -error-prototype))
+(defmethod fetch-properties ((this -error-proto))
   (properties (make-instance (class-name this))))
 
-(defmethod fetch-properties ((this -error))
+(defmethod fetch-properties ((this -eval-error-proto))
   (properties (make-instance (class-name this))))
 
-(defmethod fetch-properties ((this -eval-error-prototype))
+(defmethod fetch-properties ((this -range-error-proto))
   (properties (make-instance (class-name this))))
 
-(defmethod fetch-properties ((this -eval-error))
+(defmethod fetch-properties ((this -reference-error-proto))
   (properties (make-instance (class-name this))))
 
-(defmethod fetch-properties ((this -range-error-prototype))
+(defmethod fetch-properties ((this -syntax-error-proto))
   (properties (make-instance (class-name this))))
 
-(defmethod fetch-properties ((this -range-error))
+(defmethod fetch-properties ((this -type-error-proto))
   (properties (make-instance (class-name this))))
 
-(defmethod fetch-properties ((this -reference-error-prototype))
+(defmethod fetch-properties ((this -uri-error-proto))
   (properties (make-instance (class-name this))))
 
-(defmethod fetch-properties ((this -reference-error))
-  (properties (make-instance (class-name this))))
+(defun -error (message)
+  (let* ((msg (slot-value (-to-string message) '-string-data))
+	 (msg-pro (make-property :value msg :writable :true
+				 :configurable :true)))
+    (make-instance '-error-proto :message msg-pro)))
 
-(defmethod fetch-properties ((this -syntax-error-prototype))
-  (properties (make-instance (class-name this))))
-
-(defmethod fetch-properties ((this -syntax-error))
-  (properties (make-instance (class-name this))))
-
-(defmethod fetch-properties ((this -type-error-prototype))
-  (properties (make-instance (class-name this))))
-
-(defmethod fetch-properties ((this -type-error))
-  (properties (make-instance (class-name this))))
-
-(defmethod fetch-properties ((this -uri-error-prototype))
-  (properties (make-instance (class-name this))))
-
-(defmethod fetch-properties ((this -uri-error))
-  (properties (make-instance (class-name this))))
-
-(defmethod print-object ((this -error-prototype) stream)
+(defmethod print-object ((this -error-proto) stream)
   )
 
-(defmethod print-object ((this -eval-error-prototype) stream)
+(defmethod print-object ((this -eval-error-proto) stream)
   )
 
-(defmethod print-object ((this -range-error-prototype) stream)
+(defmethod print-object ((this -range-error-proto) stream)
   )
 
-(defmethod print-object ((this -reference-error-prototype) stream)
+(defmethod print-object ((this -reference-error-proto) stream)
   )
 
-(defmethod print-object ((this -syntax-error-prototype) stream)
+(defmethod print-object ((this -syntax-error-proto) stream)
   )
 
-(defmethod print-object ((this -type-error-prototype) stream)
+(defmethod print-object ((this -type-error-proto) stream)
   )
 
-(defmethod print-object ((this -uri-error-prototype) stream)
+(defmethod print-object ((this -uri-error-proto) stream)
   )
 
-(defmethod to-string ((this -error-prototype) &optional radix)
+(defmethod to-string ((this -error-proto) &optional radix)
   (declare (ignore radix))
   )
 
-(defmethod to-string ((this -eval-error-prototype) &optional radix)
+(defmethod to-string ((this -eval-error-proto) &optional radix)
   (declare (ignore radix))
   )
 
-(defmethod to-string ((this -range-error-prototype) &optional radix)
+(defmethod to-string ((this -range-error-proto) &optional radix)
   (declare (ignore radix))
   )
 
-(defmethod to-string ((this -reference-error-prototype) &optional radix)
+(defmethod to-string ((this -reference-error-proto) &optional radix)
   (declare (ignore radix))
   )
 
-(defmethod to-string ((this -syntax-error-prototype) &optional radix)
+(defmethod to-string ((this -syntax-error-proto) &optional radix)
   (declare (ignore radix))
   )
 
-(defmethod to-string ((this -type-error-prototype) &optional radix)
+(defmethod to-string ((this -type-error-proto) &optional radix)
   (declare (ignore radix))
   )
 
-(defmethod to-string ((this -uri-error-prototype) &optional radix)
+(defmethod to-string ((this -uri-error-proto) &optional radix)
   (declare (ignore radix))
   )

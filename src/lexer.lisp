@@ -80,10 +80,10 @@
 
 (define-condition lexer-error (general-error)
   ((char :initarg :char
-	 :initform jsimple-parser:*char* :reader lexer-error-char)
+	 :initform lesp-parser:*char* :reader lexer-error-char)
    (line :initarg :line
-	 :initform jsimple-parser:*line* :reader lexer-error-line))
-  (:documentation "Jsimple lexer error."))
+	 :initform lesp-parser:*line* :reader lexer-error-line))
+  (:documentation "Lesp lexer error."))
 
 (defmethod print-object ((err lexer-error) stream)
   (call-next-method)

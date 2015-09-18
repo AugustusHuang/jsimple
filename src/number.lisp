@@ -48,15 +48,14 @@
 
 (defclass -number-proto (-object-proto)
   ((-prototype :initform (find-class '-object-proto))
-   (-number-data :type number-raw :accessor -number-data
-		 :initarg :-number-data)
-   (constructor :initform (make-property :value -number) :allocation :class)
+   (-number-data :type number-raw :initarg :-number-data)
+   (constructor :initform (make-property :value '!number) :allocation :class)
    (to-exponential :type property :allocation :class
-		   :initform (make-property :value !to-exponential))
+		   :initform (make-property :value '!to-exponential))
    (to-fixed :type property :allocation :class
-	     :initform (make-property :value !to-fixed))
+	     :initform (make-property :value '!to-fixed))
    (to-precision :type property :allocation :class
-		 :initform (make-property :value !to-precision)))
+		 :initform (make-property :value '!to-precision)))
   (:documentation "Number prototype, provides inherited properties."))
 
 ;;; Make special number instance global.
@@ -241,60 +240,100 @@
 
 ;;; Math object definitions. Since Math is not a function and can't be called
 ;;; or constructed, it's only a wrapper.
-(defclass -number (-object-prototype)
-  ((-prototype :initform '-object-prototype :allocation :class)
-   (properties
-    :initform
-    (append (fetch-properties (find-class '-object-prototype))
-	    '((e . (make-properties :value +math-e+))
-	      (ln10 . (make-properties :value +math-ln10+))
-	      (ln2 . (make-properties :value +math-ln2+))
-	      (log10e . (make-properties :value +math-log10e+))
-	      (log2e . (make-properties :value +math-log2e+))
-	      (pi . (make-properties :value +math-pi+))
-	      (sqrt1-2 . (make-properties :value +math-sqrt-1/2+))
-	      (sqrt2 . (make-properties :value +math-sqrt-2+))
-	      (to-string-tag . (make-properties :value "Math"
-				:configurable :true))
-	      (abs . (make-properties :value '!abs))
-	      (acos . (make-properties :value '!acos))
-	      (acosh . (make-properties :value '!acosh))
-	      (asin . (make-properties :value '!asin))
-	      (asinh . (make-properties :value '!asinh))
-	      (atan . (make-properties :value '!atan))
-	      (atanh . (make-properties :value '!atanh))
-	      (atan2 . (make-properties :value '!atan2))
-	      (cbrt . (make-properties :value '!cbrt))
-	      (ceil . (make-properties :value '!ceil))
-	      (clz32 . (make-properties :value '!clz32))
-	      (cos . (make-properties :value '!cos))
-	      (cosh . (make-properties :value '!cosh))
-	      (exp . (make-properties :value '!exp))
-	      (expm1 . (make-properties :value '!expm1))
-	      (floor . (make-properties :value '!floor))
-	      (fround . (make-properties :value '!fround))
-	      (hypot . (make-properties :value '!hypot))
-	      (imul . (make-properties :value '!imul))
-	      (log . (make-properties :value '!log))
-	      (log1p . (make-properties :value '!log1p))
-	      (log10 . (make-properties :value '!log10))
-	      (log2 . (make-properties :value '!log2))
-	      (max . (make-properties :value '!max))
-	      (min . (make-properties :value '!min))
-	      (pow . (make-properties :value '!pow))
-	      (random . (make-properties :value '!random))
-	      (round . (make-properties :value '!round))
-	      (sign . (make-properties :value '!sign))
-	      (sin . (make-properties :value '!sin))
-	      (sinh . (make-properties :value '!sinh))
-	      (sqrt . (make-properties :value '!sqrt))
-	      (tan . (make-properties :value '!tan))
-	      (tanh . (make-properties :value '!tanh))
-	      (trunc . (make-properties :value '!trunc))))))
+(defclass -number (-object-proto)
+  ((-prototype :initform '-object-proto :allocation :class)
+   (e :type property :allocation :class
+      :initform (make-property :value +math-e+))
+   (ln10 :type property :allocation :class
+	 :initform (make-property :value +math-ln10+))
+   (ln2 :type property :allocation :class
+	:initform (make-property :value +math-ln2+))
+   (log10e :type property :allocation :class
+	   :initform (make-property :value +math-log10e+))
+   (log2e :type property :allocation :class
+	  :initform (make-property :value +math-log2e+))
+   (pi :type property :allocation :class
+       :initform (make-property :value +math-pi+))
+   (sqrt1-2 :type property :allocation :class
+	    :initform (make-property :value +math-sqrt-1/2+))
+   (sqrt2 :type property :allocation :class
+	  :initform (make-property :value +math-sqrt-2+))
+   (to-string-tag :type property :allocation :class
+		  :initform (make-property :value "Math"
+					   :configurable :true))
+   (abs :type property :allocation :class
+	:initform (make-property :value '!abs))
+   (acos :type property :allocation :class
+	 :initform (make-property :value '!acos))
+   (acosh :type property :allocation :class
+	  :initform (make-propert :value '!acosh))
+   (asin :type property :allocation :class
+	 :initform (make-property :value '!asin))
+   (asinh :type property :allocation :class
+	  :initform (make-property :value '!asinh))
+   (atan :type property :allocation :class
+	 :initform (make-property :value '!atan))
+   (atanh :type property :allocation :class
+	  :initform (make-property :value '!atanh))
+   (atan2 :type property :allocation :class
+	  :initform (make-property :value '!atan2))
+   (cbrt :type property :allocation :class
+	 :initform (make-property :value '!cbrt))
+   (ceil :type property :allocation :class
+	 :initform (make-property :value '!ceil))
+   (clz32 :type property :allocation :class
+	  :initform (make-property :value '!clz32))
+   (cos :type property :allocation :class
+	:initform (make-property :value '!cos))
+   (cosh :type property :allocation :class
+	 :initform (make-property :value '!cosh))
+   (exp :type property :allocation :class
+	:initform (make-property :value '!exp))
+   (expm1 :type property :allocation :class
+	  :initform (make-property :value '!expm1))
+   (floor :type property :allocation :class
+	  :initform (make-property :value '!floor))
+   (fround :type property :allocation :class
+	   :initform (make-property :value '!fround))
+   (hypot :type property :allocation :class
+	  :initform (make-property :value '!hypot))
+   (imul :type property :allocation :class
+	 :initform (make-property :value '!imul))
+   (log :type property :allocation :class
+	:initform (make-property :value '!log))
+   (log1p :type property :allocation :class
+	  :initform (make-property :value '!log1p))
+   (log10 :type property :allocation :class
+	  :initform (make-property :value '!log10))
+   (log2 :type property :allocation :class
+	 :initform (make-property :value '!log2))
+   (max :type property :allocation :class
+	:initform (make-property :value '!max))
+   (min :type property :allocation :class
+	:initform (make-property :value '!min))
+   (pow :type property :allocation :class
+	:initform (make-property :value '!pow))
+   (random :type property :allocation :class
+	   :initform (make-property :value '!random))
+   (round :type property :allocation :class
+	  :initform (make-property :value '!round))
+   (sign :type property :allocation :class
+	 :initform (make-property :value '!sign))
+   (sin :type property :allocation :class
+	:initform (make-property :value '!sin))
+   (sinh :type property :allocation :class
+	 :initform (make-property :value '!sinh))
+   (sqrt :type property :allocation :class
+	 :initform (make-property :value '!sqrt))
+   (tan :type property :allocation :class
+	:initform (make-property :value '!tan))
+   (tanh :type property :allocation :class
+	 :initform (make-property :value '!tanh))
+   (trunc :type property :allocation :class
+	  :initform (make-property :value '!trunc)))
   (:documentation "Number object, used as a reference type."))
 
 ;;; Some wrapper functions.
-;;; FIXME: Some of them are not done, note the :NAN and :INFINITY!
 (declaim (inline %abs %acos %acosh %asin %asinh %atan %atanh %atan2
 		 %cbrt %ceil %clz32 %cos %cosh %exp %expm1 %floor %fround
 		 %hypot %imul %log %log1p %log10 %log2 %max %min %pow
