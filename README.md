@@ -11,8 +11,14 @@ In addition, sometimes it's really annoying to test a es/js module in a browser,
 maybe simulating will be interesting? Or make a standalone executable?
 
 ## Usage
-Till now only parser will run. Clone the repository into /common-lisp
-directory in your home directory. In SBCL use `(require :lesp)` and the system
-will be loaded into the environment, then `(lesp-parser:XXX)`. Some of the
-new features are not supported now.
+Till now only parser will run. Clone the repository into /common-lisp or
+/.local/share/common-lisp/source directory in your home directory.
+In SBCL use `(require :lesp)` and the system will be loaded into the environment,
+then `(lesp-parser:XXX)`. Some of the new features are not supported now.
 
+## Implementation stage
+Now I'm implementing the builtin part, which acts as the back-end of the
+compiler, firstly it will be needed to run without any front-end support
+and the exported functions will have arguments and returns object of es
+types, then declaims, declarations, optimizations and dead code elimination
+will follow. If you like it, feel free to contribute or communicate with me.
