@@ -1156,7 +1156,7 @@ funcallable class, it is implementation specific."))
 ;;; NOTE: It seems that the isFinite and isNaN function in Math class
 ;;; will not coerce its parameter to number, so they may output different
 ;;; answer, we have to handle this problem. -- Augustus, 16 Sep 2015.
-(defun %is-finite (number)
+(defun .is-finite (number)
   (let ((data (slot-value (to-number number) 'number-data)))
     (case data
       ((:nan :infinity :-infinity)
@@ -1164,7 +1164,7 @@ funcallable class, it is implementation specific."))
       (t
        (!boolean :true)))))
 
-(defun %is-nan (number)
+(defun .is-nan (number)
   (let ((data (slot-value (to-number number) 'number-data)))
     (case data
       (:nan
@@ -1174,7 +1174,7 @@ funcallable class, it is implementation specific."))
 
 ;;; Helper function to parse a general number...
 ;;; PARSE-INT is internal...
-(defun %parse-float (string)
+(defun .parse-float (string)
   ;; Firstly check the first two chars, if they match 0x/0X, 0o/0O, 0b/0B,
   ;; use corresponding radix PARSE-INTEGER. Or handle decimal values.
   (let ((str (slot-value (-to-string string) 'string-data)))
@@ -1284,15 +1284,26 @@ funcallable class, it is implementation specific."))
   (!number (parse-integer (slot-value string '-string-data) :radix radix
 			  :junk-allowed t)))
 
-(defun %decode-uri (encoded)
+(defun decode (string reserved)
   )
 
-(defun %decode-uri-component (encoded-component)
+(defun .decode-uri (encoded)
+  (let ((str (-to-string encoded)))
+    ))
+
+(defun .decode-uri-component (encoded-component)
+  (let ((str (-to-string encoded-component))
+	(reserved (-to-string "")))
+    (decode str reserved)))
+
+(defun encode (string unescaped)
   )
 
-(defun %encode-uri (uri)
-  )
+(defun .encode-uri (uri)
+  (let ((str (-to-string uri)))
+    ))
 
-(defun %encode-uri-component (component)
-  )
+(defun .encode-uri-component (component)
+  (let ((str (-to-string uri)))
+    ))
 

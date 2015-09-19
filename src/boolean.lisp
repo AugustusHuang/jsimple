@@ -46,7 +46,8 @@
      arg)
     (number-type
      (if (or (= 0 (slot-value arg '-number-data))
-	     (eql :nan (slot-value arg '-number-data)))
+	     (eql :nan (slot-value arg '-number-data))
+	     (eql :-0 (slot-value arg '-number-data)))
 	 *boolean-false*
 	 *boolean-true*))
     (string-type
@@ -55,9 +56,6 @@
      *boolean-true*)
     (object-type
      *boolean-true*)))
-
-(defmethod fetch-properties ((this -boolean-proto))
-  (properties (make-instance (class-name this))))
 
 (defmethod print-object ((this -boolean-proto) stream)
   (format stream (if (eql (slot-value this '-boolean-data) :true)
