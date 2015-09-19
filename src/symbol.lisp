@@ -27,7 +27,8 @@
 ;;; Well known symbols are built-in symbol values are typically used
 ;;; as the keys of properties. -- ECMA V6.
 (defclass -symbol-proto (-object-proto)
-  ((-prototype :initform (find-class '-object-proto))
+  ((proto :initform (find-class '-object-proto))
+   (-prototype :initform (find-class '-symbol-proto))
    (-symbol-data :type symbol-raw :initarg :-symbol-data)
    (constructor :initform (make-property :value '!symbol) :allocation :class)
    (to-string-tag :type property :value (make-property :value "Symbol"

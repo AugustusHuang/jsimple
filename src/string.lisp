@@ -25,58 +25,59 @@
 (in-package :lesp-builtin)
 
 (defclass -string-proto (-object-proto)
-  ((-prototype :initform (find-class '-object-prototype))
+  ((proto :initform (find-class '-object-proto))
+   (-prototype :initform (find-class '-string-proto))
    (-string-data :type string-raw :initarg :-string-data)
    (length :type property :initarg :length :initform (make-property :value 0))
-   (constructor :initform (make-property :value -string) :allocation :class)
+   (constructor :initform (make-property :value '!string) :allocation :class)
    (char-at :type property :allocation :class
-	    :initform (make-property :value !char-at))
+	    :initform (make-property :value '!char-at))
    (char-code-at :type property :allocation :class
-		 :initform (make-property :value !char-code-at))
+		 :initform (make-property :value '!char-code-at))
    (code-point-at :type property :allocation :class
-		  :initform (make-property :value !code-point-at))
+		  :initform (make-property :value '!code-point-at))
    (concat :type property :allocation :class
-	   :initform (make-property :value !concat))
+	   :initform (make-property :value '!concat))
    (ends-with :type property :allocation :class
-	      :initform (make-property :value !ends-with))
+	      :initform (make-property :value '!ends-with))
    (includes :type property :allocation :class
-	     :initform (make-property :value !includes))
+	     :initform (make-property :value '!includes))
    (index-of :type property :allocation :class
-	     :initform (make-property :value !index-of))
+	     :initform (make-property :value '!index-of))
    (last-index-of :type property :allocation :class
-		  :initform (make-property :value !last-index-of))
+		  :initform (make-property :value '!last-index-of))
    (locale-compare :type property :allocation :class
-		   :initform (make-property :value !locale-compare))
+		   :initform (make-property :value '!locale-compare))
    (match :type property :allocation :class
-	  :initform (make-property :value !match))
+	  :initform (make-property :value '!match))
    (normalize :type property :allocation :class
-	      :initform (make-property :value !normalize))
+	      :initform (make-property :value '!normalize))
    (repeat :type property :allocation :class
-	   :initform (make-property :value !repeat))
+	   :initform (make-property :value '!repeat))
    (replace :type property :allocation :class
-	    :initform (make-property :value !replace))
+	    :initform (make-property :value '!replace))
    (search :type property :allocation :class
-	   :initform (make-property :value !search))
+	   :initform (make-property :value '!search))
    (slice :type property :allocation :class
-	  :initform (make-property :value !slice))
+	  :initform (make-property :value '!slice))
    (split :type property :allocation :class
-	  :initform (make-property :value !split))
+	  :initform (make-property :value '!split))
    (starts-with :type property :allocation :class
-		:initform (make-property :value !starts-with))
+		:initform (make-property :value '!starts-with))
    (substring :type property :allocation :class
-	      :initform (make-property :value !substring))
+	      :initform (make-property :value '!substring))
    (to-locale-lower-case :type property :allocation :class
-			 :initform (make-property :value !to-locale-lower-case))
+			 :initform (make-property :value '!to-locale-lower-case))
    (to-locale-upper-case :type property :allocation :class
-			 :initform (make-property :value !to-locale-upper-case))
+			 :initform (make-property :value '!to-locale-upper-case))
    (to-lower-case :type property :allocation :class
-		  :initform (make-property :value !to-lower-case))
+		  :initform (make-property :value '!to-lower-case))
    (to-upper-case :type property :allocation :class
-		  :initform (make-property :value !to-upper-case))
+		  :initform (make-property :value '!to-upper-case))
    (trim :type property :allocation :class
-	 :initform (make-property :value !trim))
+	 :initform (make-property :value '!trim))
    (iterator :type property :allocation :class
-	     :initform (make-property :value !iterator)))
+	     :initform (make-property :value '!iterator)))
   (:documentation "String prototype, provides inherited properties."))
 
 (defclass -string-iterator-proto (-iterator-proto)

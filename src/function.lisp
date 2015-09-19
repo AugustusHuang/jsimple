@@ -31,7 +31,8 @@
 ;;; See builtin-util.lisp
 
 (defclass -function-proto (builtin-function)
-  ((-prototype :initform (find-class '-object-proto))
+  ((proto :initform (find-class '-object-proto))
+   (-prototype :initform (find-class '-function-proto))
    (-extensible :initform :true)
    ;; Internal slots of function objects:
    ;; The lexical environment that the function was closed over. Used as the
@@ -69,19 +70,27 @@
 				  :configurable :true))
    (constructor :initform -function :allocation :class)
    (prototype :initform nil)
+   (has-own-property :type property :allocation :class
+		     :initform (make-property :value '!has-own-property))
+   (is-prototype-of :type property :allocation :class
+		    :initform (make-property :value '!is-prototype-of))
+   (property-is-enumerable :type property :allocation :class
+			   :initform
+			   (make-property :value '!property-is-enumerable))
+   (to-locale-string :type property :allocation :class
+		     :initform (make-property :value '!to-locale-string))
+   (to-string :type property :allocation :class
+	      :initform (make-property :value '!to-string))
+   (value-of :type property :allocation :class
+	     :initform (make-property :value '!value-of))
    (apply :type property :allocation :class
 	  :initform (make-property :value !apply))
    (bind :type property :allocation :class
 	 :initform (make-property :value !bind))
    (call :type property :allocation :class
-	 :initform (make-property :value !call))
-   (properties :initform nil)
+	 :initform (make-property :value !call)))
   (:metaclass funcallable-standard-class)
   (:documentation "Function prototype, provides inherited properties."))
-
-;;; Helper functions.
-(defmethod fetch-own-properties ((this -function-proto))
-  (properties (make-instance (class-name this))))
 
 (defmethod -get-prototype-of ((this -function-proto))
   )
@@ -119,19 +128,36 @@
 (defmethod -own-property-keys ((this -function-proto))
   )
 
-;;; Function prototype property methods.
-(defmethod apply ((this -function-proto) this-arg args)
+;;; Function prototype property methods. We have to reimplement the methods
+;;; 'inherited' from object prototype, since they are of different metaclass
+;;; indeed.
+(defmethod %has-own-property ((this -function-proto) value)
   )
 
-(defmethod bind ((this -function-proto) this-arg &rest args)
+(defmethod %is-prototype-of ((this -function-proto) value)
   )
 
-(defmethod call ((this -function-proto) this-arg &rest args)
+(defmethod %property-is-enumerable ((this -function-proto) value)
   )
 
-(defmethod to-string ((this -function-proto) &optional radix)
+(defmethod %to-locale-string ((this -function-proto))
+  )
+
+(defmethod %apply ((this -function-proto) this-arg args)
+  )
+
+(defmethod %bind ((this -function-proto) this-arg &rest args)
+  )
+
+(defmethod %call ((this -function-proto) this-arg &rest args)
+  )
+
+(defmethod %to-string ((this -function-proto) &optional radix)
   (declare (ignore radix))
   )
 
-(defmethod has-instance ((this -function-proto) value)
+(defmethod %value-of ((this -function-proto))
+  )
+
+(defmethod %has-instance ((this -function-proto) value)
   )

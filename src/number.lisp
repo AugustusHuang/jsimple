@@ -47,7 +47,8 @@
 (defparameter +exponent-indicator+ "eE")
 
 (defclass -number-proto (-object-proto)
-  ((-prototype :initform (find-class '-object-proto))
+  ((proto :initform (find-class '-object-proto))
+   (-prototype :initform (find-class '-number-proto))
    (-number-data :type number-raw :initarg :-number-data)
    (constructor :initform (make-property :value '!number) :allocation :class)
    (to-exponential :type property :allocation :class
@@ -177,10 +178,17 @@
 			 (!number (1+ f))
 			 (!number f)))))))))
 
-(defmethod fetch-properties ((this -number-proto))
-  (properties (make-instance (class-name this))))
+(defun -number.is-finite (number)
+  (cond ((not (eql (-type number) 'number-type))
+	 *boolean-false*)
+	((or (eql number *number-nan*)
+	     (eql number *number-infinity*)
+	     (eql number *number--infinity*))
+	 *boolean-false*)
+	(t
+	 *boolean-true*)))
 
-(defun %is-integer (number)
+(defun -number.is-integer (number)
   (cond ((not (eql (-type number) 'number-type))
 	 *boolean-false*)
 	((or (eql number *number-nan*)
@@ -192,7 +200,15 @@
 	(t
 	 *boolean-true*)))
 
-(defun %is-safe-integer (number)
+(defun -number.is-nan (number)
+  (cond ((not (eql (-type number) 'number-type))
+	 *boolean-false*)
+	((eql number *number-nan*)
+	 *boolean-true*)
+	(t
+	 *boolean-false*)))
+
+(defun -number.is-safe-integer (number)
   (let ((int (-to-integer number)))
     (cond ((not (eql (-type number) 'number-type))
 	   *boolean-false*)
@@ -208,7 +224,13 @@
 	  (t
 	   *boolean-false*))))
 
-(defmethod to-exponential ((this -number-proto) digits)
+(defun -number.parse-float (string)
+  (.parse-float string))
+
+(defun -number.parse-int (string radix)
+  (.parse-int string radix))
+
+(defmethod %to-exponential ((this -number-proto) digits)
   (let ((f (if (eql digits :undefined)
 	       0
 	       (slot-value (-to-integer digits) '-number-data)))
@@ -223,25 +245,26 @@
       (t
        ))))
 
-(defmethod to-fixed ((this -number-proto) digits)
+(defmethod %to-fixed ((this -number-proto) digits)
   )
 
-(defmethod to-locale-string ((this -number-proto))
+(defmethod %to-locale-string ((this -number-proto))
   )
 
-(defmethod to-precision ((this -number-proto) precision)
+(defmethod %to-precision ((this -number-proto) precision)
   )
 
-(defmethod to-string ((this -number-proto) &optional radix)
+(defmethod %to-string ((this -number-proto) &optional radix)
   )
 
-(defmethod value-of ((this -number-proto))
+(defmethod %value-of ((this -number-proto))
   )
 
 ;;; Math object definitions. Since Math is not a function and can't be called
 ;;; or constructed, it's only a wrapper.
-(defclass -number (-object-proto)
-  ((-prototype :initform '-object-proto :allocation :class)
+(defclass -math (-object-proto)
+  ((proto :initform (find-class '-object-proto))
+   (-prototype :initform (find-class '-math))
    (e :type property :allocation :class
       :initform (make-property :value +math-e+))
    (ln10 :type property :allocation :class

@@ -46,7 +46,8 @@
 ;;; isPrototypeOf = t, propertyIsEnumerable = t, toLocaleString = t,
 ;;; toString = t, valueOf = t.
 (defclass -object-proto (proto)
-  ((-prototype :initform :null)
+  ((proto :initform :null)
+   (-prototype :initform (find-class '-object-proto))
    (-extensible :initform :true)
    (-primitive-value :initform :undefined)
    (constructor :initform (make-property :value '!object) :allocation :class)
@@ -62,8 +63,7 @@
    (to-string :type property :allocation :class
 	      :initform (make-property :value '!to-string))
    (value-of :type property :allocation :class
-	     :initform (make-property :value '!value-of))
-   (properties :type list :initarg :properties :initform nil))
+	     :initform (make-property :value '!value-of)))
   (:documentation "Object prototype, provides inherited properties."))
 
 ;;; %Object% Object Constructor: [[Prototype]] = %FunctionPrototype%,
