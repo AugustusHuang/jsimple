@@ -84,7 +84,7 @@
 ;;; or strings) and CDRs property structures.
 (defstruct property
   ;; The value retrieved by a get access of the property.
-  (value :undefined :type (or +js-value-types+ null))
+  (value :undefined :type (or +js-value-types+ function-raw null))
   ;; If not :UNDEFINED must be a function object, in this implementation,
   ;; function is an object, but has parallel status, so there's no way to
   ;; be both function and object. The function's [[Call]] method is called
@@ -305,374 +305,633 @@ funcallable class, it is implementation specific."))
 ;;; will have name camel-to-hyphen ed too, but since built-in function should
 ;;; have a instance of -FUNCTION-PROTO without using the duplicated symbol,
 ;;; add ! as a prefix.
-(setf !eval
+(setf !.eval
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value ".eval")
 		     :length (make-property :value 1))
-      !is-finite
+      !.is-finite
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value ".isFinite")
 		     :length (make-property :value 1))
-      !is-nan
+      !.is-nan
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value ".isNaN")
 		     :length (make-property :value 1))
-      !parse-float
+      !.parse-float
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value ".parseFloat")
 		     :length (make-property :value 1))
-      !parse-int
+      !.parse-int
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value ".parseInt")
 		     :length (make-property :value 2))
-      !decode-uri
+      !.decode-uri
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value ".decodeURI")
 		     :length (make-property :value 1))
-      !decode-uri-component
+      !.decode-uri-component
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value ".decodeURIComponent")
 		     :length (make-property :value 1))
-      !encode-uri
+      !.encode-uri
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value ".encodeURI")
 		     :length (make-property :value 1))
-      !encode-uri-component
+      !.encode-uri-component
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value ".encodeURIComponent")
 		     :length (make-property :value 1)))
 
-(setf !assign
+(setf !object.assign
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.assign")
 		     :length (make-property :value 2))
-      !create
+      !object.create
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.create")
 		     :length (make-property :value 2))
-      !define-properties
+      !object.define-properties
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.defineProperties")
 		     :length (make-property :value 2))
-      !define-property
+      !object.define-property
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.defineProperty")
 		     :length (make-property :value 3))
-      !freeze
+      !object.freeze
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.freeze")
 		     :length (make-property :value 1))
-      !get-own-property-descriptor
+      !object.get-own-property-descriptor
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.getOwnPropertyDescriptor")
 		     :length (make-property :value 2))
-      !get-own-property-names
+      !object.get-own-property-names
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.getOwnPropertyNames")
 		     :length (make-property :value 1))
-      !get-own-property-symbols
+      !object.get-own-property-symbols
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.getOwnPropertySymbols")
 		     :length (make-property :value 1))
-      !get-prototype-of
+      !object.get-prototype-of
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.getPrototypeOf")
 		     :length (make-property :value 1))
-      !is
+      !object.is
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.is")
 		     :length (make-property :value 2))
-      !is-extensible
+      !object.is-extensible
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.isExtensible")
 		     :length (make-property :value 1))
-      !is-frozen
+      !object.is-frozen
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.isFrozen")
 		     :length (make-property :value 1))
-      !is-sealed
+      !object.is-sealed
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.isSealed")
 		     :length (make-property :value 1))
-      !keys
+      !object.keys
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.keys")
 		     :length (make-property :value 1))
-      !prevent-extensions
+      !object.prevent-extensions
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.preventExtensions")
 		     :length (make-property :value 1))
-      !seal
+      !object.seal
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.seal")
 		     :length (make-property :value 1))
-      !set-prototype-of
+      !object.set-prototype-of
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Object.setPrototypeOf")
 		     :length (make-property :value 2))
-      !abs
+      !symbol.for
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Symbol.for")
+		     :length (make-property :value 1))
+      !symbol.keyFor
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Symbol.keyFor")
+		     :length (make-property :value 1))
+      !number.is-finite
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Number.isFinite")
+		     :length (make-property :value 1))
+      !number.is-integer
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Number.isInteger")
+		     :length (make-property :value 1))
+      !number.is-nan
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Number.isNaN")
+		     :length (make-property :value 1))
+      !number.is-safe-integer
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Number.isSafeInteger")
+		     :length (make-property :value 1))
+      !number.parse-float
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Number.parseFloat")
+		     :length (make-property :value 1))
+      !number.parse-int
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Number.parseInt")
+		     :length (make-property :value 2))
+      !math.abs
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.abs")
 		     :length (make-property :value 1))
-      !acos
+      !math.acos
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.acos")
 		     :length (make-property :value 1))
-      !acosh
+      !math.acosh
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.acosh")
 		     :length (make-property :value 1))
-      !asin
+      !math.asin
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.asin")
 		     :length (make-property :value 1))
-      !asinh
+      !math.asinh
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.asinh")
 		     :length (make-property :value 1))
-      !atan
+      !math.atan
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.atan")
 		     :length (make-property :value 1))
-      !atanh
+      !math.atanh
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.atanh")
 		     :length (make-property :value 1))
-      !atan2
+      !math.atan2
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.atan2")
 		     :length (make-property :value 2))
-      !cbrt
+      !math.cbrt
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.cbrt")
 		     :length (make-property :value 1))
-      !ceil
+      !math.ceil
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.ceil")
 		     :length (make-property :value 1))
-      !clz32
+      !math.clz32
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.clz32")
 		     :length (make-property :value 1))
-      !cos
+      !math.cos
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.cos")
 		     :length (make-property :value 1))
-      !cosh
+      !math.cosh
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.cosh")
 		     :length (make-property :value 1))
-      !exp
+      !math.exp
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.exp")
 		     :length (make-property :value 1))
-      !expm1
+      !math.expm1
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.expm1")
 		     :length (make-property :value 1))
-      !floor
+      !math.floor
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.floor")
 		     :length (make-property :value 1))
-      !fround
+      !math.fround
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.fround")
 		     :length (make-property :value 1))
-      !hypot
+      !math.hypot
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.hypot")
 		     :length (make-property :value 2))
-      !imul
+      !math.imul
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.imul")
 		     :length (make-property :value 2))
-      !log
+      !math.log
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.log")
 		     :length (make-property :value 1))
-      !log1p
+      !math.log1p
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.log1p")
 		     :length (make-property :value 1))
-      !log10
+      !math.log10
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.log10")
 		     :length (make-property :value 1))
-      !log2
+      !math.log2
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.log2")
 		     :length (make-property :value 1))
-      !max
+      !math.max
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.max")
 		     :length (make-property :value 2))
-      !min
+      !math.min
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.min")
 		     :length (make-property :value 2))
-      !pow
+      !math.pow
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.pow")
 		     :length (make-property :value 2))
-      !random
+      !math.random
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.random")
 		     :length (make-property :value 0))
-      !round
+      !math.round
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.round")
 		     :length (make-property :value 1))
-      !sign
+      !math.sign
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.sign")
 		     :length (make-property :value 1))
-      !sin
+      !math.sin
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.sin")
 		     :length (make-property :value 1))
-      !sinh
+      !math.sinh
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.sinh")
 		     :length (make-property :value 1))
-      !sqrt
+      !math.sqrt
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.sqrt")
 		     :length (make-property :value 1))
-      !tan
+      !math.tan
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.tan")
 		     :length (make-property :value 1))
-      !tanh
+      !math.tanh
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.tanh")
 		     :length (make-property :value 1))
-      !trunc
+      !math.trunc
       (make-instance '-function-proto
 		     :-prototype nil
 		     :-extensible nil
 		     :name (make-property :value "Math.trunc")
 		     :length (make-property :value 1))
-      )
+      !date.now
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Date.now")
+		     :length (make-property :value 0))
+      !date.parse
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Date.parse")
+		     :length (make-property :value 1))
+      !date.utc
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Date.UTC")
+		     :length (make-property :value 7))
+      !string.from-char-code
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "String.fromCharCode")
+		     :length (make-property :value 1))
+      !string.from-code-point
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "String.fromCodePoint")
+		     :length (make-property :value 1))
+      !string.raw
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "String.raw")
+		     :length (make-property :value 1))
+      !array.from
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Array.from")
+		     :length (make-property :value 1))
+      !array.is-array
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Array.isArray")
+		     :length (make-property :value 1))
+      !array.of
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Array.of")
+		     :length (make-property :value 0))
+      !int8-array.from
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Int8Array.from")
+		     :length (make-property :value 1))
+      !uint8-array.from
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Uint8Array.from")
+		     :length (make-property :value 1))
+      !uint8-clamped-array.from
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Uint8ClampedArray.from")
+		     :length (make-property :value 1))
+      !int16-array.from
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Int16Array.from")
+		     :length (make-property :value 1))
+      !uint16-array.from
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Uint16Array.from")
+		     :length (make-property :value 1))
+      !int32-array.from
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Int32Array.from")
+		     :length (make-property :value 1))
+      !uint32-array.from
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Uint32Array.from")
+		     :length (make-property :value 1))
+      !float32-array.from
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Float32Array.from")
+		     :length (make-property :value 1))
+      !float64-array.from
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Float64Array.from")
+		     :length (make-property :value 1))
+      !int8-array.of
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Int8Array.of")
+		     :length (make-property :value 0))
+      !uint8-array.of
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Uint8Array.of")
+		     :length (make-property :value 0))
+      !uint8-clamped-array.of
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Uint8ClampedArray.of")
+		     :length (make-property :value 0))
+      !int16-array.of
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Int16Array.of")
+		     :length (make-property :value 0))
+      !uint16-array.of
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Uint16Array.of")
+		     :length (make-property :value 0))
+      !int32-array.of
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Int32Array.of")
+		     :length (make-property :value 0))
+      !uint32-array.of
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Uint32Array.of")
+		     :length (make-property :value 0))
+      !float32-array.of
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Float32Array.of")
+		     :length (make-property :value 0))
+      !float64-array.of
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Float64Array.of")
+		     :length (make-property :value 0))
+      !array-buffer.is-view
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "ArrayBuffer.isView")
+		     :length (make-property :value 1))
+      ;; LENGTH tested from V8.
+      !json.parse
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "JSON.parse")
+		     :length (make-property :value 2))
+      !json.stringify
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "JSON.stringify")
+		     :length (make-property :value 3))
+      !promise.all
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Promise.all")
+		     :length (make-property :value 1))
+      !promise.race
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Promise.race")
+		     :length (make-property :value 1))
+      !promise.reject
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Promise.reject")
+		     :length (make-property :value 1))
+      !promise.resolve
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Promise.resolve")
+		     :length (make-property :value 1))
+      ;; I don't know what's the sense of Reflect class...
+      !proxy.revocable
+      (make-instance '-function-proto
+		     :-prototype nil
+		     :-extensible nil
+		     :name (make-property :value "Proxy.revocable")
+		     :length (make-property :value 2)))
 
 (setf !object
       (make-instance '-function-proto
