@@ -52,18 +52,18 @@
    (-primitive-value :initform :undefined)
    (constructor :initform (make-property :value '!object) :allocation :class)
    (has-own-property :type property :allocation :class
-		     :initform (make-property :value '!has-own-property))
+		     :initform (make-property :value !has-own-property))
    (is-prototype-of :type property :allocation :class
-		    :initform (make-property :value '!is-prototype-of))
+		    :initform (make-property :value !is-prototype-of))
    (property-is-enumerable :type property :allocation :class
 			   :initform
-			   (make-property :value '!property-is-enumerable))
+			   (make-property :value !property-is-enumerable))
    (to-locale-string :type property :allocation :class
-		     :initform (make-property :value '!to-locale-string))
+		     :initform (make-property :value !to-locale-string))
    (to-string :type property :allocation :class
-	      :initform (make-property :value '!to-string))
+	      :initform (make-property :value !to-string))
    (value-of :type property :allocation :class
-	     :initform (make-property :value '!value-of)))
+	     :initform (make-property :value !value-of)))
   (:documentation "Object prototype, provides inherited properties."))
 
 ;;; %Object% Object Constructor: [[Prototype]] = %FunctionPrototype%,
@@ -73,11 +73,6 @@
 ;;; getOwnPropertySymbols = t, getPrototypeOf = t, is = t, isExtensible = t,
 ;;; isFrozen = t, isSealed = t, keys = t, preventExtensions = t, seal = t,
 ;;; prototype = %ObjectPrototype%, seal = t, setPrototypeOf = t.
-
-;;; Helpers to make access to PROPERTIES when
-;;; we are creating new class objects.
-(defmethod fetch-properties ((this -object-proto))
-  (slot-value this 'properties))
 
 ;;; We need PRINT-OBJECT methods for all mixins and original object type.
 ;;; Object style: <Object: <a: 1> <b: 2>>
@@ -116,17 +111,19 @@
     (null-type
      (error "Invalid conversion from null to object"))
     (boolean-type
-     (-object :-primitive-value (slot-value arg 'boolean-data)))
+     (!object :-primitive-value (slot-value arg 'boolean-data)))
     (number-type
-     (-object :-primitive-value (slot-value arg 'number-data)))
+     (!object :-primitive-value (slot-value arg 'number-data)))
     (string-type
-     (-object :-primitive-value (slot-value arg 'string-data)))
+     (!object :-primitive-value (slot-value arg 'string-data)))
     (symbol-type
-     (-object :-primitive-value (slot-value arg 'symbol-data)))
+     (!object :-primitive-value (slot-value arg 'symbol-data)))
     (object-type
      arg)))
 
 ;;; Internal methods.
+;;; Here internal methods are handled in Lisp land, while abstract operations
+;;; are handled in es land.
 (defmethod -get-prototype-of ((this -object-proto))
   (slot-value this '-prototype))
 
