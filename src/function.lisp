@@ -131,18 +131,6 @@
 ;;; Function prototype property methods. We have to reimplement the methods
 ;;; 'inherited' from object prototype, since they are of different metaclass
 ;;; indeed.
-(defmethod %has-own-property ((this -function-proto) value)
-  )
-
-(defmethod %is-prototype-of ((this -function-proto) value)
-  )
-
-(defmethod %property-is-enumerable ((this -function-proto) value)
-  )
-
-(defmethod %to-locale-string ((this -function-proto))
-  )
-
 (defmethod %apply ((this -function-proto) this-arg args)
   )
 
@@ -152,12 +140,44 @@
 (defmethod %call ((this -function-proto) this-arg &rest args)
   )
 
+(defmethod %has-own-property ((this -object-proto) value)
+  (let ((p (-to-property-key value))
+	(o (-to-object this)))
+    (if (eql (-get-own-property o p) :undefined)
+	*boolean-false*
+	*boolean-true*)))
+
+(defmethod %is-prototype-of ((this -object-proto) value)
+  (if (not (eql (-type this) 'object-type))
+      *boolean-false*
+      (loop for value = (-get-prototype-of value)
+	 if (eql value :null)
+	 do (return-from %is-prototype-of *boolean-false*)
+	 ;; XXX: What does the standard mean? The instance itself as a
+	 ;; prototype or the class object? -- Augustus, 18 Sep 2015.
+	 if (eql value (class-of this))
+	 do (return-from %is-prototype-of *boolean-true*))))
+
+(defmethod %property-is-enumerable ((this -object-proto) value)
+  (let* ((p (-to-property-key value))
+	 (o (-to-object this))
+	 (desc (-get-own-property o p)))
+    (if (eql desc :undefined)
+	*boolean-false*
+	(if (eql (property-enumerable desc) :false)
+	    *boolean-false*
+	    *boolean-true*))))
+
+(defmethod %to-locale-string ((this -object-proto))
+  (%to-string this))
+
 (defmethod %to-string ((this -function-proto) &optional radix)
   (declare (ignore radix))
   )
 
 (defmethod %value-of ((this -function-proto))
-  )
+  this)
 
-(defmethod %has-instance ((this -function-proto) value)
+;;; This is a global symbol, name it special.
+(defmethod -symbol.has-instance ((this -function-proto) value)
   )

@@ -101,9 +101,9 @@
 (defmethod to-string ((this -boolean-proto) &optional radix)
   (declare (ignore radix))
   (if (eql (slot-value this '-boolean-data) :true)
-      "true"
-      "false"))
+      (!string "true")
+      (!string "false")))
 
 (defmethod value-of ((this -boolean-proto))
-  (slot-value this '-boolean-data))
+  this)
 
