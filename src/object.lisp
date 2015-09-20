@@ -364,8 +364,39 @@
 (defun -object.get-prototype-of (object)
   (-get-prototype-of object))
 
+(defun same-value (x y)
+  (when (not (eql (-type x) (-type y)))
+    (return-from same-value *boolean-false*))
+  (typecase x
+    (undefined-type
+     *boolean-true*)
+    (null-type
+     *boolean-true*)
+    (number-type
+     (if (eql x y)
+	 *boolean-true*
+	 (if (= (slot-value x '-number-data) (slot-value y '-number-data))
+	     *boolean-true*
+	     *boolean-false*)))
+    (string-type
+     (if (string= (slot-value x '-string-data) (slot-value y '-string-data))
+	 *boolean-true*
+	 *boolean-false*))
+    (boolean-type
+     (if (eql x y)
+	 *boolean-true*
+	 *boolean-false*))
+    (symbol-type
+     (if (eql (slot-value x '-symbol-data) (slot-value y '-symbol-data))
+	 *boolean-true*
+	 *boolean-false*))
+    (object-type
+     (if (eql x y)
+	 *boolean-true*
+	 *boolean-false*))))
+
 (defun -object.is (value1 value2)
-  )
+  (same-value value1 value2))
 
 (defun -object.is-extensible (object)
   (if (eql (-is-extensible object) :false)
@@ -387,7 +418,15 @@
 	  *boolean-true*)))
 
 (defun -object.keys (object)
-  )
+  (let ((obj (-to-object object))
+	(name-list nil))
+    (dolist (key-value (properties obj))
+      (let ((prop (cdr key-value))
+	    (key (car key-value)))
+	(when (eql (property-enumerable prop) :true)
+	  ;; Here the key are raw Lisp symbols, how to handle them?
+	  (push key name-list))))
+    (!array name-list)))
 
 (defun -object.prevent-extensions (object)
   (if (not (eql (-type object) 'object-type))
@@ -403,8 +442,16 @@
 	(-set-integrity-level object "sealed")
 	object)))
 
+;;; This function should be implemented with underlying class replacement.
 (defun -object.set-prototype-of (object prototype)
-  )
+  (when (not (or (eql (-type prototype) 'null-type)
+		 (eql (-type prototype) 'object-type)))
+    (error "Type error."))
+  (when (not (eql (-type prototype) 'object-type))
+    (return-from -object.set-prototype-of object))
+  (when (eql (-set-prototype-of object prototype) :false)
+    (error "Type error."))
+  object)
 
 ;;; Prototype property methods are handled with 'this', so define them as
 ;;; methods.
@@ -442,7 +489,29 @@
 ;;; I don't know what does the standard mean!
 (defmethod %to-string ((this -object-proto) &optional radix)
   (declare (ignore radix))
-  )
+  (let ((tag ""))
+    (cond ((-is-array this)
+	   (setf tag "Array"))
+	  ((eql (type-of this) '-string-proto)
+	   (setf tag "String"))
+	  ((eql (type-of this) '-function-proto)
+	   (setf tag "Function"))
+	  ((eql (type-of this) '-error-proto)
+	   (setf tag "Error"))
+	  ((eql (type-of this) '-boolean-proto)
+	   (setf tag "Boolean"))
+	  ((eql (type-of this) '-number-proto)
+	   (setf tag "Number"))
+	  ((eql (type-of this) '-date-proto)
+	   (setf tag "Date"))
+	  ((eql (type-of this) '-reg-exp-proto)
+	   (setf tag "RegExp"))
+	  (t
+	   (let ((new-tag (-get this *symbol-to-string-tag*)))
+	     (if (eql :undefined new-tag)
+		 (setf tag "Object")
+		 (setf tag new-tag)))))
+    (!string (concatenate 'string "[object " tag "]"))))
 
 (defmethod %value-of ((this -object-proto))
   (-to-object this))
