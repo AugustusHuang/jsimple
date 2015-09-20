@@ -1,5 +1,6 @@
 # lesp
-An Ecma-script 6 interpreter written in Common Lisp, still in its infancy!
+An Ecma-script 6 compiler/interpreter written in Common Lisp,
+now only the parser runs.
 
 ## Target
 The most recent version of ECMA-262 standard shows more possibilities to
