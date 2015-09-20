@@ -406,17 +406,17 @@
   (:documentation "Math object, used as a reference type."))
 
 ;;; Some wrapper functions.
-(declaim (inline %math.abs %math.acos %math.acosh %math.asin %math.asinh
-		 %math.atan %math.atanh %math.atan2 %math.cbrt %math.ceil
-		 %math.clz32 %math.cos %math.cosh %math.exp %math.expm1
-		 %math.floor %math.fround %math.hypot %math.imul %math.log
-		 %math.log1p %math.log10 %math.log2 %math.max %math.min
-		 %math.pow %math.random %math.round %math.sign %math.sin
-		 %math.sinh %math.sqrt %math.tan %math.tanh %math.trunc))
+(declaim (inline -math.abs -math.acos -math.acosh -math.asin -math.asinh
+		 -math.atan -math.atanh -math.atan2 -math.cbrt -math.ceil
+		 -math.clz32 -math.cos -math.cosh -math.exp -math.expm1
+		 -math.floor -math.fround -math.hypot -math.imul -math.log
+		 -math.log1p -math.log10 -math.log2 -math.max -math.min
+		 -math.pow -math.random -math.round -math.sign -math.sin
+		 -math.sinh -math.sqrt -math.tan -math.tanh -math.trunc))
 
 ;;; All declarations shall be replaced by a implicit type conversion,
 ;;; which converts and handles the type error.
-(defun %math.abs (x)
+(defun -math.abs (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (case n
@@ -429,7 +429,7 @@
       (t
        x))))
 
-(defun %math.acos (x)
+(defun -math.acos (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (cond ((eql n :nan)
@@ -445,7 +445,7 @@
 	  (t
 	   (!number (acos n))))))
 
-(defun %math.acosh (x)
+(defun -math.acosh (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (cond ((eql n :nan)
@@ -461,7 +461,7 @@
 	  (t
 	   (!number (acosh n))))))
 
-(defun %math.asin (x)
+(defun -math.asin (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (cond ((eql n :nan)
@@ -477,7 +477,7 @@
 	  (t
 	   (!number (asin n))))))
 
-(defun %math.asinh (x)
+(defun -math.asinh (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (cond ((eql n :nan)
@@ -493,7 +493,7 @@
 	  (t
 	   (!number (asinh n))))))
 
-(defun %math.atan (x)
+(defun -math.atan (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (cond ((eql n :nan)
@@ -509,7 +509,7 @@
 	  (t
 	   (!number (atan x))))))
 
-(defun %math.atanh (x)
+(defun -math.atanh (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (cond ((eql n :nan)
@@ -528,28 +528,32 @@
 	   (!number (atanh n))))))
 
 ;;; Add -0 as a case.
-(defun %math.atan2 (y x)
+(defun -math.atan2 (y x)
   (declare (type number-type y x))
   (let ((n (slot-value y '-number-data))
 	(m (slot-value x '-number-data)))
     (cond ((or (eql n :nan) (eql m :nan))
 	   *number-nan*)
-	  ((and (> n 0) (zerop m))
+	  ((and (> n 0) (or (zerop m) (eql m :-0)))
 	   (!number (/ +number-pi+ 2)))
 	  ((and (> m 0) (zerop n))
 	   *number-0*)
 	  ((and (zerop n) (zerop m))
 	   *number-0*)
-	  ((and (< m 0) (zerop n))
+	  ((and (or (< m 0) (eql m :-0)) (zerop n))
 	   (!number +number-pi+))
-	  ((and (< n 0) (zerop m))
+	  ((and (eql n :-0) (>= x 0))
+	   *number--0*)
+	  ((and (eql n :-0) (or (< x 0) (eql m :-0)))
+	   (!number (- +number-pi+)))
+	  ((and (< n 0) (or (eql m :-0) (zerop m)))
 	   (!number (/ +number-pi+ 2)))
 	  ((and (> n 0) (eql m :infinity))
 	   *number-0*)
 	  ((and (> n 0) (eql m :-infinity))
 	   (!number +number-pi+))
 	  ((and (< n 0) (eql m :infinity))
-	   *number-0*)
+	   *number--0*)
 	  ((and (< n 0) (eql m :-infinity))
 	   (!number (- +number-pi+)))
 	  ((and (eql n :infinity) (eql m :infinity))
@@ -567,7 +571,7 @@
 	  (t
 	   (!number (atan y x))))))
 
-(defun %cbrt (x)
+(defun -math.cbrt (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (case n
@@ -575,6 +579,8 @@
        *number-nan*)
       (0
        *number-0*)
+      (:-0
+       *number--0*)
       (:infinity
        *number-infinity*)
       (:-infinity
@@ -582,59 +588,62 @@
       (t
        (!number (expt n (coerce 1/3 'double-float)))))))
 
-(defun %ceil (x)
+(defun -math.ceil (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
-    (case n
-      (:nan
-       *number-nan*)
-      (0
-       *number-0*)
-      (:infinity
-       *number-infinity*)
-      (:-infinity
-       *number--infinity*)
-      (t
-       (!number (ceiling x))))))
+    (cond ((eql n :nan)
+	   *number-nan*)
+	  ((zerop n)
+	   *number-0*)
+	  ((eql n :-0)
+	   *number--0*)
+	  ((eql n :infinity)
+	   *number-infinity*)
+	  ((eql n :-infinity)
+	   *number--infinity*)
+	  ((< -1 x 0)
+	   *number--0*)
+	  (t
+	   (!number (ceiling x))))))
 
-(defun %clz32 (x)
+(defun -math.clz32 (x)
   (declare (type number-type x))
   (let ((n (slot-value (-to-uint32 x) '-number-data)))
     (!number (- 32 (integer-length n)))))
 
-(defun %cos (x)
+(defun -math.cos (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (case n
       (:nan
        *number-nan*)
-      (0
+      ((0 :-0)
        (!number 1))
       ((:infinity :-infinity)
        *number-nan*)
       (t
        (!number (cos n))))))
 
-(defun %cosh (x)
+(defun -math.cosh (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (case n
       (:nan
        *number-nan*)
-      (0
+      ((0 :-0)
        (!number 1))
       ((:infinity :-infinity)
        *number-infinity*)
       (t
        (!number (cosh n))))))
 
-(defun %exp (x)
+(defun -math.exp (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (case n
       (:nan
        *number-nan*)
-      (0
+      ((0 :-0)
        (!number 1))
       (:infinity
        *number-infinity*)
@@ -643,7 +652,7 @@
       (t
        (!number (exp n))))))
 
-(defun %expm1 (x)
+(defun -math.expm1 (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (case n
@@ -651,6 +660,8 @@
        *number-nan*)
       (0
        *number-0*)
+      (:-0
+       *number--0*)
       (:infinity
        *number-infinity*)
       (:-infinity
@@ -658,7 +669,7 @@
       (t
        (!number (- (exp x) 1))))))
 
-(defun %floor (x)
+(defun -math.floor (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (case n
@@ -666,6 +677,8 @@
        *number-nan*)
       (0
        *number-0*)
+      (:-0
+       *number--0*)
       (:infinity
        *number-infinity*)
       (:-infinity
@@ -673,13 +686,13 @@
       (t
        (!number (floor n))))))
 
-(defun %fround (x)
+(defun -math.fround (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (case n
       (:nan
        *number-nan*)
-      ((0 :infinity :-infinity)
+      ((0 :-0 :infinity :-infinity)
        x)
       (t
        (!number (fround n))))))
@@ -687,7 +700,7 @@
 ;;; In order to implement the no argument clause in standard,
 ;;; we use optional arguments to pretend to be a length 0 function
 ;;; with generated length 2.
-(defun %hypot (&optional value1 value2 &rest values)
+(defun -math.hypot (&optional value1 value2 &rest values)
   (declare (type (or null number-type) value1 value2)
 	   (type list values)))
   (let* ((val1 (if value1 (slot-value value1 '-number-data) 0))
@@ -701,10 +714,12 @@
 	  (return-from %hypot *number-infinity*)
 	  (if (eql a :nan)
 	      (return-from %hypot *number-nan*)
-	      (incf total (* a a)))))
-    (!number (sqrt total)))
+	      (if (or (eql a :-0) (zerop a))
+		  (identity total)
+		  (incf total (* a a)))))
+      (!number (sqrt total)))
 
-(defun %imul (x y)
+(defun -math.imul (x y)
   (declare (type number-type x y))
   (let* ((a (slot-value (-to-uint32 x) '-number-data))
 	 (b (slot-value (-to-uint32 y) '-number-data))
@@ -713,12 +728,12 @@
 	(!number (- product (expt 2 32)))
 	(!number product))))
 
-(defun %log (x)
+(defun -math.log (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (cond ((or (eql n :nan) (< n 0) (eql n :-infinity))
 	   *number-nan*)
-	  ((zerop n)
+	  ((or (zerop n) (eql n :-0))
 	   *number--infinity*)
 	  ((= n 1)
 	   *number-0*)
@@ -727,7 +742,7 @@
 	  (t
 	   (!number (log n))))))
 
-(defun %log1p (x)
+(defun -math.log1p (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (cond ((or (eql n :nan) (< n -1) (eql n :-infinity))
@@ -736,17 +751,19 @@
 	   *number--infinity*)
 	  ((zerop n)
 	   *number-0*)
+	  ((eql n :-0)
+	   *number--0*)
 	  ((eql n :infinity)
 	   *number-infinity)
 	  (t
 	   (!number (log (1+ x)))))))
 
-(defun %log10 (x)
+(defun -math.log10 (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (cond ((or (eql n :nan) (eql n :-infinity) (< n 0))
 	   *number-nan*)
-	  ((zerop n)
+	  ((or (zerop n) (eql n :-0))
 	   *number--infinity*)
 	  ((= n 1)
 	   *number-0*)
@@ -755,12 +772,12 @@
 	  (t
 	   (!number (log x 10))))))
 
-(defun %log2 (x)
+(defun -math.log2 (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (cond ((or (eql n :nan) (eql n :-infinity) (< n 0))
 	   *number-nan*)
-	  ((zerop n)
+	  ((or (zerop n) (eql n :-0))
 	   *number--infinity*)
 	  ((= n 1)
 	   *number-0*)
@@ -769,7 +786,7 @@
 	  (t
 	   (!number (log x 2))))))
 
-(defun %max (&optional value1 value2 &rest values)
+(defun -math.max (&optional value1 value2 &rest values)
   (declare (type (or null number-type) value1 value2)
 	   (type list values))
   (let ((val1 (if value1 (slot-value value1 '-number-data) :-infinity))
@@ -786,13 +803,18 @@
 	 nil)
 	(:infinity
 	 (return-from %max *number-infinity*))
+	(:-0
+	 (when (or (< maximum 0) (eql maximum :-infinity))
+	   (setf maximum :-0)))
 	(t
 	 (if (eql maximum :-infinity)
 	     (setf maximum a)
-	     (setf maximum (max a maximum))))))
+	     (if (eql maximum :-0)
+		 (when (>= a 0) (setf maximum a))
+		 (setf maximum (max a maximum)))))))
     (!number maximum)))
 
-(defun %min (&optional value1 value2 &rest values)
+(defun -math.min (&optional value1 value2 &rest values)
   (declare (type (or null number-type) value1 value2)
 	   (type list values))
   (let ((val1 (if value1 (slot-value value1 '-number-data) :infinity))
@@ -809,19 +831,24 @@
 	 nil)
 	(:-infinity
 	 (return-from %min *number--infinity*))
+	(:-0
+	 (when (or (>= minimum 0) (eql minimum :infinity))
+	   (setf minimum :-0)))
 	(t
 	 (if (eql minimum :infinity)
 	     (setf minimum a)
-	     (setf minimum (min a minimum))))))
+	     (if (eql minimum :-0)
+		 (when (< a 0) (setf minimum a))
+		 (setf minimum (min a minimum)))))))
     (!number minimum)))
 
-(defun %pow (x y)
+(defun -math.pow (x y)
   (declare (type number-type x y))
   (let ((m (slot-value x '-number-data))
 	(n (slot-value y '-number-data)))
     (cond ((eql n :nan)
 	   *number-nan*)
-	  ((zerop n)
+	  ((or (zerop n) (eql n :-0))
 	   (!number 1))
 	  ;; We fall through, so N won't be 0.
 	  ((eql m :nan)
@@ -844,12 +871,22 @@
 	   *number--infinity*)
 	  ((and (eql m :-infinity) (> n 0) (evenp n))
 	   *number-infinity*)
-	  ((and (eql m :-infinity) (< n 0))
+	  ((and (eql m :-infinity) (< n 0) (oddp n))
+	   *number--0*)
+	  ((and (eql m :-infinity) (< n 0) (evenp n))
 	   *number-0*)
 	  ;; We are facing +/-0 problem, now ignore it.
 	  ((and (zerop m) (> n 0))
 	   *number-0*)
 	  ((and (zerop m) (< n 0))
+	   *number-infinity*)
+	  ((and (eql m :-0) (> n 0) (oddp n))
+	   *number--0*)
+	  ((and (eql m :-0) (> n 0) (evenp n))
+	   *number-0*)
+	  ((and (eql m :-0) (< n 0) (oddp n))
+	   *number--infinity*)
+	  ((and (eql m :-0) (< n 0) (evenp n))
 	   *number-infinity*)
 	  ((and (< m 0)
 		(eql :false (slot-value (-is-integer y) '-boolean-data)))
@@ -857,38 +894,43 @@
 	  (t
 	   (!number (expt m n))))))
 
-(defun %random ()
+(defun -math.random ()
   (!number (coerce (/ (random most-positive-fixnum) most-positive-fixnum)
 		   'double-float)))
 
-(defun %round (x)
-  (declare (type number-type x))
-  (let ((n (slot-value x '-number-data)))
-    (case n
-      (:nan
-       *number-nan*)
-      (0
-       *number-0*)
-      (:infinity
-       *number-infinity*)
-      (:-infinity
-       *number--infinity*)
-      (t
-       (!number (round n))))))
-
-(defun %sign (x)
+(defun -math.round (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (cond ((eql n :nan)
 	   *number-nan*)
 	  ((zerop n)
 	   *number-0*)
+	  ((eql n :-0)
+	   *number--0*)
+	  ((eql n :infinity)
+	   *number-infinity*)
+	  ((eql n :-infinity)
+	   *number--infinity*)
+	  ((and (< n 0) (>= n -0.5))
+	   *number--0*)
+	  (t
+	   (!number (round n))))))
+
+(defun -math.sign (x)
+  (declare (type number-type x))
+  (let ((n (slot-value x '-number-data)))
+    (cond ((eql n :nan)
+	   *number-nan*)
+	  ((zerop n)
+	   *number-0*)
+	  ((eql n :-0)
+	   *number--0*)
 	  ((or (< n 0) (eql n :-infinity))
 	   (!number -1))
 	  ((or (> n 0) (eql n :infinity))
 	   (!number 1)))))
 
-(defun %sin (x)
+(defun -math.sin (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (case n
@@ -896,10 +938,12 @@
        *number-nan*)
       (0
        *number-0*)
+      (:-0
+       *number--0*)
       (t
        (!number (sin n))))))
 
-(defun %sinh (x)
+(defun -math.sinh (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (case n
@@ -907,6 +951,8 @@
        *number-nan*)
       (0
        *number-0*)
+      (:-0
+       *number--0*)
       (:infinity
        *number-infinity*)
       (:-infinity
@@ -914,19 +960,21 @@
       (t
        (!number (sinh n))))))
 
-(defun %sqrt (x)
+(defun -math.sqrt (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (cond ((or (eql n :nan) (< n 0) (eql n :-infinity))
 	   *number-nan*)
 	  ((zerop n)
 	   *number-0*)
+	  ((eql n :-0)
+	   *number--0*)
 	  ((eql n :infinity)
 	   *number-infinity*)
 	  (t
 	   (!number (sqrt n))))))
 
-(defun %tan (x)
+(defun -math.tan (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (case n
@@ -934,10 +982,12 @@
        *number-nan*)
       (0
        *number-0*)
+      (:-0
+       *number-0*)
       (t
        (!number (tan n))))))
 
-(defun %tanh (x)
+(defun -math.tanh (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (case n
@@ -945,6 +995,8 @@
        *number-nan*)
       (0
        *number-0*)
+      (:-0
+       *number--0*)
       (:infinity
        (!number 1))
       (:-infinity
@@ -952,13 +1004,15 @@
       (t
        (!number (tanh n))))))
 
-(defun %trunc (x)
+(defun -math.trunc (x)
   (declare (type number-type x))
   (let ((n (slot-value x '-number-data)))
     (cond ((eql n :nan)
 	   *number-nan*)
 	  ((zerop n)
 	   *number-0*)
+	  ((eql n :-0)
+	   *number--0*)
 	  ((eql n :infinity)
 	   *number-infinity*)
 	  ((eql n :-infinity)
