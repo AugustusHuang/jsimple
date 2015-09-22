@@ -67,6 +67,7 @@
        do (dolist (op ops) (setf (gethash op precs) n)))
     precs))
 
+(defparameter *in-class* nil)
 (defparameter *in-function* nil)
 (defparameter *label-scope* nil)
 (defmacro with-label-scope (type label &body body)
@@ -202,7 +203,6 @@
                       (cond ((semicolonp) (next) nil)
                             ((can-insert-semicolon) nil)
                             (t (prog1 (expression) (semicolon))))))
-	 (:static (static-function* t))
          (:switch (let ((val (parenthesised))
                         (cases nil))
                     (with-label-scope :switch label
@@ -322,17 +322,15 @@
   ;;     }
   ;; }
   (def class* ()
-    (let ((superclass))
+    (let ((superclass nil))
       (with-defs
 	(def name (and (token-type-p token :name)
 		       (prog1 (token-value token) (next))))
 	(when (not name) (unexpected token))
 	;; Superclass, make extends optional...
-	(next)
 	(if (tokenp token :keyword :extends)
 	    (setf superclass (and (token-type-p token :name)
-				  (prog1
-				      (token-value token)
+				  (prog1 (token-value token)
 				    (next)
 				    (if (tokenp token :punc #\{)
 					(next)
@@ -340,19 +338,27 @@
 	    (if (tokenp token :punc #\{)
 		(next)
 		(unexpected token)))
-	(def body (let ((*label-scope* nil))
+	(def body (let ((*in-class* t)
+			(*label-scope* nil))
 		    ;; How about var, let and const?
 		    ;; Class definition only contains functions' definitions.
 		    (loop until (tokenp token :punc #\})
-		       collect (or (static-function* t) (function* t)))))
+		       collect (prog1
+				   (if (tokenp token :keyword :static)
+				       (static-function* t)
+				       (function* t))
+				 (next)))))
 	(next)
-	(as :class name superclass body))))
+	(if superclass
+	    (as :class name :extends superclass body)
+	    (as :class name body)))))
 
   (def static-function* (statement)
-    (when (tokenp token :keyword :static)
+    (progn
       (next)
-      (when (tokenp token :keyword :function)
-	(function* statement))))
+      (if (tokenp token :keyword :function)
+	  (function* statement)
+	  (unexpected token))))
   
   (def function* (statement)
     (with-defs
@@ -463,14 +469,20 @@
 	  ((tokenp token :punc #\{)
 	   ;; export { XXX as XXX, XXX as XXX }, export { XXX, XXX }
 	   ;; or export { XXX as XXX } from XXX.
-	   ())
+	   (let ((lst (xport-as-list #\} nil t)))
+	     (next)
+	     (if (semicolonp)
+		 (as :export lst)
+		 (if (token-typep token :string)
+		     (as :export lst (token-value token))
+		     (unexpected token)))))
 	  ((tokenp token :operator :*)
 	   ;; export * from XXX.
 	   (next)
 	   (expect-token :name "from")
 	   (let ((module (progn (next) (if (not (token-type-p token :string))
 					   (unexpected token)
-					   token))))
+					   (token-value token)))))
 	     (as :export :all module)))
 	  ((tokenp token :keyword :var)
 	   (as :export (progn (next) (var*))))
@@ -493,26 +505,26 @@
 	   (expect-token :name "as")
 	   (let ((binding (prog1 (if (not (token-type-p token :name))
 				     (unexpected token)
-				     token) (next))))
+				     (prog1 (token-value token) (next))))))
 	     (expect-token :name "from")
-	     (let ((module (progn (next) (if (not (token-type-p token :string)
-						  (unexpected token)
-						  token)))))
-	       (as :import (as :as :all (token-value binding)) module))))
+	     (let ((module (progn (next) (if (not (token-type-p token :string))
+					     (unexpected token)
+					     (token-value token)))))
+	       (as :import (as :as :all binding module)))))
 	  ((tokenp token :punc #\{)
 	   (let ((imports (progn (next) (expr-list #\} nil t))))
 	     (next)
 	     (expect-token :name "from")
-	     (let ((module (progn (next) (if (not (token-type-p token :string)
-						  (unexpected token)
-						  token)))))
+	     (let ((module (progn (next) (if (not (token-type-p token :string))
+					     (unexpected token)
+					     (token-value token)))))
 	       (as :import imports module))))
 	  ((token-type-p token :name)
 	   (let ((imported token)
 		 (module (progn (next) (expect-token :name "from")
-				(next) (if (not (token-type-p token :string)
-						(unexpected token)
-						token)))))
+				(next) (if (not (token-type-p token :string))
+					   (unexpected token)
+					   (token-value token)))))
 	     (as :import imported module)))
 	  (t
 	   (unexpected token))))
@@ -557,8 +569,22 @@
       (next)
       (nreverse elts)))
 
-  (def expr-as-list (closing &optional allow-trailing-comma allow-empty)
-    (let (())))
+  ;; Handle export/import as-list.
+  (def xport-as-list (closing &optional allow-trailing-comma allow-empty)
+    (let ((elts ()))
+      (loop for first = t then nil until (tokenp token :punc closing) do
+	   (unless first (expect #\,))
+	   (when (and allow-trailing-comma (tokenp token :punc closing))
+	     (return))
+	   (push (unless (and allow-empty
+			      (tokenp token :punc #\,))
+		   (cons (prog2 (next) (token-value token) (next))
+			 (if (tokenp token :punc #\,)
+			     nil
+			     (cons (progn (expect-token :name "as") :as)
+					  (token-value token)))) elts)))
+      (next)
+      (nreverse elts)))
   
   ;; In order to implement this new feature...
   (def destructure ()
