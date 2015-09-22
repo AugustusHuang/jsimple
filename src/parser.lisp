@@ -47,7 +47,7 @@
 
 ;;; FIXME: Change Javascript from 3rd version to 6th version. Some new
 ;;; reserved keywords will be added, and maybe some change in the source.
-(defparameter +unary-prefix+ '(:typeof :void :delete :-- :++ :! :~ :- :+))
+(defparameter +unary-prefix+ '(:typeof :void :delete :-- :++ :! :~ :- :+ :...))
 (defparameter +unary-postfix+ '(:-- :++))
 (defparameter +assignment+
   (let ((assign (make-hash-table)))
@@ -60,7 +60,7 @@
 (defparameter +precedence+
   (let ((precs (make-hash-table)))
     ;; The => arrow function operator is the last.
-    (loop for ops in '((:=>) (:|\|\||) (:&&) (:|\||) (:^) (:&)
+    (loop for ops in '((:...) (:=>) (:|\|\||) (:&&) (:|\||) (:^) (:&)
 		       (:== :=== :!= :!==) (:< :> :<= :>= :in :instanceof)
 		       (:>> :<< :>>>) (:+ :-) (:* :/ :%))
        for n from 1
@@ -72,7 +72,6 @@
 (defmacro with-label-scope (type label &body body)
   `(let ((*label-scope* (cons (cons ,type ,label) *label-scope*))) ,@body))
 
-;;; FIXME: Print more elegantly...
 (define-condition parser-error (general-error)
   ((char :initarg :char
 	 :initform lesp-parser:*char* :reader parser-error-char)
@@ -82,7 +81,7 @@
 
 (defmethod print-object ((err parser-error) stream)
   (call-next-method)
-  (format stream "parser error char ~A at line ~D."
+  (format stream ":~A:~D:"
 	  (parser-error-char err)
 	  (parser-error-line err)))
 
@@ -124,13 +123,13 @@
     (apply #'token-error token control args))
   
   (def unexpected (token)
-    (token-error token "Unexpected token '~A': " (token-id token)))
+    (token-error token "Unexpected token '~A'" (token-id token)))
 
   ;; If the token is what we want, step forward, or signal an error.
   (def expect-token (type val)
     (if (tokenp token type val)
         (next)
-        (error* "Unexpected token '~A', expected '~A': "
+        (error* "Unexpected token '~A', expected '~A'"
 		(token-id token) val)))
   
   (def expect (punc)
@@ -198,11 +197,12 @@
 	 (:import (import*))
 	 (:let (prog1 (js-let) (semicolon)))
          (:return (unless *in-function*
-		    (error* "'return' outside of function: "))
+		    (error* "'return' outside of function"))
                   (as :return
                       (cond ((semicolonp) (next) nil)
                             ((can-insert-semicolon) nil)
                             (t (prog1 (expression) (semicolon))))))
+	 (:static (static-function* t))
          (:switch (let ((val (parenthesised))
                         (cases nil))
                     (with-label-scope :switch label
@@ -239,23 +239,23 @@
 					   (and (eq type :break)
 						(eq ltype :switch)))
 				   (return t)))
-                      (error* "'~A' not inside a loop or switch: " type))
+                      (error* "'~A' not inside a loop or switch" type))
                     nil)
                    ((token-type-p token :name)
                     (let ((name (token-value token)))
                       (ecase type
                         (:break
 			 (unless (some (lambda (lb) (equal (cdr lb) name)) *label-scope*)
-			   (error* "Labeled 'break' without matching labeled statement: ")))
+			   (error* "Labeled 'break' without matching labeled statement")))
                         (:continue
 			 (unless (find (cons :loop name) *label-scope* :test #'equal)
-			   (error* "Labeled 'continue' without matching labeled loop: "))))
+			   (error* "Labeled 'continue' without matching labeled loop"))))
                       (next) (semicolon)
                       name)))))
 
   (def block* ()
-    (prog1 (as :block (loop :until (tokenp token :punc #\})
-                            :collect (statement)))
+    (prog1 (as :block (loop until (tokenp token :punc #\})
+			 collect (statement)))
       (next)))
 
   (def for-in (label init lhs)
@@ -318,6 +318,8 @@
   ;;     static method() {
   ;;         return true;
   ;;     }
+  ;;     method() {
+  ;;     }
   ;; }
   (def class* ()
     (let ((superclass))
@@ -342,11 +344,16 @@
 		    ;; How about var, let and const?
 		    ;; Class definition only contains functions' definitions.
 		    (loop until (tokenp token :punc #\})
-		       collect (function* t))))
+		       collect (or (static-function* t) (function* t)))))
 	(next)
 	(as :class name superclass body))))
 
-  ;; FIXME: Check if function is static!
+  (def static-function* (statement)
+    (when (tokenp token :keyword :static)
+      (next)
+      (when (tokenp token :keyword :function)
+	(function* statement))))
+  
   (def function* (statement)
     (with-defs
 	(def name (and (token-type-p token :name)
@@ -387,7 +394,7 @@
     (let ((body (ensure-block)) catch finally)
       (when (tokenp token :keyword :catch)
         (next) (expect #\()
-        (unless (token-type-p token :name) (error* "Name expected: "))
+        (unless (token-type-p token :name) (error* "Name expected"))
         (let ((name (token-value token)))
           (next) (expect #\))
           (setf catch (cons name (ensure-block)))))
@@ -434,11 +441,81 @@
   (def js-let (&optional no-in)
     (as :let (letdefs no-in)))
 
+  ;; Shall we implement a export and import list,
+  ;; and support modular programming in such an early stage?
   (def export* ()
-    )
-
+    (cond ((tokenp token :keyword :default)
+	   (let ((type-tok (next)))
+	     (cond ((tokenp type-tok :keyword :var)
+		    (as :export :default (progn (next) (var*))))
+		   ((tokenp type-tok :keyword :let)
+		    (as :export :default (progn (next) (js-let))))
+		   ((tokenp type-tok :keyword :const)
+		    (as :export :default (progn (next) (const*))))
+		   ((tokenp type-tok :keyword :function)
+		    (as :export :default
+			;; When default export a function and a class,
+			;; it will be an anonymous declaration.
+			(progn (next) (function* t))))
+		   ((tokenp type-tok :keyword :class)
+		    (as :export :default (progn (next) (class*))))
+		   (t (unexpected type-tok)))))
+	  ((tokenp token :punc #\{)
+	   ;; export { XXX as XXX, XXX as XXX }, export { XXX, XXX }
+	   ;; or export { XXX as XXX } from XXX.
+	   ())
+	  ((tokenp token :operator :*)
+	   ;; export * from XXX.
+	   (next)
+	   (expect-token :name "from")
+	   (let ((module (progn (next) (if (not (token-type-p token :string))
+					   (unexpected token)
+					   token))))
+	     (as :export :all module)))
+	  ((tokenp token :keyword :var)
+	   (as :export (progn (next) (var*))))
+	  ((tokenp token :keyword :let)
+	   (as :export (progn (next) (js-let))))
+	  ((tokenp token :keyword :const)
+	   (as :export (progn (next) (const*))))
+	  ((tokenp token :keyword :function)
+	   (as :export (progn (next) (function* t))))
+	  ((tokenp token :keyword :class)
+	   (as :export (progn (next) (class*))))
+	  (t
+	   (unexpected token))))
+  
   (def import* ()
-    )
+    ;; Can be import XXX from XXX, import * as XXX from XXX,
+    ;; or import { XXX, XXX } from XXX.
+    (cond ((tokenp token :operator :*)
+	   (next)
+	   (expect-token :name "as")
+	   (let ((binding (prog1 (if (not (token-type-p token :name))
+				     (unexpected token)
+				     token) (next))))
+	     (expect-token :name "from")
+	     (let ((module (progn (next) (if (not (token-type-p token :string)
+						  (unexpected token)
+						  token)))))
+	       (as :import (as :as :all (token-value binding)) module))))
+	  ((tokenp token :punc #\{)
+	   (let ((imports (progn (next) (expr-list #\} nil t))))
+	     (next)
+	     (expect-token :name "from")
+	     (let ((module (progn (next) (if (not (token-type-p token :string)
+						  (unexpected token)
+						  token)))))
+	       (as :import imports module))))
+	  ((token-type-p token :name)
+	   (let ((imported token)
+		 (module (progn (next) (expect-token :name "from")
+				(next) (if (not (token-type-p token :string)
+						(unexpected token)
+						token)))))
+	     (as :import imported module)))
+	  (t
+	   (unexpected token))))
   
   (def new* ()
     (let ((newexp (expr-atom nil)))
@@ -480,6 +557,9 @@
       (next)
       (nreverse elts)))
 
+  (def expr-as-list (closing &optional allow-trailing-comma allow-empty)
+    (let (())))
+  
   ;; In order to implement this new feature...
   (def destructure ()
     )
@@ -585,8 +665,8 @@
           (as :seq expr (progn (next) (expression)))
           expr)))
 
-  (as :js (loop until (token-type-p token :eof)
-	     collect (statement))))
+  (as :lesp (loop until (token-type-p token :eof)
+	       collect (statement))))
 
 (defun parse-js-string (&rest args)
   (apply 'parse-js args))

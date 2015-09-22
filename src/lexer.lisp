@@ -74,6 +74,8 @@
 (defun token-id (token)
   (token-value token))
 
+;;; Those three variables are used to record where now we are, and how we
+;;; report the error position correctly.
 (defvar *line*)
 (defvar *char*)
 (defvar *position*)
@@ -85,9 +87,10 @@
 	 :initform lesp-parser:*line* :reader lexer-error-line))
   (:documentation "Lesp lexer error."))
 
+;;; Simplify the error print.
 (defmethod print-object ((err lexer-error) stream)
   (call-next-method)
-  (format stream "lexer error char ~A at line ~D."
+  (format stream ":~A:~D:"
 	  (lexer-error-char err)
 	  (lexer-error-line err)))
 
@@ -118,8 +121,6 @@
   (concatenate 'string (list #\newline #\return
 			     (code-char #x2028) (code-char #x2029))))
 
-;;; For now even though strict mode is not enabled, don't enable variables like
-;;; LET or STATIC.
 (defparameter +keywords+
   (let ((keywords (make-hash-table :test 'equal)))
     (dolist (word '(:break :case :catch :class :const :continue :debugger
@@ -147,13 +148,15 @@
 
 (defparameter *check-for-reserved-words* nil)
 
-;;; Wrapper of READ-JS-NUMBER-1, read a number with specific radix.
 (defun read-js-number (stream &key junk-allowed)
+  "Wrapper of READ-JS-NUMBER-1, read a number with specific radix."
   (flet ((peek-1 () (peek-char nil stream nil nil))
          (next-1 () (read-char stream nil nil)))
     (read-js-number-1 #'peek-1 #'next-1 :junk-allowed junk-allowed)))
 
+;;; EQ returns T in SBCL when handling same keyword.
 (defun read-js-number-1 (peek next &key junk-allowed)
+  "Read a number with specific radix."
   (labels ((digits (radix)
              (with-output-to-string (out)
                (loop for ch = (funcall peek)
@@ -263,7 +266,7 @@
 					   (prog1 start (setf start nil))
 					   (next)))
                                      :junk-allowed t)
-                   (lexer-error "Invalid number syntax: "))))
+                   (lexer-error "Invalid number syntax."))))
       (token :num num)))
 
   (def handle-dot ()
@@ -278,7 +281,7 @@
        do (let ((digit (digit-char-p (next t) 16)))
 	    (if digit
 		(incf num (* digit (expt 16 pos)))
-		(lexer-error "Invalid \\~A escape pattern: " char)))
+		(lexer-error "Invalid \\~A escape pattern." char)))
        finally (return num)))
   
   (def read-escaped-char (&optional in-string)
@@ -323,7 +326,7 @@
 			       ((eql ch #\`)
 				(return))
 			       (t (write-char ch)))))))
-      (end-of-file () (lexer-error "Unterminated template: "))))
+      (end-of-file () (lexer-error "Unterminated template."))))
   
   (def read-string ()
     (let ((quote (next)))
@@ -335,10 +338,10 @@
 				  (let ((ch (read-escaped-char t)))
 				    (when ch (write-char ch))))
                                  ((find ch +line-terminators+)
-				  (lexer-error "Line terminator inside string: "))
+				  (lexer-error "Line terminator inside string."))
                                  ((eql ch quote) (return))
                                  (t (write-char ch)))))))
-        (end-of-file () (lexer-error "Unterminated string: ")))))
+        (end-of-file () (lexer-error "Unterminated string.")))))
 
   (def add-comment (type c)
     (when include-comments
@@ -370,12 +373,12 @@
                      (with-output-to-string (out)
                        (loop with star = nil
                           for ch = (or (next)
-				       (lexer-error "Unterminated comment: "))
+				       (lexer-error "Unterminated comment."))
                           until (and star (eql ch #\/))
                           do (setf star (eql ch #\*)) (write-char ch out))))
         (loop with star = nil
            for ch = (or (next)
-			(lexer-error "Unterminated comment: "))
+			(lexer-error "Unterminated comment."))
            until (and star (eql ch #\/))
            do (setf star (eql ch #\*)))))
 
@@ -403,11 +406,11 @@
 			     (if ch
 				 (write-char ch)
 				 ;; Will be deleted on SBCL.
-					;(format t "\\u~4,'0X" code)
+				 ;; (format t "\\u~4,'0X" code)
 				 ))
 			   (write-char ch))))
                 (read-while #'identifier-char-p)))
-      (end-of-file () (lexer-error "Unterminated regex: "))))
+      (end-of-file () (lexer-error "Unterminated regex."))))
 
   (def read-operator (&optional start)
     (labels ((grow (str)
@@ -444,7 +447,7 @@
 			(cond ((eql ch #\\)
 			       (next)
 			       (unless (eql (next) #\u)
-				 (lexer-error "Unrecognized escape in id: "))
+				 (lexer-error "Unrecognized escape in id."))
 			       (write-char (code-char (hex-bytes 4 #\u)))
 			       (setf unicode-escape t))
 			      ((and ch (identifier-char-p ch)) (write-char (next)))
@@ -452,7 +455,7 @@
            (keyword (and (not unicode-escape) (gethash word +keywords+))))
       (cond ((and *check-for-reserved-words* (not unicode-escape)
                   (gethash word	+reserved-words-ecma-6+))
-             (lexer-error "Reserved word ~A: " word))
+             (lexer-error "Reserved word ~A." word))
             ((not keyword) (token :name word))
             ((gethash word +operators+) (token :operator keyword))
             ((member keyword +atom-keywords+) (token :atom keyword))
@@ -474,7 +477,7 @@
                   ((eql next #\/) (handle-slash))
                   ((find next +operator-chars+) (read-operator))
                   ((or (identifier-char-p next) (eql next #\\)) (read-word))
-                  (t (lexer-error "Unexpected char '~A': " next)))))))
+                  (t (lexer-error "Unexpected char '~A'." next)))))))
   
   #'next-token)
 

@@ -26,7 +26,7 @@
 ;;;; appearence of compile-warning. Make it silent!
 (in-package :lesp-error)
 
-(define-condition general-error ()
+(define-condition general-error (simple-error)
   ()
   (:documentation "General lesp error, will be the superclass of all."))
 
