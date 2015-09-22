@@ -121,11 +121,15 @@
   (concatenate 'string (list #\newline #\return
 			     (code-char #x2028) (code-char #x2029))))
 
+;;; NOTE: :AS and :FROM are used when we need to use module, this is
+;;; enabled by default in our compiler, and they are not mentioned as keywords
+;;; in ECMA-262 version 6, so in this compiler all files which have 'as'
+;;; and 'from' as some of their variable names won't run.
 (defparameter +keywords+
   (let ((keywords (make-hash-table :test 'equal)))
-    (dolist (word '(:break :case :catch :class :const :continue :debugger
+    (dolist (word '(:as :break :case :catch :class :const :continue :debugger
 		    :default :delete :do :else :export :extends :false
-		    :finally :for :function :if :implements :import :in
+		    :finally :for :from :function :if :implements :import :in
 		    :instanceof :interface :let :new :null :package :private
 		    :protected :public :return :static :super :switch :this
 		    :throw :true :try :typeof :var :void :while :with :yield))
