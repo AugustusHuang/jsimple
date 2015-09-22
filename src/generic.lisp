@@ -213,4 +213,159 @@ method."))
 (defgeneric %next (this)
   (:documentation ""))
 
+(defgeneric %exec (this string)
+  (:documentation "Performs a regular expression match of STRING against the
+regular expression and returns an Array object containing the results of the
+match, or :NULL if STRING did not match."))
+
+(defgeneric %test (this string)
+  (:documentation ""))
+
+(defgeneric %copy-within (this target start &optional end)
+  (:documentation ""))
+
+(defgeneric %entries (this)
+  (:documentation ""))
+
+(defgeneric %every (this callback &optional this-arg)
+  (:documentation ""))
+
+(defgeneric %fill (this value &optional start end)
+  (:documentation ""))
+
+(defgeneric %filter (this callback &optional this-arg)
+  (:documentation ""))
+
+(defgeneric %find (this predicate &optional this-arg)
+  (:documentation ""))
+
+(defgeneric %find-index (this predicate &optional this-arg)
+  (:documentation ""))
+
+(defgeneric %for-each (this callback &optional this-arg)
+  (:documentation ""))
+
+(defgeneric %join (this separator)
+  (:documentation ""))
+
+(defgeneric %map (this callback &optional this-arg)
+  (:documentation ""))
+
+(defgeneric %pop (this)
+  (:documentation ""))
+
+(defgeneric %push (this &rest items)
+  (:documentation ""))
+
+(defgeneric %reduce (this callback &optional initial)
+  (:documentation ""))
+
+(defgeneric %reduce-right (this callback &optional initial)
+  (:documentation ""))
+
+(defgeneric %reverse (this)
+  (:documentation ""))
+
+(defgeneric %shift (this)
+  (:documentation ""))
+
+(defgeneric %some (this callback &optional this-arg)
+  (:documentation ""))
+
+(defgeneric %sort (this compare)
+  (:documentation "The elements of this array are sorted, if COMPARE is given
+it should be a function that accepts two arguments X and Y and returns a
+negative value if X < Y, zero if X = Y or a positive value if X > Y."))
+
+(defgeneric %unshift (this &rest items)
+  (:documentation ""))
+
+(defgeneric %values (this)
+  (:documentation ""))
+
+(defgeneric %set (this array &optional offset)
+  (:documentation "Sets multiple values in THIS, reading the values from the
+object ARRAY, OFFSET value indicates the first element index in THIS where
+values are written, if omitted, is assumed to be 0."))
+
+(defgeneric %subarray (this &optional begin end)
+  (:documentation "Returns a new typed-array whose element type is the same as
+THIS and whose ArrayBuffer is the same as the ArrayBuffer of THIS, inclusively
+from BEGIN and up to END exclusively, if either is negative, it refers to an
+index from the end of the array."))
+
+(defgeneric %clear (this)
+  (:documentation ""))
+
+(defgeneric %delete (this key)
+  (:documentation ""))
+
+(defgeneric %get (this key)
+  (:documentation ""))
+
+(defgeneric %has (this key)
+  (:documentation ""))
+
+(defgeneric %add (this value)
+  (:documentation ""))
+
+(defgeneric %get-float32 (this byte-offset &optional endian)
+  (:documentation ""))
+
+(defgeneric %get-float64 (this byte-offset &optional endian)
+  (:documentation ""))
+
+(defgeneric %get-int8 (this byte-offset)
+  (:documentation ""))
+
+(defgeneric %get-int16 (this byte-offset &optional endian)
+  (:documentation ""))
+
+(defgeneric %get-int32 (this byte-offset &optional endian)
+  (:documentation ""))
+
+(defgeneric %get-uint8 (this byte-offset)
+  (:documentation ""))
+
+(defgeneric %get-uint16 (this byte-offset &optional endian)
+  (:documentation ""))
+
+(defgeneric %get-uint32 (this byte-offset &optional endian)
+  (:documentation ""))
+
+(defgeneric %set-float32 (this byte-offset value &optional endian)
+  (:documentation ""))
+
+(defgeneric %set-float64 (this byte-offset value &optional endian)
+  (:documentation ""))
+
+(defgeneric %set-int8 (this byte-offset value)
+  (:documentation ""))
+
+(defgeneric %set-int16 (this byte-offset value &optional endian)
+  (:documentation ""))
+
+(defgeneric %set-int32 (this byte-offset value &optional endian)
+  (:documentation ""))
+
+(defgeneric %set-uint8 (this byte-offset value)
+  (:documentation ""))
+
+(defgeneric %set-uint16 (this byte-offset value &optional endian)
+  (:documentation ""))
+
+(defgeneric %set-uint32 (this byte-offset value &optional endian)
+  (:documentation ""))
+
+(defgeneric %return (this value)
+  (:documentation ""))
+
+(defgeneric %throw (this exception)
+  (:documentation ""))
+
+(defgeneric %catch (this on-rejected)
+  (:documentation ""))
+
+(defgeneric %then (this on-fulfilled on-rejected)
+  (:documentation ""))
 
