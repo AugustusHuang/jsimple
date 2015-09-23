@@ -59,7 +59,7 @@
 
 (defparameter +precedence+
   (let ((precs (make-hash-table)))
-    ;; The => arrow function operator is the last.
+    ;; The => arrow function operator and ... spread operator are the last.
     (loop for ops in '((:...) (:=>) (:|\|\||) (:&&) (:|\||) (:^) (:&)
 		       (:== :=== :!= :!==) (:< :> :<= :>= :in :instanceof)
 		       (:>> :<< :>>>) (:+ :-) (:* :/ :%))
@@ -372,8 +372,51 @@
       (def argnames (loop for first = t then nil
 		       until (tokenp token :punc #\))
 		       unless first do (expect #\,)
-		       unless (token-type-p token :name) do (unexpected token)
-		       collect (prog1 (token-value token) (next))))
+		       unless (or (token-type-p token :name)
+				  (tokenp token :operator :...)
+				  (tokenp token :punc #\[)
+				  (tokenp token :punc #\{))
+		       do (unexpected token)
+		       ;; Return "a" if normal argument,
+		       ;; return (:ARRAY xxx) or (:Object xxx) if using
+		       ;; destructuring,
+		       ;; return ("a" 0) if default argument with value 0,
+		       ;; return (:REST args) if rest argument args,
+		       ;; return (:SPREAD iterable) if in function calls.
+		       collect (let ((val (token-value token))
+				     (type (token-type token)))
+				 (next)
+				 (cond ((and (eq type :name)
+					     (tokenp token :punc #\,))
+					val)
+				       ((and (eq type :name)
+					     (tokenp token :operator :=))
+					(list val (prog2 (next)
+						      (token-value token)
+						    (next))))
+				       ((and (eq type :operator)
+					     statement
+					     (token-type-p token :name))
+					(if (tokenp (peek) :punc #\))
+					    (list :rest (token-value token))
+					    ;; The rest parameters should and
+					    ;; only appear at the last place.
+					    (unexpected token)))
+				       ((and (eq type :operator)
+					     (not statement))
+					(if (token-type-p token :name)
+					    (list :spread (token-value token))
+					    (if (tokenp token :punc #\[)
+						(list :spread (progn
+								(next)
+								(array*)))
+						(unexpected token))))
+				       ((eq val #\[)
+					(progn (next) (array*)))
+				       ((eq val #\{)
+					(progn (next) (object*)))
+				       (t
+					(unexpected token))))))
       (next)
       (expect #\{)
       (def body (let ((*in-function* t) (*label-scope* ()))
@@ -407,31 +450,39 @@
         (setf finally (ensure-block)))
       (as :try body catch finally)))
 
+  ;; How about merge them...
   (def vardefs (no-in)
-    (unless (token-type-p token :name) (unexpected token))
-    (let ((name (token-value token)) val)
-      (next)
-      (when (tokenp token :operator :=)
-        (next) (setf val (expression nil no-in)))
-      (if (tokenp token :punc #\,)
-          (progn (next) (cons (cons name val) (vardefs no-in)))
-          (list (cons name val)))))
+    (cond ((token-type-p token :name)
+	   (let ((name (token-value token)) val)
+	     (next)
+	     (when (tokenp token :operator :=)
+	       (next) (setf val (expression nil no-in)))
+	     (if (tokenp token :punc #\,)
+		 (progn (next) (cons (cons name val) (vardefs no-in)))
+		 (list (cons name val)))))
+	  ((tokenp token :punc #\[)
+	   (progn (next) (array*)))
+	  ((tokenp token :punc #\{)
+	   (progn (next) (object*)))
+	  (t
+	   (unexpected token))))
 
   (def letdefs (no-in)
-    (if (token-type-p token :name)
-	(let ((name (token-value token)) val)
-	  (next)
-	  (when (tokenp token :operator :=)
-	    (next) (setf val (expression nil no-in)))
-	  (if (tokenp token :punc #\,)
-	      (progn (next) (cons (cons name val) (letdefs no-in)))
-	      (list (cons name val))))
-	;; We are facing destructuring.
-	(if (tokenp token :punc #\[)
-	    (progn (next) (array*))
-	    (if (tokenp token :punc #\{)
-		(progn (next) (object*))
-		(unexpected token)))))
+    (cond ((token-type-p token :name)
+	   (let ((name (token-value token)) val)
+	     (next)
+	     (when (tokenp token :operator :=)
+	       (next) (setf val (expression nil no-in)))
+	     (if (tokenp token :punc #\,)
+		 (progn (next) (cons (cons name val) (letdefs no-in)))
+		 (list (cons name val)))))
+	   ;; We are facing destructuring.
+	  ((tokenp token :punc #\[)
+	   (progn (next) (array*)))
+	  ((tokenp token :punc #\{)
+	   (progn (next) (object*)))
+	  (t
+	   (unexpected token))))
 
   ;; FIXME: var [a, b] = XXX; is also valid in ES6.
   (def var* (&optional no-in)
