@@ -160,7 +160,8 @@
 
 ;;; EQ returns T in SBCL when handling same keyword.
 (defun read-js-number-1 (peek next &key junk-allowed)
-  "Read a number with specific radix."
+  "Read a number with specific radix. Can recognize Infinity, -Infinity, NaN
+and -0."
   (labels ((digits (radix)
              (with-output-to-string (out)
                (loop for ch = (funcall peek)
@@ -173,7 +174,11 @@
       (flet ((ret (x)
                (return-from read-js-number-1
                  (and x (or junk-allowed (eq (funcall peek) nil))
-		      (if minus (if (eq x :infinity) :-infinity (- x)) x)))))
+		      (if minus
+			  (if (eq x :infinity)
+			      :-infinity
+			      (- x))
+			  x)))))
         (cond ((and (equal body "0") (find (funcall peek) "xX") (funcall next))
                (ret (parse-integer (digits 16) :junk-allowed t :radix 16)))
 	      ((and (equal body "0") (find (funcall peek) "oO") (funcall next))
@@ -313,11 +318,13 @@
 		 (with-output-to-string (*standard-output*)
 		   (loop (let ((ch (next t)))
 			   (cond ((eql ch #\$)
-				  (if (eql (next t) #\{)
+				  (if (eql (peek) #\{)
 				      (progn
 					(setf in-interpolate t)
-					(write-char #\$)
-					(write-char #\{))))
+					(write-char ch)
+					(next)
+					(write-char ch))
+				      (write-char ch)))
 				 ((and (eql ch #\}) in-interpolate)
 				  (setf in-interpolate nil)
 				  (write-char ch))
