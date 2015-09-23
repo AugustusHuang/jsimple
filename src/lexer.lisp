@@ -304,33 +304,30 @@
 		      (setf num (+ nx (* num 8))))
                  ch))))))
 
-  (def read-bounded-char ()
-    (let ((ch (next t))
-	  (ch2 (next t)))
-      (if (eql ch2 #\})
-	  ch
-	  (progn
-	    (write-char #\{)
-	    (write-char ch)
-	    (write-char ch2)))))
-
   (def read-template ()
     ;; Eat a backquote.
-    (next)
-    (handler-case
-	(token :template
-	       (with-output-to-string (*standard-output*)
-		 (loop (let ((ch (next t)))
-			 (cond ((eql ch #\$)
-				(if (eql (next t) #\{)
-				    (let ((ch (read-bounded-char)))
-				      (when ch (write-char ch)))
-				    (write-char ch)))
-			       ;; Templates allow multiple line input.
-			       ((eql ch #\`)
-				(return))
-			       (t (write-char ch)))))))
-      (end-of-file () (lexer-error "Unterminated template"))))
+    (let ((in-interpolate nil))
+      (next)
+      (handler-case
+	  (token :template
+		 (with-output-to-string (*standard-output*)
+		   (loop (let ((ch (next t)))
+			   (cond ((eql ch #\$)
+				  (if (eql (next t) #\{)
+				      (progn
+					(setf in-interpolate t)
+					(write-char #\$)
+					(write-char #\{))))
+				 ((and (eql ch #\}) in-interpolate)
+				  (setf in-interpolate nil)
+				  (write-char ch))
+				 ;; Templates allow multiple line input.
+				 ((and (eql ch #\`) (null in-interpolate))
+				  (return))
+				 ((and (eql ch #\`) in-interpolate)
+				  (lexer-error "Unterminated template literal"))
+				 (t (write-char ch)))))))
+	(end-of-file () (lexer-error "Unterminated template")))))
   
   (def read-string ()
     (let ((quote (next)))
