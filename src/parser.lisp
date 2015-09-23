@@ -60,6 +60,7 @@
 (defparameter +precedence+
   (let ((precs (make-hash-table)))
     ;; The => arrow function operator and ... spread operator are the last.
+    ;; The . property operator is the first.
     (loop for ops in '((:...) (:=>) (:|\|\||) (:&&) (:|\||) (:^) (:&)
 		       (:== :=== :!= :!==) (:< :> :<= :>= :in :instanceof)
 		       (:>> :<< :>>>) (:+ :-) (:* :/ :%))
@@ -163,68 +164,77 @@
                (eq (token-value token) :/))
       (setf peeked nil
             token (funcall input t)))
-    (case (token-type token)
-      ((:num :string :regexp :operator :atom :template) (simple-statement))
-      (:name (if (tokenp (peek) :punc #\:)
-                 (let ((label (prog1 (token-value token) (skip 2))))
-                   (as :label label
-		       (with-label-scope :label label (statement label))))
-                 (simple-statement)))
-      (:punc (case (token-value token)
-               (#\{ (next) (block*))
-               ((#\[ #\() (simple-statement))
-               (#\; (next) (as :block ()))
-               (t (unexpected token))))
-      (:keyword
-       ;; Add const and let in ECMA version 6.
-       ;; NOTE: Though now we handle strict-mode keywords as ordinary keywords
-       ;; so that they can't be variable names, we don't handle them explicitly
-       ;; for now.
-       ;; --- Augustus, 24 Aug 2015.
-       (case (prog1 (token-value token) (next))
-         (:break (break/cont :break))
-	 (:class (class*))
-	 (:const (prog1 (const*) (semicolon)))
-         (:continue (break/cont :continue))
-         (:debugger (semicolon) (as :debugger))
-         (:do (let ((body (with-label-scope :loop label (statement))))
-                (expect-key :while)
-                (as :do (parenthesised) body)))
-	 (:export (export*))
-         (:for (for* label))
-         (:function (function* t))
-         (:if (if*))
-	 (:import (import*))
-	 (:let (prog1 (js-let) (semicolon)))
-         (:return (unless *in-function*
-		    (error* "'return' outside of function"))
-                  (as :return
-                      (cond ((semicolonp) (next) nil)
-                            ((can-insert-semicolon) nil)
-                            (t (prog1 (expression) (semicolon))))))
-         (:switch (let ((val (parenthesised))
-                        (cases nil))
-                    (with-label-scope :switch label
-                      (expect #\{)
-                      (loop :until (tokenp token :punc #\}) :do
-                         (case (token-value token)
-                           (:case (next)
-                             (push (cons (prog1 (expression) (expect #\:)) nil) cases))
-                           (:default (next) (expect #\:) (push (cons nil nil) cases))
-                           (t (unless cases (unexpected token))
-                              (push (statement) (cdr (car cases))))))
-                      (next)
-                      (as :switch val (loop for case in (nreverse cases)
-					 collect (cons (car case)
-						       (nreverse (cdr case))))))))
-         (:throw (let ((ex (expression))) (semicolon) (as :throw ex)))
-         (:try (try*))
-         (:var (prog1 (var*) (semicolon)))
-         (:while (as :while (parenthesised)
-		     (with-label-scope :loop label (statement))))
-         (:with (as :with (parenthesised) (statement)))
-         (t (unexpected token))))
-      (t (unexpected token))))
+    (cond ((or (eq (token-type token) :num)
+	       (eq (token-type token) :string)
+	       (eq (token-type token) :regexp)
+	       (eq (token-type token) :operator)
+	       (eq (token-type token) :atom)
+	       (eq (token-type token) :template)) (simple-statement))
+	  ((eq (token-type token) :name)
+	   (if (tokenp (peek) :punc #\:)
+	       (let ((label (prog1 (token-value token) (skip 2))))
+		 (as :label label
+		     (with-label-scope :label label (statement label))))
+	       (simple-statement)))
+	  ((or (tokenp token :keyword :this)
+	       (tokenp token :keyword :super))
+	   (simple-statement))
+	  ((eq (token-type token) :punc)
+	   (case (token-value token)
+	     (#\{ (next) (block*))
+	     ((#\[ #\() (simple-statement))
+	     (#\; (next) (as :block ()))
+	     (t (unexpected token))))
+	  ((eq (token-type token) :keyword)
+	   ;; Add const and let in ECMA version 6.
+	   ;; NOTE: Though now we handle strict-mode keywords as ordinary
+	   ;; keywords so that they can't be variable names,
+	   ;; we don't handle them explicitly for now.
+	   ;; --- Augustus, 24 Aug 2015.
+	   (case (prog1 (token-value token) (next))
+	     (:break (break/cont :break))
+	     (:class (class*))
+	     (:const (prog1 (const*) (semicolon)))
+	     (:continue (break/cont :continue))
+	     (:debugger (semicolon) (as :debugger))
+	     (:do (let ((body (with-label-scope :loop label (statement))))
+		    (expect-key :while)
+		    (as :do (parenthesised) body)))
+	     (:export (export*))
+	     (:for (for* label))
+	     (:function (function* t))
+	     (:if (if*))
+	     (:import (import*))
+	     (:let (prog1 (js-let) (semicolon)))
+	     (:return (unless *in-function*
+			(error* "'return' outside of function"))
+		      (as :return
+			  (cond ((semicolonp) (next) nil)
+				((can-insert-semicolon) nil)
+				(t (prog1 (expression) (semicolon))))))
+	     (:switch (let ((val (parenthesised))
+			    (cases nil))
+			(with-label-scope :switch label
+			  (expect #\{)
+			  (loop :until (tokenp token :punc #\}) :do
+			     (case (token-value token)
+			       (:case (next)
+				 (push (cons (prog1 (expression) (expect #\:)) nil) cases))
+			       (:default (next) (expect #\:) (push (cons nil nil) cases))
+			       (t (unless cases (unexpected token))
+				  (push (statement) (cdr (car cases))))))
+			  (next)
+			  (as :switch val (loop for case in (nreverse cases)
+					     collect (cons (car case)
+							   (nreverse (cdr case))))))))
+	     (:throw (let ((ex (expression))) (semicolon) (as :throw ex)))
+	     (:try (try*))
+	     (:var (prog1 (var*) (semicolon)))
+	     (:while (as :while (parenthesised)
+			 (with-label-scope :loop label (statement))))
+	     (:with (as :with (parenthesised) (statement)))
+	     (t (unexpected token))))
+	  (t (unexpected token))))
 
   (def simple-statement ()
     (let ((exp (expression)))
@@ -327,16 +337,12 @@
 		       (prog1 (token-value token) (next))))
 	(when (not name) (unexpected token))
 	;; Superclass, make extends optional...
-	(if (tokenp token :keyword :extends)
-	    (setf superclass (and (token-type-p token :name)
-				  (prog1 (token-value token)
-				    (next)
-				    (if (tokenp token :punc #\{)
-					(next)
-					(unexpected token)))))
-	    (if (tokenp token :punc #\{)
-		(next)
-		(unexpected token)))
+	(when (tokenp token :keyword :extends)
+	  (progn (next) (if (token-type-p token :name)
+			    (setf superclass (token-value token))
+			    (unexpected token))
+		 (next)))
+	(expect #\{)
 	(def body (let ((*label-scope* ()))
 		    ;; How about var, let and const?
 		    ;; Class definition only contains functions' definitions.
@@ -388,6 +394,9 @@
 				 (next)
 				 (cond ((and (eq type :name)
 					     (tokenp token :punc #\,))
+					val)
+				       ((and (eq type :name)
+					     (tokenp token :punc #\)))
 					val)
 				       ((and (eq type :name)
 					     (tokenp token :operator :=))
@@ -450,7 +459,7 @@
         (setf finally (ensure-block)))
       (as :try body catch finally)))
 
-  ;; How about merge them...
+  ;; Merge var, const and let definitions, the only difference is the prefix.
   (def vardefs (no-in)
     (cond ((token-type-p token :name)
 	   (let ((name (token-value token)) val)
@@ -461,40 +470,30 @@
 		 (progn (next) (cons (cons name val) (vardefs no-in)))
 		 (list (cons name val)))))
 	  ((tokenp token :punc #\[)
-	   (progn (next) (array*)))
-	  ((tokenp token :punc #\{)
-	   (progn (next) (object*)))
-	  (t
-	   (unexpected token))))
-
-  (def letdefs (no-in)
-    (cond ((token-type-p token :name)
-	   (let ((name (token-value token)) val)
-	     (next)
+	   (let ((lhs (progn (next) (array*))) val)
 	     (when (tokenp token :operator :=)
 	       (next) (setf val (expression nil no-in)))
 	     (if (tokenp token :punc #\,)
-		 (progn (next) (cons (cons name val) (letdefs no-in)))
-		 (list (cons name val)))))
-	   ;; We are facing destructuring.
-	  ((tokenp token :punc #\[)
-	   (progn (next) (array*)))
+		 (progn (next) (cons (cons lhs val) (vardefs no-in)))
+		 (list (cons lhs val)))))
 	  ((tokenp token :punc #\{)
-	   (progn (next) (object*)))
+	   (let ((lhs (progn (next) (object*))) val)
+	     (when (tokenp token :operator :=)
+	       (next) (setf val (expression nil no-in)))
+	     (if (tokenp token :punc #\,)
+		 (progn (next) (cons (cons lhs val) (vardefs no-in)))
+		 (list (cons lhs val)))))
 	  (t
 	   (unexpected token))))
 
-  ;; FIXME: var [a, b] = XXX; is also valid in ES6.
   (def var* (&optional no-in)
     (as :var (vardefs no-in)))
 
   (def const* ()
     (as :const (vardefs t)))
 
-  ;; FIXME: Can have let [a, b] = XXX; or let [, a] = XXX.
-  ;; Change it to fit this!
   (def js-let (&optional no-in)
-    (as :let (letdefs no-in)))
+    (as :let (vardefs no-in)))
 
   ;; Shall we implement a export and import list,
   ;; and support modular programming in such an early stage?
@@ -662,23 +661,20 @@
 		 elts))
       (nreverse elts)))
   
-  ;; In order to implement this new feature...
-  (def destructure ()
-    )
-
   (def array* ()
     (as :array (expr-list #\] t t)))
 
   (def object* ()
     ;; Now object property can be written as a = 0 instead of a: a = 0.
     (as :object (loop for first = t then nil
-                      until (tokenp token :punc #\})
-                      unless first do (expect #\,)
-                      until (tokenp token :punc #\}) collect
+		   until (tokenp token :punc #\})
+		   unless first do (expect #\,)
+		   until (tokenp token :punc #\})
+		   collect
 		     (let ((name (as-property-name)))
 		       (cond ((tokenp token :punc #\:)
 			      (next) (cons name (expression nil)))
-			     ;; TODO: Move them into class.
+			     ;; TODO: They can also appear in class.
 			     ((or (equal name "get") (equal name "set"))
 			      (let ((name1 (as-property-name))
 				    (body (progn
@@ -692,7 +688,7 @@
 				       body)))
 			     (t (unexpected token))))
                    finally (next))))
-
+  
   (def as-property-name ()
     (if (member (token-type token) '(:num :string))
         (prog1 (token-value token) (next))
