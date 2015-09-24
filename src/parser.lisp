@@ -99,6 +99,13 @@
         (with-input-from-string (in input) (parse-js* in strict-semicolons))
         (parse-js* input strict-semicolons))))
 
+;;; TODO: Problems when parsing ES6 now:
+;;; 1. New object representation.
+;;; 2. Object and array as arguments.
+;;; 3. Variable definition in class, though not encouraged.
+;;; 4. Get and set in class.
+;;; 5. Spread operator in function call.
+
 (defun/defs parse-js* (stream &optional strict-semicolons)
   (def input (if (functionp stream) stream (lex-js stream)))
   (def token (funcall input))
