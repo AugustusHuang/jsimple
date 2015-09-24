@@ -353,8 +353,7 @@
 		       collect (prog1
 				   (if (tokenp token :keyword :static)
 				       (static-function* t)
-				       (function* t))
-				 (next)))))
+				       (function* t))))))
 	(next)
 	(if superclass
 	    (as :class name :extends superclass body)
@@ -364,7 +363,7 @@
     (progn
       (next)
       (if (token-type-p token :name)
-	  (function* statement)
+	  (as :static (function* statement))
 	  (unexpected token))))
   
   (def function* (statement)
