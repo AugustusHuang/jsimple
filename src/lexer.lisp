@@ -101,14 +101,14 @@
 ;;; NOTE: All constant parameters should be surronded by +.
 (defparameter +operator-chars+ "+-*&%=<>!?|~^")
 
-;;; Add arrow function, OF operator and ... spread operator.
+;;; Add arrow function, OF operator and spread operator.
 (defparameter +operators+
   (let ((ops (make-hash-table :test 'equal)))
     (dolist (op '(:in :instanceof :of :typeof :new :void :delete
 		  :++ :-- :+ :- :! :~ :& :|\|| :^ :* :/ :%
                   :>> :<< :>>> :< :> :<= :>= :== :=== :!= :!==
 		  :? := :+= :-= :/= :*= :%= :>>= :<<= :=>
-                  :>>>= :~= :%= :|\|=| :^= :&= :&& :|\|\|| :...))
+                  :>>>= :~= :%= :|\|=| :^= :&= :&& :|\|\||) :...)
       (setf (gethash (string-downcase (string op)) ops) op))
     ops))
 
@@ -280,9 +280,15 @@ and -0."
 
   (def handle-dot ()
     (next)
-    (if (digit-char-p (peek))
-        (read-num #\.)
-        (token :punc #\.)))
+    (cond ((digit-char-p (peek))
+	   (read-num #\.))
+	  ((eql (peek) #\.)
+	   (next)
+	   (if (eql (next) #\.)
+	       (token :operator :...)
+	       (lexer-error "Unexpected token .")))
+	  (t
+	   (token :punc #\.))))
 
   (def hex-bytes (n char)
     (loop with num = 0
@@ -321,9 +327,9 @@ and -0."
 				  (if (eql (peek) #\{)
 				      (progn
 					(setf in-interpolate t)
-					(write-char ch)
+					(write-char #\$)
 					(next)
-					(write-char ch))
+					(write-char #\{))
 				      (write-char ch)))
 				 ((and (eql ch #\}) in-interpolate)
 				  (setf in-interpolate nil)
@@ -483,7 +489,7 @@ and -0."
                   ((eql next #\.) (handle-dot))
                   ((find next "[]{}(),;:") (token :punc (next)))
                   ((eql next #\/) (handle-slash))
-                  ((find next +operator-chars+) (read-operator))
+		  ((find next +operator-chars+) (read-operator))
                   ((or (identifier-char-p next) (eql next #\\)) (read-word))
                   (t (lexer-error "Unexpected char '~A'" next)))))))
   

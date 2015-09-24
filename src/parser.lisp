@@ -169,7 +169,8 @@
 	       (eq (token-type token) :regexp)
 	       (eq (token-type token) :operator)
 	       (eq (token-type token) :atom)
-	       (eq (token-type token) :template)) (simple-statement))
+	       (eq (token-type token) :template))
+	   (simple-statement))
 	  ((eq (token-type token) :name)
 	   (if (tokenp (peek) :punc #\:)
 	       (let ((label (prog1 (token-value token) (skip 2))))
@@ -212,6 +213,7 @@
 			  (cond ((semicolonp) (next) nil)
 				((can-insert-semicolon) nil)
 				(t (prog1 (expression) (semicolon))))))
+	     (:super (super*))
 	     (:switch (let ((val (parenthesised))
 			    (cases nil))
 			(with-label-scope :switch label
@@ -228,6 +230,7 @@
 					     collect (cons (car case)
 							   (nreverse (cdr case))))))))
 	     (:throw (let ((ex (expression))) (semicolon) (as :throw ex)))
+	     (:this (this*))
 	     (:try (try*))
 	     (:var (prog1 (var*) (semicolon)))
 	     (:while (as :while (parenthesised)
@@ -360,7 +363,7 @@
   (def static-function* (statement)
     (progn
       (next)
-      (if (tokenp token :keyword :function)
+      (if (token-type-p token :name)
 	  (function* statement)
 	  (unexpected token))))
   
@@ -370,9 +373,6 @@
 		       (prog1 (token-value token) (next))))
       (when (and statement (not name)) (unexpected token))
       (expect #\()
-      ;; FIXME: ES 6 supports default parameter value, add this feature!
-      ;; FIXME: When ordinary argument list is finished, after ... will be
-      ;; the rest parameters!
       ;; NOTE: Spread operator looks the same, but it only appear when
       ;; the function is called. so it won't be hard to tell them apart.
       (def argnames (loop for first = t then nil
@@ -407,14 +407,18 @@
 					     statement
 					     (token-type-p token :name))
 					(if (tokenp (peek) :punc #\))
-					    (list :rest (token-value token))
+					    (prog1
+						(list :rest (token-value token))
+					      (next))
 					    ;; The rest parameters should and
 					    ;; only appear at the last place.
 					    (unexpected token)))
 				       ((and (eq type :operator)
 					     (not statement))
 					(if (token-type-p token :name)
-					    (list :spread (token-value token))
+					    (prog1
+						(list :spread (token-value token))
+					      (next))
 					    (if (tokenp token :punc #\[)
 						(list :spread (progn
 								(next)
@@ -616,6 +620,10 @@
           ((tokenp token :keyword :function)
            (next)
            (subscripts (function* nil) allow-calls))
+	  ((or (tokenp token :keyword :this)
+	       (tokenp token :keyword :super))
+	   (let ((atom (token-value token)))
+	     (subscripts (prog1 atom (next)) allow-calls)))
           ((member (token-type token) '(:atom :num :string
 					:regexp :template :name))
            (let ((atom (if (eq (token-type token) :regexp)
@@ -675,6 +683,7 @@
 		       (cond ((tokenp token :punc #\:)
 			      (next) (cons name (expression nil)))
 			     ;; TODO: They can also appear in class.
+			     ;; It seems they are cheated as functions.
 			     ((or (equal name "get") (equal name "set"))
 			      (let ((name1 (as-property-name))
 				    (body (progn
